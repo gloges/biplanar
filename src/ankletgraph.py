@@ -68,20 +68,109 @@ class AnkletGraph[T: Hashable]:
     #   Graph attributes
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def get_attribute(self, name: str) -> Any:
-        """Return a graph attribute."""
-        return self._attr[name]
+    def get_attribute(self, attr_name: str) -> Any:
+        """Return a graph attribute.
 
-    def update_attributes(self, **attr: Any) -> None:
-        """Set or overwrite graph attributes."""
+        Parameters
+        ----------
+        attr_name : str
+            Attribute name.
+
+        Returns
+        -------
+        Any
+            Attribute value.
+
+        Raises
+        ------
+        KeyError
+            If the graph has no attribute `attr_name`.
+
+        See Also
+        --------
+        :meth:`set_attributes`,
+        :meth:`remove_attribute`,
+        :meth:`clear_attributes`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5), name='myGraph', color='b')
+        >>> g.get_attribute('color')
+        'b'
+
+        The graph's name is *not* an attribute:
+
+        >>> g.get_attribute('name')
+        Traceback (most recent call last):
+        ...
+        KeyError: 'name'
+        """
+        return self._attr[attr_name]
+
+    def set_attributes(self, **attr: Any) -> None:
+        """Set or overwrite graph attributes.
+
+        Parameters
+        ----------
+        attr : keyword arguments
+            Set or change attributes using key=value.
+
+        Raises
+        ------
+        KeyError
+            If the attribute keys include "name".
+
+        See Also
+        --------
+        :meth:`get_attribute`,
+        :meth:`remove_attribute`,
+        :meth:`clear_attributes`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5), name='myGraph', color='r', type='foo')
+        >>> g.set_attributes(type='bar', acyclic=False)
+        >>> g.get_attribute('type')
+        'bar'
+        >>> g.get_attribute('acyclic')
+        False
+        >>> g.set_attributes(name='yourGraph')
+        Traceback (most recent call last):
+        ...
+        KeyError: "'name' cannot be an attribute."
+        """
+        if 'name' in attr:
+            raise KeyError("'name' cannot be an attribute.")
         self._attr.update(attr)
 
-    def remove_attribute(self, name: str) -> None:
-        """Remove a graph attribute."""
-        self._attr.pop(name)
+    def remove_attribute(self, attr_name: str) -> None:
+        """Remove a graph attribute.
+
+        Returns quietly if the attribute does not exist.
+
+        Parameters
+        ----------
+        attr_name : str
+            Attribute name.
+
+        See Also
+        --------
+        :meth:`get_attribute`,
+        :meth:`set_attributes`,
+        :meth:`clear_attributes`
+        """
+        if attr_name in self._attr:
+            self._attr.pop(attr_name)
 
     def clear_attributes(self) -> None:
-        """Remove all graph attributes."""
+        """Remove all graph attributes.
+
+        See Also
+        --------
+        :meth:`get_attribute`,
+        :meth:`set_attributes`,
+        :meth:`remove_attribute`
+        """
         self._attr.clear()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
