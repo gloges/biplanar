@@ -1,11 +1,24 @@
 """Combinatorial anklets."""
 
-from collections.abc import Hashable
+from collections.abc import Hashable, Iterable, Iterator
+from types import NotImplementedType
 from typing import Self
 
 
 class Anklet[T: Hashable](tuple[T, ...]):
-    """An anklet is a combinatorial bracelet with all beads distinct."""
+    """An anklet is a combinatorial bracelet with all beads distinct.
+
+    Examples
+    --------
+    >>> Anklet(0, 1, 2, 3) == Anklet(1, 2, 3, 0)
+    True
+    >>> Anklet(0, 1, 2, 3) == Anklet(0, 1, 3, 2)
+    False
+    >>> Anklet(0, 1, 2, 1)
+    Traceback (most recent call last):
+    ...
+    ValueError: beads are not distinct
+    """
 
     def __new__(cls, *beads: T) -> Self:
         if len(set(beads)) != len(beads):
@@ -14,6 +27,16 @@ class Anklet[T: Hashable](tuple[T, ...]):
 
     @classmethod
     def from_iterable(cls, values: Iterable[T] = (), /) -> Self:
+        """Construct an anklet from an iterable of values.
+
+        Unlike `Anklet(x)`, this method treats `x` as a source of elements
+        rather than as the lone element of the anklet.
+
+        Examples
+        --------
+        >>> Anklet.from_iterable(range(4)) == Anklet(0, 1, 2, 3)
+        True
+        """
         return cls(*values)
 
     def __repr__(self) -> str:
