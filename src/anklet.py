@@ -26,18 +26,18 @@ class Anklet[T: Hashable](tuple[T, ...]):
         return super().__new__(cls, beads)
 
     @classmethod
-    def from_iterable(cls, values: Iterable[T] = (), /) -> Self:
-        """Construct an anklet from an iterable of values.
+    def from_iterable(cls, beads: Iterable[T] = (), /) -> Self:
+        """Construct an anklet from an iterable of beads.
 
-        Unlike `Anklet(x)`, this method treats `x` as a source of elements
-        rather than as the lone element of the anklet.
+        Unlike `Anklet(x)`, this method treats `x` as a source of beads
+        rather than as the lone bead of the anklet.
 
         Examples
         --------
         >>> Anklet.from_iterable(range(4)) == Anklet(0, 1, 2, 3)
         True
         """
-        return cls(*values)
+        return cls(*beads)
 
     def __repr__(self) -> str:
         return "ank(" + ", ".join(repr(bead) for bead in self) + ")"
