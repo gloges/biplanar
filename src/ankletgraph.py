@@ -10,13 +10,17 @@ class AnkletGraph[T: Hashable]:
     """An **anklet graph** is a multi-hypergraph with additional combinatorial structure."""
 
     _name: str
+    _attr: dict[str, Any]
     _node: dict[T, dict[str, Any]]
     _edge: dict[Anklet[T], int]
 
-    def __init__(self, *, name: str = "") -> None:
+    def __init__(self, nodes: Iterable[T] = (), *, name: str = "", **attr: Any) -> None:
         self._name = name
+        self._attr = attr
         self._node = {}
         self._edge = {}
+
+        self.add_nodes_from(nodes)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -59,6 +63,26 @@ class AnkletGraph[T: Hashable]:
         :meth:`number_of_nodes` : identical method
         """
         return len(self._node)
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Graph attributes
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def get_attribute(self, name: str) -> Any:
+        """Return a graph attribute."""
+        return self._attr[name]
+
+    def update_attributes(self, **attr: Any) -> None:
+        """Set or overwrite graph attributes."""
+        self._attr.update(attr)
+
+    def remove_attribute(self, name: str) -> None:
+        """Remove a graph attribute."""
+        self._attr.pop(name)
+
+    def clear_attributes(self) -> None:
+        """Remove all graph attributes."""
+        self._attr.clear()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Nodes
