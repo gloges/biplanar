@@ -178,16 +178,22 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def get_node_attributes(self, name: str, default: Any = None) -> dict[T, Any]:
-        """Return node attributes."""
-        raise NotImplementedError()
+        if default is not None:
+            return {n: d.get(name, default) for n, d in self._node.items()}
+        return {n: d[name] for n, d in self._node.items() if name in d}
 
-    def set_node_attributes(self, name: str, default: Any = None) -> None:
-        """Set node attributes."""
-        raise NotImplementedError()
+    def set_node_attributes(self, name: str, values: Mapping[T, Any]) -> None:
+        for n, val in values.items():
+            try:
+                self._node[n][name] = val
+            except KeyError:
+                pass
 
     def remove_node_attributes(self, name: str, nodes: Collection[T] | None = None) -> None:
-        """Remove node attributes."""
-        raise NotImplementedError()
+        for n in self:
+            if nodes is None or n in nodes:
+                if name in self._node[n]:
+                    self._node[n].pop(name)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Hyperedges
