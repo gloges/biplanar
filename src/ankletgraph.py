@@ -152,14 +152,14 @@ class AnkletGraph[T: Hashable]:
     #   Associated graphs
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def to_undirected(self) -> nx.Graph[T]:
+    def to_undirected(self) -> nx.Graph:
         """The simple graph reflecting node adjacencies in the anklet graph."""
         raise NotImplementedError()
 
-    def skeleton_graph(self) -> nx.MultiGraph[T]:
+    def skeleton_graph(self) -> nx.MultiGraph:
         """The multi-graph formed by replacing each hyperedge by a cycle."""
         raise NotImplementedError()
 
-    def wheel_graph(self) -> nx.MultiGraph[T]:
+    def wheel_graph(self) -> nx.MultiGraph:
         """The multi-graph formed by replacing each hyperedge by a wheel."""
         raise NotImplementedError()
