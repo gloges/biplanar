@@ -26,21 +26,21 @@ class Anklet[T: Hashable](tuple[T, ...]):
         return super().__new__(cls, beads)
 
     @classmethod
-    def from_iterable(cls, values: Iterable[T] = (), /) -> Self:
-        """Construct an anklet from an iterable of values.
+    def from_iterable(cls, beads: Iterable[T] = (), /) -> Self:
+        """Construct an anklet from an iterable of beads.
 
-        Unlike `Anklet(x)`, this method treats `x` as a source of elements
-        rather than as the lone element of the anklet.
+        Unlike `Anklet(x)`, this method treats `x` as a source of beads
+        rather than as the lone bead of the anklet.
 
         Examples
         --------
         >>> Anklet.from_iterable(range(4)) == Anklet(0, 1, 2, 3)
         True
         """
-        return cls(*values)
+        return cls(*beads)
 
     def __repr__(self) -> str:
-        return "ank(" + ", ".join(repr(bead) for bead in self) + ")"
+        return "A(" + ", ".join(repr(bead) for bead in self) + ")"
 
     def __add__(self, value: object) -> NotImplementedType:
         return NotImplemented
@@ -52,10 +52,10 @@ class Anklet[T: Hashable](tuple[T, ...]):
         return NotImplemented
 
     def representatives(self) -> Iterator[tuple[T, ...]]:
-        """Yield all representative tuples of the anklet.
+        """Generate all representative tuples of the anklet.
 
         For an anklet of length `n ≥ 3`, yields the `2n` images of its defining tuple under
-        the action of `Dih_n`. Anklets of length `n ≤ 1` and `n = 2` yield only one and two
+        the action of `Dihₙ`. Anklets of length `n ≤ 1` and `n = 2` yield only one and two
         representatives, respectively.
 
         Yields
@@ -96,14 +96,72 @@ class Anklet[T: Hashable](tuple[T, ...]):
             return NotImplemented
         return self in other.representatives()
 
-    def __lt__(self, other: object) -> NotImplementedType:
-        return NotImplemented
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        """Return whether the anklet is a sub-anklet of `other`.
 
-    def __le__(self, other: object) -> NotImplementedType:
-        return NotImplemented
+        This "sub-anklet" partial order has the empty anklet of length zero as its least element.
 
-    def __gt__(self, other: object) -> NotImplementedType:
-        return NotImplemented
+        Parameters
+        ----------
+        other : object
+            Anklet against which to compare this anklet.
+
+        Returns
+        -------
+        NotImplementedType or bool
+            `NotImplemented` if `other` is not an anklet.
+            Otherwise, whether this anklet is a sub-anklet of `other`.
+
+        Examples
+        --------
+        >>> Anklet(0, 1, 2) <= Anklet(0, 3, 1, 4, 2, 5)
+        True
+        >>> Anklet(0, 1, 2, 3) <= Anklet(4, 1, 5, 3, 0, 2)
+        False
+        >>> Anklet() <= Anklet(0, 1, 2)
+        True
+        """
+        if not isinstance(other, Anklet):
+            return NotImplemented
+
+        # Edge case for empty anklet to avoid IndexError below
+        if not self:
+            return True
+
+        # Scan through 'other', collecting the next bead for each representative of 'self'
+        # as they are passed. If a rep manages to collect all of its beads then it is a sub-anklet.
+        states = {rep: 0 for rep in self.representatives()}
+        for bead in other:
+            for rep, index in states.items():
+                if bead == rep[index]:
+                    states[rep] += 1
+                    if states[rep] == len(self):
+                        return True
+        return False
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `self <= other` and `self != other`.
+
+        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        """
+        if not isinstance(other, Anklet):
+            return NotImplemented
+        return len(self) < len(other) and self <= other
 
     def __ge__(self, other: object) -> NotImplementedType:
-        return NotImplemented
+        """Return whether `other <= self`.
+
+        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        """
+        if not isinstance(other, Anklet):
+            return NotImplemented
+        return other <= self
+
+    def __gt__(self, other: object) -> NotImplementedType:
+        """Return whether `other <= self` and `self != other`.
+
+        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        """
+        if not isinstance(other, Anklet):
+            return NotImplemented
+        return len(other) < len(self) and other <= self
