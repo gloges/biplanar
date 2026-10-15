@@ -1,6 +1,6 @@
 """Combinatorial anklets."""
 
-from collections.abc import Container, Hashable, Iterable, Iterator
+from collections.abc import Hashable, Iterable, Iterator
 from types import NotImplementedType
 from typing import Self
 
