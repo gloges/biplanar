@@ -1,6 +1,6 @@
 """Combinatorial anklets."""
 
-from collections.abc import Hashable, Iterable, Iterator
+from collections.abc import Container, Hashable, Iterable, Iterator
 from types import NotImplementedType
 from typing import Self
 
@@ -165,3 +165,84 @@ class Anklet[T: Hashable](tuple[T, ...]):
         if not isinstance(other, Anklet):
             return NotImplemented
         return len(other) < len(self) and other <= self
+
+    def without_bead(self, bead: T, /) -> Self:
+        """Return the anklet with a bead removed.
+
+        The relative order of all retained beads is preserved.
+
+        Parameters
+        ----------
+        bead : T
+            Bead to remove.
+
+        Returns
+        -------
+        Self
+            The anklet with `bead` removed, if present.
+
+        See Also
+        --------
+        :meth:`without_beads`
+
+        Examples
+        --------
+        >>> a = Anklet(5, 2, 3, 0, 4, 1)
+        >>> a.without_bead(3)
+        A(5, 2, 0, 4, 1)
+        >>> a.without_bead(6)
+        A(5, 2, 3, 0, 4, 1)
+        """
+        return type(self).from_iterable(b for b in self if b is not bead)
+
+    def without_beads(self, beads: Container[T], /) -> Self:
+        """Return the anklet with beads removed.
+
+        Parameters
+        ----------
+        beads : Container[T]
+            Beads to remove.
+
+        Returns
+        -------
+        Self
+            Anklet with beads from `beads` removed, if present.
+
+        See Also
+        --------
+        :meth:`without_bead`
+
+        Examples
+        --------
+        >>> Anklet(5, 2, 3, 0, 4, 1).without_beads((0, 2))
+        A(5, 3, 4, 1)
+        >>> Anklet(5, 2, 3, 0, 4, 1).without_beads(Anklet(0, 1, 6))
+        A(5, 2, 3, 4)
+        """
+        return type(self).from_iterable(b for b in self if b not in beads)
+
+    def standardized(self) -> Self:
+        """Return an equivalent anklet with minimal defining tuple.
+
+        Returns
+        -------
+        Self
+            An equivalent anklet.
+
+        Raises
+        ------
+        TypeError
+            If `<` is not supported between beads.
+
+        Examples
+        --------
+        >>> Anklet(2, 0, 1).standardized()
+        A(0, 1, 2)
+        >>> Anklet(2, 1, 0, 3).standardized()
+        A(0, 1, 2, 3)
+        >>> Anklet(0j, 1j).standardized()
+        Traceback (most recent call last):
+        ...
+        TypeError: '<' not supported between instances of 'complex' and 'complex'
+        """
+        return type(self).from_iterable(min(self.representatives()))
