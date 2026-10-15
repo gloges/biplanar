@@ -2,6 +2,7 @@
 
 from collections.abc import Hashable, Iterator
 from typing import Any
+import networkx as nx
 from anklet import Anklet
 
 
@@ -105,3 +106,31 @@ class AnkletGraph[T: Hashable]:
     def remove_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
         """Remove a hyperedge."""
         raise NotImplementedError()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Associated graphs
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def skeleton_graph(self) -> nx.MultiGraph[T]:
+        """The multi-graph formed by replacing each hyperedge by a cycle."""
+        raise NotImplementedError()
+
+    def wheel_graph(self) -> nx.MultiGraph[T]:
+        """The multi-graph formed by replacing each hyperedge by a wheel."""
+        raise NotImplementedError()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Incidence / adjacency
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def incidence(self) -> dict[T, Anklet[T]]:
+        """Return the incidence data of the graph."""
+        raise NotImplementedError()
+
+    def adjacency(self) -> dict[T, set[T]]:
+        """Return the adjacency data of the graph."""
+        raise NotImplementedError()
+
+    def connected_components(self) -> Iterator[set[T]]:
+        """Generate connected components."""
+        return nx.connected_components(self.skeleton_graph())
