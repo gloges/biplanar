@@ -64,3 +64,23 @@ class Anklet[T: Hashable](tuple[T, ...]):
         for vals in (self, self[::-1]):
             for i in range(len(self)):
                 yield vals[i:] + vals[:i]
+
+    def __hash__(self) -> int:
+        return hash(frozenset(self.representatives()))
+
+    def __eq__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, Anklet):
+            return NotImplemented
+        return self in other.representatives()
+
+    def __lt__(self, other: object) -> NotImplementedType:
+        return NotImplemented
+
+    def __le__(self, other: object) -> NotImplementedType:
+        return NotImplemented
+
+    def __gt__(self, other: object) -> NotImplementedType:
+        return NotImplemented
+
+    def __ge__(self, other: object) -> NotImplementedType:
+        return NotImplemented
