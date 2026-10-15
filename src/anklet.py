@@ -28,3 +28,39 @@ class Anklet[T: Hashable](tuple[T, ...]):
     def __rmul__(self, value: object) -> NotImplementedType:
         return NotImplemented
 
+    def representatives(self) -> Iterator[tuple[T, ...]]:
+        """Yield all representative tuples of the anklet.
+
+        For an anklet of length `n ≥ 3`, yields the `2n` images of its defining tuple under
+        the action of `Dih_n`. Anklets of length `n ≤ 1` and `n = 2` yield only one and two
+        representatives, respectively.
+
+        Yields
+        ------
+        tuple[T, ...]
+            A representative tuple, equivalent to the defining tuple
+            up to cyclic permutation and reversal.
+
+        Examples
+        --------
+        >>> list(Anklet().representatives())
+        [()]
+        >>> list(Anklet(0).representatives())
+        [(0,)]
+        >>> sorted(Anklet(0, 1).representatives())
+        [(0, 1), (1, 0)]
+        >>> sorted(Anklet(0, 1, 2).representatives())
+        [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
+        >>> len(list(Anklet.from_iterable(range(100)).representatives()))
+        200
+        """
+        if len(self) <= 1:
+            yield tuple(self)
+            return
+        if len(self) == 2:
+            yield tuple(self)
+            yield tuple(reversed(self))
+            return
+        for vals in (self, self[::-1]):
+            for i in range(len(self)):
+                yield vals[i:] + vals[:i]
