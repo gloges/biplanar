@@ -133,18 +133,6 @@ class AnkletGraph[T: Hashable]:
         raise NotImplementedError()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Associated graphs
-    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-
-    def skeleton_graph(self) -> nx.MultiGraph[T]:
-        """The multi-graph formed by replacing each hyperedge by a cycle."""
-        raise NotImplementedError()
-
-    def wheel_graph(self) -> nx.MultiGraph[T]:
-        """The multi-graph formed by replacing each hyperedge by a wheel."""
-        raise NotImplementedError()
-
-    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence / adjacency
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
@@ -158,4 +146,20 @@ class AnkletGraph[T: Hashable]:
 
     def connected_components(self) -> Iterator[set[T]]:
         """Generate connected components."""
-        return nx.connected_components(self.skeleton_graph())
+        return nx.connected_components(self.to_undirected())
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Associated graphs
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def to_undirected(self) -> nx.Graph[T]:
+        """The simple graph reflecting node adjacencies in the anklet graph."""
+        raise NotImplementedError()
+
+    def skeleton_graph(self) -> nx.MultiGraph[T]:
+        """The multi-graph formed by replacing each hyperedge by a cycle."""
+        raise NotImplementedError()
+
+    def wheel_graph(self) -> nx.MultiGraph[T]:
+        """The multi-graph formed by replacing each hyperedge by a wheel."""
+        raise NotImplementedError()
