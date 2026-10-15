@@ -178,11 +178,63 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def get_node_attributes(self, name: str, default: Any = None) -> dict[T, Any]:
+        """Return node attributes.
+
+        Parameters
+        ----------
+        name : str
+            Attribute name.
+        default : Any, optional (default=None)
+            Default value of the node attribute if there is no value set for a node
+            in the anklet graph. If `None` then nodes without this attribute
+            are not included in the returned dict.
+
+        Returns
+        -------
+        dict[T, Any]
+            Attributes keyed by node.
+
+        See Also
+        --------
+        :meth:`set_node_attributes`,
+        :meth:`remove_node_attributes`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5))
+        >>> g.set_node_attributes('color', {0: 1, 1: 2.5, 3: 'c'})
+        >>> g.get_node_attributes('color')
+        {0: 1, 1: 2.5, 3: 'c'}
+        >>> g.get_node_attributes('color', 'r')
+        {0: 1, 1: 2.5, 2: 'r', 3: 'c', 4: 'r'}
+        """
         if default is not None:
             return {n: d.get(name, default) for n, d in self._node.items()}
         return {n: d[name] for n, d in self._node.items() if name in d}
 
     def set_node_attributes(self, name: str, values: Mapping[T, Any]) -> None:
+        """Set or update node attributes.
+
+        Parameters
+        ----------
+        name : str
+            Attribute name.
+        values : Mapping[T, Any]
+            Attribute values keyed by nodes of the anklet graph.
+            Keys which are not nodes in the graph are silently ignored.
+
+        See Also
+        --------
+        :meth:`get_node_attributes`,
+        :meth:`remove_node_attributes`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5))
+        >>> g.set_node_attributes('weight', {0: 1, 1: 2.5, 'a': 'b', 3: 'c'})
+        >>> g.get_node_attributes('weight')
+        {0: 1, 1: 2.5, 3: 'c'}
+        """
         for n, val in values.items():
             try:
                 self._node[n][name] = val
@@ -190,6 +242,34 @@ class AnkletGraph[T: Hashable]:
                 pass
 
     def remove_node_attributes(self, name: str, nodes: Collection[T] | None = None) -> None:
+        """Remove node attributes.
+
+        Parameters
+        ----------
+        name : str
+            Attribute name.
+        nodes : Collection[T] or None, optional (default=None)
+            Nodes from which to remove the attribute.
+            If `None`, the attribute is removed from *all* nodes.
+
+        See Also
+        --------
+        :meth:`get_node_attributes`,
+        :meth:`set_node_attributes`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5))
+        >>> g.set_node_attributes('color', dict(enumerate('abcde')))
+        >>> g.get_node_attributes('color')
+        {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e'}
+        >>> g.remove_node_attributes('color', [0, 3])
+        >>> g.get_node_attributes('color')
+        {1: 'b', 2: 'c', 4: 'e'}
+        >>> g.remove_node_attributes('color')
+        >>> g.get_node_attributes('color')
+        {}
+        """
         for n in self:
             if nodes is None or n in nodes:
                 if name in self._node[n]:
