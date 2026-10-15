@@ -7,7 +7,20 @@ from anklet import Anklet
 
 
 class AnkletGraph[T: Hashable]:
-    """An **anklet graph** is a multi-hypergraph with additional combinatorial structure."""
+    """An **anklet graph** is a multi-hypergraph with additional combinatorial structure.
+
+    A hyperedge in an anklet graph is represented by a finite sequence of unique incident nodes
+    considered up to cyclic rotation and reversal: an *anklet*. That is, each hyperedge specifies
+    a cylic ordering of its incidences with no chosen orientation or distinguished starting point.
+
+    Forgetting the anklet structure of the hyperedges yields an ordinary multi-hypergraph:
+    each hyperedge is simply incident to the set of nodes appearing in its sequence.
+
+    An embedding of an anklet graph into a surface must preserve the anklet structure of its
+    hyperedges. This means that a hyperedge of size `n` must be embedded as a topological disk
+    whose boundary is subdivided into an `n`-gon with the incident nodes appearing at the vertices
+    in the prescribed cyclic order.
+    """
 
     _name: str
     _attr: dict[str, Any]
@@ -36,11 +49,19 @@ class AnkletGraph[T: Hashable]:
         self._name = s
 
     def __str__(self) -> str:
-        """Return a short summary of the graph."""
+        """Return a short summary of the graph.
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5), name='myGraph', color='b', type='foo')
+        >>> print(g)
+        AnkletGraph named myGraph with attribute(s) (color, type), 5 nodes and 0 hyperedges
+        """
         return "".join([
             type(self).__name__,
             f" named {self._name}" if self._name else "",
-            f" with {self.number_of_nodes()} nodes"
+            " with attribute(s) (" + ", ".join(self._attr) + ")," if self._attr else " with",
+            f" {self.number_of_nodes()} nodes"
             f" and {self.number_of_hyperedges()} hyperedges",
         ])
 
