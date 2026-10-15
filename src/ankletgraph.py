@@ -18,8 +18,8 @@ class AnkletGraph[T: Hashable]:
 
     An embedding of an anklet graph into a surface must preserve the anklet structure of its
     hyperedges. This means that a hyperedge of size `n` must be embedded as a topological disk
-    whose boundary is subdivided into an `n`-gon with the incident nodes assigned
-    to the boundary vertices in the prescribed cyclic order.
+    whose boundary is subdivided into an `n`-gon with the incident nodes appearing at the vertices
+    in the prescribed cyclic order.
     """
 
     _name: str
