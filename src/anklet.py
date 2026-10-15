@@ -220,3 +220,29 @@ class Anklet[T: Hashable](tuple[T, ...]):
         A(5, 2, 3, 4)
         """
         return type(self).from_iterable(b for b in self if b not in beads)
+
+    def standardized(self) -> Self:
+        """Return an equivalent anklet with minimal defining tuple.
+
+        Returns
+        -------
+        Self
+            An equivalent anklet.
+
+        Raises
+        ------
+        TypeError
+            If `<` is not supported between beads.
+
+        Examples
+        --------
+        >>> Anklet(2, 0, 1).standardized()
+        A(0, 1, 2)
+        >>> Anklet(2, 1, 0, 3).standardized()
+        A(0, 1, 2, 3)
+        >>> Anklet(0j, 1j).standardized()
+        Traceback (most recent call last):
+        ...
+        TypeError: '<' not supported between instances of 'complex' and 'complex'
+        """
+        return type(self).from_iterable(min(self.representatives()))
