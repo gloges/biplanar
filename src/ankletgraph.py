@@ -103,11 +103,65 @@ class AnkletGraph[T: Hashable]:
         return len(self._node)
 
     def add_node(self, n: T, **attr: dict[str, Any]) -> None:
+        """Add a node and update its attributes.
+
+        Parameters
+        ----------
+        n : T
+            The node to add to the graph.
+        attr : keyword arguments, optional
+            Set or change node attributes using key=value.
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_node(0, color='r')
+        >>> g.nodes
+        {0}
+        >>> g.get_node_attributes('color')
+        {0: 'r'}
+        >>> g.add_node(0, color='g', weight=5)
+        >>> g.nodes
+        {0}
+        >>> g.get_node_attributes('color')
+        {0: 'g'}
+        >>> g.get_node_attributes('weight')
+        {0: 5}
+        """
         if n not in self._node:
             self._node[n] = {}
         self._node[n].update(attr)
 
     def add_nodes_from(self, nodes: Iterable[T], **attr: dict[str, Any]) -> None:
+        """Add multiple nodes.
+
+        Parameters
+        ----------
+        nodes : Iterable[T]
+            A container (list, dict, set, etc.) of nodes to add.
+            If `nodes` is a `Mapping` then the values are used to update node attributes.
+        attr : keyword arguments, optional
+            Update attributes for all nodes in nodes. Node attributes specified in nodes
+            take precedence over attributes specified via keyword arguments.
+
+        See Also
+        --------
+        :meth:`add_node`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_nodes_from(range(2))
+        >>> g.nodes
+        {0, 1}
+        >>> g.add_nodes_from({1: {'weight': 2}, 2: {'weight': 5, 'color': 'r'}, 3: {}}, weight=0)
+        >>> g.nodes
+        {0, 1, 2, 3}
+        >>> g.get_node_attributes('color')
+        {2: 'r'}
+        >>> g.get_node_attributes('weight')
+        {1: 2, 2: 5, 3: 0}
+        """
         for n in nodes:
             if n not in self:
                 self._node[n] = {}
