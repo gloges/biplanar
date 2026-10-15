@@ -97,6 +97,30 @@ class Anklet[T: Hashable](tuple[T, ...]):
         return self in other.representatives()
 
     def __le__(self, other: object) -> NotImplementedType | bool:
+        """Return whether the anklet is a sub-anklet of `other`.
+
+        This "sub-anklet" partial order has the empty anklet of length zero as its least element.
+
+        Parameters
+        ----------
+        other : object
+            Anklet against which to compare this anklet.
+
+        Returns
+        -------
+        NotImplementedType or bool
+            `NotImplemented` if `other` is not an anklet.
+            Otherwise, whether this anklet is a sub-anklet of `other`.
+
+        Examples
+        --------
+        >>> Anklet(0, 1, 2) <= Anklet(0, 3, 1, 4, 2, 5)
+        True
+        >>> Anklet(0, 1, 2, 3) <= Anklet(4, 1, 5, 3, 0, 2)
+        False
+        >>> Anklet() <= Anklet(0, 1, 2)
+        True
+        """
         if not isinstance(other, Anklet):
             return NotImplemented
 
@@ -116,16 +140,28 @@ class Anklet[T: Hashable](tuple[T, ...]):
         return False
 
     def __lt__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `self <= other` and `self != other`.
+
+        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        """
         if not isinstance(other, Anklet):
             return NotImplemented
         return len(self) < len(other) and self <= other
 
     def __ge__(self, other: object) -> NotImplementedType:
+        """Return whether `other <= self`.
+
+        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        """
         if not isinstance(other, Anklet):
             return NotImplemented
         return other <= self
 
     def __gt__(self, other: object) -> NotImplementedType:
+        """Return whether `other <= self` and `self != other`.
+
+        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        """
         if not isinstance(other, Anklet):
             return NotImplemented
         return len(other) < len(self) and other <= self
