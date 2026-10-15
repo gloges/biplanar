@@ -1,6 +1,6 @@
 """Combinatorial anklets."""
 
-from collections.abc import Hashable, Iterable, Iterator
+from collections.abc import Container, Hashable, Iterable, Iterator
 from types import NotImplementedType
 from typing import Self
 
@@ -96,14 +96,36 @@ class Anklet[T: Hashable](tuple[T, ...]):
             return NotImplemented
         return self in other.representatives()
 
-    def __lt__(self, other: object) -> NotImplementedType:
-        return NotImplemented
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, Anklet):
+            return NotImplemented
 
-    def __le__(self, other: object) -> NotImplementedType:
-        return NotImplemented
+        # Edge case for empty anklet to avoid IndexError below
+        if not self:
+            return True
 
-    def __gt__(self, other: object) -> NotImplementedType:
-        return NotImplemented
+        # Scan through 'other', collecting the next bead for each representative of 'self'
+        # as they are passed. If a rep manages to collect all of its beads then it is a sub-anklet.
+        states = {rep: 0 for rep in self.representatives()}
+        for bead in other:
+            for rep, index in states.items():
+                if bead == rep[index]:
+                    states[rep] += 1
+                    if states[rep] == len(self):
+                        return True
+        return False
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, Anklet):
+            return NotImplemented
+        return len(self) < len(other) and self <= other
 
     def __ge__(self, other: object) -> NotImplementedType:
-        return NotImplemented
+        if not isinstance(other, Anklet):
+            return NotImplemented
+        return other <= self
+
+    def __gt__(self, other: object) -> NotImplementedType:
+        if not isinstance(other, Anklet):
+            return NotImplemented
+        return len(other) < len(self) and other <= self
