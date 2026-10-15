@@ -75,3 +75,33 @@ class AnkletGraph[T: Hashable]:
     def remove_node(self, n: T) -> None:
         """Remove a node."""
         raise NotImplementedError()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Hyperedges
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def number_of_hyperedges(self) -> int:
+        """Return the number of hyperedges (counted with multiplicity).
+
+        See Also
+        --------
+        :meth:`number_of_unique_hyperedges`
+        """
+        return len(self._edge)
+
+    def number_of_unique_hyperedges(self) -> int:
+        """Return the number of unique hyperedges (i.e. counted without multiplicity).
+
+        See Also
+        --------
+        :meth:`number_of_hyperedges`
+        """
+        return sum(self._edge.values())
+
+    def add_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
+        """Add a hyperedge."""
+        raise NotImplementedError()
+
+    def remove_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
+        """Remove a hyperedge."""
+        raise NotImplementedError()
