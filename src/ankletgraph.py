@@ -266,12 +266,12 @@ class AnkletGraph[T: Hashable]:
     #   Node attributes
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def get_node_attributes(self, name: str, default: Any = None) -> dict[T, Any]:
+    def get_node_attributes(self, attr_name: str, default: Any = None) -> dict[T, Any]:
         """Return node attributes.
 
         Parameters
         ----------
-        name : str
+        attr_name : str
             Attribute name.
         default : Any, optional (default=None)
             Default value of the node attribute if there is no value set for a node
@@ -298,15 +298,15 @@ class AnkletGraph[T: Hashable]:
         {0: 1, 1: 2.5, 2: 'r', 3: 'c', 4: 'r'}
         """
         if default is not None:
-            return {n: d.get(name, default) for n, d in self._node.items()}
-        return {n: d[name] for n, d in self._node.items() if name in d}
+            return {n: d.get(attr_name, default) for n, d in self._node.items()}
+        return {n: d[attr_name] for n, d in self._node.items() if attr_name in d}
 
-    def set_node_attributes(self, name: str, values: Mapping[T, Any]) -> None:
+    def set_node_attributes(self, attr_name: str, values: Mapping[T, Any]) -> None:
         """Set or update node attributes.
 
         Parameters
         ----------
-        name : str
+        attr_name : str
             Attribute name.
         values : Mapping[T, Any]
             Attribute values keyed by nodes of the anklet graph.
@@ -326,16 +326,16 @@ class AnkletGraph[T: Hashable]:
         """
         for n, val in values.items():
             try:
-                self._node[n][name] = val
+                self._node[n][attr_name] = val
             except KeyError:
                 pass
 
-    def remove_node_attributes(self, name: str, nodes: Collection[T] | None = None) -> None:
+    def remove_node_attributes(self, attr_name: str, nodes: Collection[T] | None = None) -> None:
         """Remove node attributes.
 
         Parameters
         ----------
-        name : str
+        attr_name : str
             Attribute name.
         nodes : Collection[T] or None, optional (default=None)
             Nodes from which to remove the attribute.
@@ -361,8 +361,8 @@ class AnkletGraph[T: Hashable]:
         """
         for n in self:
             if nodes is None or n in nodes:
-                if name in self._node[n]:
-                    self._node[n].pop(name)
+                if attr_name in self._node[n]:
+                    self._node[n].pop(attr_name)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Hyperedges
