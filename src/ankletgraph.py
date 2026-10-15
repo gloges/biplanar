@@ -31,6 +31,15 @@ class AnkletGraph[T: Hashable]:
     def name(self, s: str) -> None:
         self._name = s
 
+    def __str__(self) -> str:
+        """Return a short summary of the graph."""
+        return "".join([
+            type(self).__name__,
+            f" named {self._name}" if self._name else "",
+            f" with {self.number_of_nodes()} nodes"
+            f" and {self.number_of_hyperedges()} hyperedges",
+        ])
+
     def __iter__(self) -> Iterator[T]:
         """Iterate over the nodes. Use: `for n in g`."""
         return iter(self._node)
