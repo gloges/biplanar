@@ -1,6 +1,6 @@
 """Combinatorial anklets."""
 
-from collections.abc import Hashable, Iterable, Iterator
+from collections.abc import Container, Hashable, Iterable, Iterator
 from types import NotImplementedType
 from typing import Self
 
@@ -165,3 +165,9 @@ class Anklet[T: Hashable](tuple[T, ...]):
         if not isinstance(other, Anklet):
             return NotImplemented
         return len(other) < len(self) and other <= self
+
+    def without_bead(self, bead: T, /) -> Self:
+        return type(self).from_iterable(b for b in self if b is not bead)
+
+    def without_beads(self, beads: Container[T], /) -> Self:
+        return type(self).from_iterable(b for b in self if b not in beads)
