@@ -42,5 +42,36 @@ class AnkletGraph[T: Hashable]:
             return False
 
     def __len__(self) -> int:
-        """Return the number of nodes. Use: `len(g)`."""
+        """Return the number of nodes. Use: `len(g)`.
+
+        See Also
+        --------
+        :meth:`number_of_nodes` : identical method
+        """
         return len(self._node)
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Nodes
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    @property
+    def nodes(self) -> set[T]:
+        """The set of nodes."""
+        return set(self._node)
+
+    def number_of_nodes(self) -> int:
+        """Return the number of nodes.
+
+        See Also
+        --------
+        :meth:`__len__` : identical method
+        """
+        return len(self._node)
+
+    def add_node(self, n: T) -> None:
+        """Add a node."""
+        raise NotImplementedError()
+
+    def remove_node(self, n: T) -> None:
+        """Remove a node."""
+        raise NotImplementedError()
