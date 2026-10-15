@@ -1,6 +1,6 @@
 """Anklet graphs."""
 
-from collections.abc import Collection, Hashable, Iterator
+from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
 from typing import Any
 import networkx as nx
 from anklet import Anklet
@@ -79,8 +79,17 @@ class AnkletGraph[T: Hashable]:
         return len(self._node)
 
     def add_node(self, n: T, **attr: dict[str, Any]) -> None:
-        """Add a node."""
-        raise NotImplementedError()
+        if n not in self._node:
+            self._node[n] = {}
+        self._node[n].update(attr)
+
+    def add_nodes_from(self, nodes: Iterable[T], **attr: dict[str, Any]) -> None:
+        for n in nodes:
+            if n not in self:
+                self._node[n] = {}
+            self._node[n].update(attr)
+            if isinstance(nodes, Mapping):
+                self._node[n].update(nodes[n])
 
     def remove_node(self, n: T) -> None:
         """Remove a node."""
