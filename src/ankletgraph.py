@@ -1,6 +1,6 @@
 """Anklet graphs."""
 
-from collections.abc import Hashable, Iterator
+from collections.abc import Collection, Hashable, Iterator
 from typing import Any
 import networkx as nx
 from anklet import Anklet
@@ -78,12 +78,28 @@ class AnkletGraph[T: Hashable]:
         """
         return len(self._node)
 
-    def add_node(self, n: T) -> None:
+    def add_node(self, n: T, **attr: dict[str, Any]) -> None:
         """Add a node."""
         raise NotImplementedError()
 
     def remove_node(self, n: T) -> None:
         """Remove a node."""
+        raise NotImplementedError()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Node attributes
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def get_node_attributes(self, name: str, default: Any = None) -> dict[T, Any]:
+        """Return node attributes."""
+        raise NotImplementedError()
+
+    def set_node_attributes(self, name: str, default: Any = None) -> None:
+        """Set node attributes."""
+        raise NotImplementedError()
+
+    def remove_node_attributes(self, name: str, nodes: Collection[T] | None = None) -> None:
+        """Remove node attributes."""
         raise NotImplementedError()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
