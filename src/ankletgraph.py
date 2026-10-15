@@ -7,7 +7,20 @@ from anklet import Anklet
 
 
 class AnkletGraph[T: Hashable]:
-    """An **anklet graph** is a multi-hypergraph with additional combinatorial structure."""
+    """An **anklet graph** is a multi-hypergraph with additional combinatorial structure.
+
+    A hyperedge in an anklet graph is represented by a finite sequence of unique incident nodes
+    considered up to cyclic rotation and reversal: an *anklet*. That is, each hyperedge specifies
+    a cylic ordering of its incidences with no chosen orientation or distinguished starting point.
+
+    Forgetting the anklet structure of the hyperedges yields an ordinary multi-hypergraph:
+    each hyperedge is simply incident to the set of nodes appearing in its sequence.
+
+    An embedding of an anklet graph into a surface must preserve the anklet structure of its
+    hyperedges. This means that a hyperedge of size `n` must be embedded as a topological disk
+    whose boundary is subdivided into an `n`-gon with the incident nodes assigned
+    to the boundary vertices in the prescribed cyclic order.
+    """
 
     _name: str
     _attr: dict[str, Any]
