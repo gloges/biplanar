@@ -40,7 +40,7 @@ class Anklet[T: Hashable](tuple[T, ...]):
         return cls(*beads)
 
     def __repr__(self) -> str:
-        return "ank(" + ", ".join(repr(bead) for bead in self) + ")"
+        return "A(" + ", ".join(repr(bead) for bead in self) + ")"
 
     def __add__(self, value: object) -> NotImplementedType:
         return NotImplemented
@@ -52,10 +52,10 @@ class Anklet[T: Hashable](tuple[T, ...]):
         return NotImplemented
 
     def representatives(self) -> Iterator[tuple[T, ...]]:
-        """Yield all representative tuples of the anklet.
+        """Generate all representative tuples of the anklet.
 
         For an anklet of length `n ≥ 3`, yields the `2n` images of its defining tuple under
-        the action of `Dih_n`. Anklets of length `n ≤ 1` and `n = 2` yield only one and two
+        the action of `Dihₙ`. Anklets of length `n ≤ 1` and `n = 2` yield only one and two
         representatives, respectively.
 
         Yields
