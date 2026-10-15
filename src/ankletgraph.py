@@ -49,11 +49,19 @@ class AnkletGraph[T: Hashable]:
         self._name = s
 
     def __str__(self) -> str:
-        """Return a short summary of the graph."""
+        """Return a short summary of the graph.
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5), name='myGraph', color='b', type='foo')
+        >>> print(g)
+        AnkletGraph named myGraph with attribute(s) (color, type), 5 nodes and 0 hyperedges
+        """
         return "".join([
             type(self).__name__,
             f" named {self._name}" if self._name else "",
-            f" with {self.number_of_nodes()} nodes"
+            " with attribute(s) (" + ", ".join(self._attr) + ")," if self._attr else " with",
+            f" {self.number_of_nodes()} nodes"
             f" and {self.number_of_hyperedges()} hyperedges",
         ])
 
