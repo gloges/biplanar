@@ -284,12 +284,68 @@ class AnkletGraph[T: Hashable]:
                 self._node[n].update(nodes[n])
 
     def remove_node(self, n: T) -> None:
+        """Remove a node and all incident hyperedges.
+
+        Parameters
+        ----------
+        n : T
+            A node in the graph.
+
+        Raises
+        ------
+        ValueError
+            If `n` is not in the graph.
+
+        See Also
+        --------
+        :meth:`remove_nodes_from`,
+        :meth:`erase_node`,
+        :meth:`erase_nodes_from`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g.nodes
+        {0, 1, 2, 3, 4}
+        >>> g.remove_node(1)
+        >>> g.nodes
+        {0, 2, 3, 4}
+        >>> g.hyperedges
+        ((A(2, 3, 4), 3),)
+        """
         if n not in self.nodes:
             raise ValueError(f"the node {n} is not in the graph")
         self._node.pop(n)
         self.remove_hyperedges_from({hype: k for hype, k in self._edge.items() if n in hype})
 
     def remove_nodes_from(self, nodes: Iterable[T]) -> None:
+        """Remove multiple nodes.
+
+        Parameters
+        ----------
+        nodes : Iterable[T]
+            A container (list, dict, set, etc.) of nodes.
+            If a node from `nodes` is not in the graph it is silently ignored.
+
+        See Also
+        --------
+        :meth:`remove_node`,
+        :meth:`erase_node`,
+        :meth:`erase_nodes_from`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g.nodes
+        {0, 1, 2, 3, 4}
+        >>> g.remove_nodes_from((2, 4, 'a'))
+        >>> g.nodes
+        {0, 1, 3}
+        >>> g.hyperedges
+        ((A(0, 1), 1),)
+        """
         for n in nodes:
             try:
                 self.remove_node(n)
@@ -297,6 +353,36 @@ class AnkletGraph[T: Hashable]:
                 pass
 
     def erase_node(self, n: T) -> None:
+        """Remove a node and erase it from all incident hyperedges.
+
+        Parameters
+        ----------
+        n : T
+            A node in the graph.
+
+        Raises
+        ------
+        ValueError
+            If `n` is not in the graph.
+
+        See Also
+        --------
+        :meth:`remove_node`,
+        :meth:`remove_nodes_from`,
+        :meth:`erase_nodes_from`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
+        >>> g.nodes
+        {0, 1, 2, 3, 4}
+        >>> g.erase_node(1)
+        >>> g.nodes
+        {0, 2, 3, 4}
+        >>> g.hyperedges
+        ((A(0, 4), 2), (A(2, 3, 4), 1))
+        """
         if n not in self.nodes:
             raise ValueError(f"the node {n} is not in the graph")
         self._node.pop(n)
@@ -305,6 +391,32 @@ class AnkletGraph[T: Hashable]:
             self._edge.pop(Anklet())
 
     def erase_nodes_from(self, nodes: Iterable[T]) -> None:
+        """Erase multiple nodes.
+
+        Parameters
+        ----------
+        nodes : Iterable[T]
+            A container (list, dict, set, etc.) of nodes.
+            If a node from `nodes` is not in the graph it is silently ignored.
+
+        See Also
+        --------
+        :meth:`remove_node`,
+        :meth:`remove_nodes_from`,
+        :meth:`erase_node`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
+        >>> g.nodes
+        {0, 1, 2, 3, 4}
+        >>> g.erase_nodes_from((1, 3, 5))
+        >>> g.nodes
+        {0, 2, 4}
+        >>> g.hyperedges
+        ((A(0, 4), 2), (A(2, 4), 1))
+        """
         for n in nodes:
             try:
                 self.erase_node(n)
