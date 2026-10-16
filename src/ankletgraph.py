@@ -846,12 +846,41 @@ class AnkletGraph[T: Hashable]:
 
     def to_undirected(self) -> nx.Graph:
         """The simple graph reflecting node adjacencies in the anklet graph."""
-        raise NotImplementedError()
+        g = nx.Graph()
+        g.add_nodes_from(self._node)
+        for n, nbrs in self.adjacency().items():
+            for nbr in nbrs:
+                g.add_edge(n, nbr)
+        return g
 
-    def skeleton_graph(self) -> nx.MultiGraph:
-        """The multi-graph formed by replacing each hyperedge by a cycle."""
-        raise NotImplementedError()
+    def to_incidence_graph(self) -> nx.Graph:
+        """The simple graph reflecting node-hyperedge incidences in the anklet graph."""
+        g = nx.Graph()
+        g.add_nodes_from(self._node)
+        for hype, k in self._edge.items():
+            for i in range(k):
+                g.add_edges_from((n, (hype, i)) for n in hype)
+        return g
 
-    def wheel_graph(self) -> nx.MultiGraph:
-        """The multi-graph formed by replacing each hyperedge by a wheel."""
-        raise NotImplementedError()
+    def to_wheel_graph(self) -> nx.Graph:
+        """The simple graph formed by representing each hyperedge by a wheel."""
+
+        # Turn each hyperedge into a (labeled) wheel graph and take their disjoint union
+        hypes_all = [k * [hype] for hype, k in self._edge.items()]
+        hypes_all = [hype for hype_copies in hypes_all for hype in hype_copies]
+        g: nx.Graph = nx.disjoint_union_all([hype.to_wheel_graph() for hype in hypes_all])
+
+        # To avoid collisions, relabel the nodes of 'g' (in place)
+        # by shifting above the largest int in self._node (if any)
+        shift = 0
+        for n in self._node:
+            if isinstance(n, int) and shift <= n:
+                shift = n + 1
+        nx.relabel_nodes(g, dict(enumerate(g, start=shift)), copy=False)
+
+        # Add the anklet graph nodes to 'g' and join the labeled wheel graph nodes
+        # to the node recorded by their 'anklet' attribute
+        g.add_nodes_from(self._node)
+        g.add_edges_from(nx.get_node_attributes(g, 'anklet').items())
+
+        return g
