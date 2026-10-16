@@ -413,6 +413,42 @@ class AnkletGraph[T: Hashable]:
         return sum(self._edge.values())
 
     def add_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
+        """Add a hyperedge.
+
+        If the hyperedge is already present then its multiplicity is increased by `k`.
+        Otherwise, the hyperedge is added to the graph and its multiplicity set to `k`.
+        The hyperedge's incident nodes will be automatically added to the graph
+        if they are not already present.
+
+        Parameters
+        ----------
+        hype : Anklet[NodeT]
+            The hyperedge to add to the graph.
+        k : int, optional (default=1)
+            The number of copies of `hype` to add.
+
+        Raises
+        ------
+        ValueError
+            If `k` is not a positive integer.
+
+        See Also
+        --------
+        :meth:`add_hyperedges_from`
+
+        Examples
+        --------
+        >>> hype = Anklet(0, 1, 2)
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedge(hype, 2)
+        >>> g.nodes
+        {0, 1, 2}
+        >>> g.hyperedges
+        ((A(0, 1, 2), 2),)
+        >>> g.add_hyperedge(hype, 3)
+        >>> g.hyperedges
+        ((A(0, 1, 2), 5),)
+        """
         if not isinstance(k, int) or k <= 0:
             raise ValueError(f"k={k} is not a positive integer")
 
@@ -422,6 +458,31 @@ class AnkletGraph[T: Hashable]:
         self._edge[hype] += k
 
     def add_hyperedges_from(self, hypes: Iterable[Anklet[T]]) -> None:
+        """Add multiple hyperedges.
+
+        Parameters
+        ----------
+        hypes: Iterable[Anklet[T]]
+            A container (list, dict, set, etc.) of hyperedges.
+            If `hypes` is a Mapping then the values are interpreted as the number of copies
+            of each hyperedge to add; otherwise, one instance of each hyperedge is added.
+
+        See Also
+        --------
+        :meth:`add_hyperedge`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from([Anklet(0, 1), Anklet(1, 2, 3, 4)])
+        >>> g.nodes
+        {0, 1, 2, 3, 4}
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(1, 2, 3, 4), 1))
+        >>> g.add_hyperedges_from({Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 2})
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(1, 2, 3, 4), 3), (A(0, 2), 2))
+        """
         if isinstance(hypes, Mapping):
             for hype, k in hypes.items():
                 self.add_hyperedge(hype, k)
