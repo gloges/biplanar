@@ -284,8 +284,32 @@ class AnkletGraph[T: Hashable]:
                 self._node[n].update(nodes[n])
 
     def remove_node(self, n: T) -> None:
-        """Remove a node."""
-        raise NotImplementedError()
+        if n not in self.nodes:
+            raise ValueError(f"the node {n} is not in the graph")
+        self._node.pop(n)
+        self.remove_hyperedges_from({hype: k for hype, k in self._edge.items() if n in hype})
+
+    def remove_nodes_from(self, nodes: Iterable[T]) -> None:
+        for n in nodes:
+            try:
+                self.remove_node(n)
+            except ValueError:
+                pass
+
+    def erase_node(self, n: T) -> None:
+        if n not in self.nodes:
+            raise ValueError(f"the node {n} is not in the graph")
+        self._node.pop(n)
+        self._edge = {hype.without_bead(n): k for hype, k in self._edge.items()}
+        if Anklet() in self._edge:
+            self._edge.pop(Anklet())
+
+    def erase_nodes_from(self, nodes: Iterable[T]) -> None:
+        for n in nodes:
+            try:
+                self.erase_node(n)
+            except ValueError:
+                pass
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Node attributes
