@@ -1,6 +1,7 @@
 """Anklet graphs."""
 
 from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
+from itertools import combinations
 from typing import Any
 import networkx as nx
 from anklet import Anklet
@@ -745,13 +746,31 @@ class AnkletGraph[T: Hashable]:
     #   Incidence / adjacency
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def incidence(self) -> dict[T, Anklet[T]]:
-        """Return the incidence data of the graph."""
-        raise NotImplementedError()
+    def incidence(self) -> dict[T, set[Anklet[T]]]:
+        """Return the incidence data."""
+        inc = {n: set() for n in self}
+        for hype in self._edge:
+            for n in hype:
+                inc[n].add(hype)
+        return inc
 
     def adjacency(self) -> dict[T, set[T]]:
-        """Return the adjacency data of the graph."""
-        raise NotImplementedError()
+        """Return the adjacency data."""
+        adj = {n: set() for n in self}
+        for hype in self._edge:
+            for u, v in combinations(hype, 2):
+                adj[u].add(v)
+                adj[v].add(u)
+        return adj
+
+    def anklet_adjacency(self) -> dict[T, set[T]]:
+        """Return the anklet adjacency data."""
+        adj = {n: set() for n in self}
+        for hype in self._edge:
+            for i, n in enumerate(hype):
+                adj[n].add(hype[i-1])
+                adj[hype[i-1]].add(n)
+        return adj
 
     def connected_components(self) -> Iterator[set[T]]:
         """Generate connected components."""
