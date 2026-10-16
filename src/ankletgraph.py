@@ -536,6 +536,10 @@ class AnkletGraph[T: Hashable]:
         """The hyperedges and their multiplicities."""
         return tuple((hype, k) for hype, k in self._edge.items())
 
+    def _all_hyperedges(self) -> list[Anklet[T]]:
+        """Return a list of the hyperedges with multiplicity."""
+        return [hype for hypes in [k * [hype] for hype, k in self._edge.items()] for hype in hypes]
+
     def number_of_hyperedges(self) -> int:
         """Return the number of hyperedges (counted with multiplicity).
 
@@ -947,9 +951,7 @@ class AnkletGraph[T: Hashable]:
         """
 
         # Turn each hyperedge into a (labeled) wheel graph and take their disjoint union
-        hypes_all = [k * [hype] for hype, k in self._edge.items()]
-        hypes_all = [hype for hype_copies in hypes_all for hype in hype_copies]
-        g: nx.Graph = nx.disjoint_union_all([hype.to_wheel_graph() for hype in hypes_all])
+        g = nx.disjoint_union_all([hype.to_wheel_graph() for hype in self._all_hyperedges()])
 
         # To avoid collisions, relabel the nodes of 'g' (in place)
         # by shifting above the largest int in self._node (if any)
