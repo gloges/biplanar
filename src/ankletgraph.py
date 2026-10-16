@@ -998,3 +998,9 @@ class AnkletGraph[T: Hashable]:
     def connected_components(self) -> Iterator[set[T]]:
         """Generate connected components."""
         return nx.connected_components(self.to_adjacency_graph())
+
+    def is_connected(self) -> bool:
+        return nx.is_connected(self.to_adjacency_graph())
+
+    def is_biconnected(self) -> bool:
+        return nx.is_biconnected(self.to_adjacency_graph())
