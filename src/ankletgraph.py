@@ -996,11 +996,82 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def connected_components(self) -> Iterator[set[T]]:
-        """Generate connected components."""
+        """Generate connected components.
+
+        Yields
+        ------
+        set[T]
+            Set of nodes of a connected component.
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(7))
+        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(2, 3)])
+        >>> list(g.connected_components())
+        [{0, 1, 2, 3}, {4}, {5}, {6}]
+        >>> g.add_hyperedges_from([Anklet(4), Anklet(5, 6)])
+        >>> list(g.connected_components())
+        [{0, 1, 2, 3}, {4}, {5, 6}]
+        >>> g.add_hyperedge(Anklet(0, 4, 6))
+        >>> list(g.connected_components())
+        [{0, 1, 2, 3, 4, 5, 6}]
+        """
         return nx.connected_components(self.to_adjacency_graph())
 
     def is_connected(self) -> bool:
+        """Return whether the anklet graph is connected.
+
+        Returns
+        -------
+        bool
+            `True` if the anklet graph is connected, `False` otherwise.
+
+        See Also
+        --------
+        :meth:`connected_components`,
+        :meth:`is_biconnected`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(4))
+        >>> g.add_hyperedge(Anklet(0, 1, 2))
+        >>> g.is_connected()
+        False
+        >>> g.add_hyperedge(Anklet(2, 3))
+        >>> g.is_connected()
+        True
+        """
         return nx.is_connected(self.to_adjacency_graph())
 
     def is_biconnected(self) -> bool:
+        """Return whether the anklet graph is biconnected.
+
+        An anklet graph is biconnected *if and only if* it cannot be disconnected by *erasing*
+        one node. Note that in erasing a node its incident hyperedges are *not* removed.
+
+        Returns
+        -------
+        bool
+            `True` if the anklet graph is biconnected, `False` otherwise.
+
+        See Also
+        --------
+        :meth:`connected_components`,
+        :meth:`is_connected`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedge(Anklet(0, 1, 2))
+        >>> g.is_biconnected()
+        True
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(0, 1, 3)])
+        >>> g.is_biconnected()
+        True
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(0, 3, 4)])
+        >>> g.is_biconnected()
+        False
+        """
         return nx.is_biconnected(self.to_adjacency_graph())
