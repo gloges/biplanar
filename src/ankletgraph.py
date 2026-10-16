@@ -401,6 +401,11 @@ class AnkletGraph[T: Hashable]:
     def number_of_hyperedges(self) -> int:
         """Return the number of hyperedges (counted with multiplicity).
 
+        Returns
+        -------
+        int
+            The total number of hyperedges in the graph.
+
         See Also
         --------
         :meth:`number_of_unique_hyperedges`
@@ -416,6 +421,11 @@ class AnkletGraph[T: Hashable]:
 
     def number_of_unique_hyperedges(self) -> int:
         """Return the number of unique hyperedges (i.e. counted without multiplicity).
+
+        Returns
+        -------
+        int
+            The number of unique hyperedges in the graph.
 
         See Also
         --------
@@ -440,7 +450,7 @@ class AnkletGraph[T: Hashable]:
 
         Parameters
         ----------
-        hype : Anklet[NodeT]
+        hype : Anklet[T]
             The hyperedge to add to the graph.
         k : int, optional (default=1)
             The number of copies of `hype` to add.
