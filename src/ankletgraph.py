@@ -836,10 +836,6 @@ class AnkletGraph[T: Hashable]:
                 adj[hype[i-1]].add(n)
         return adj
 
-    def connected_components(self) -> Iterator[set[T]]:
-        """Generate connected components."""
-        return nx.connected_components(self.to_adjacency_graph())
-
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Associated graphs
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
@@ -994,3 +990,11 @@ class AnkletGraph[T: Hashable]:
         False
         """
         return nx.is_planar(self.to_wheel_graph())
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Connectivity
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def connected_components(self) -> Iterator[set[T]]:
+        """Generate connected components."""
+        return nx.connected_components(self.to_adjacency_graph())
