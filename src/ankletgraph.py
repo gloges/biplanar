@@ -884,3 +884,11 @@ class AnkletGraph[T: Hashable]:
         g.add_edges_from(nx.get_node_attributes(g, 'anklet').items())
 
         return g
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Planarity
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def is_planar(self) -> bool:
+        """Return whether the anklet graph is planar."""
+        return nx.is_planar(self.to_wheel_graph())
