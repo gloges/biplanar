@@ -845,7 +845,39 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def to_incidence_graph(self) -> nx.Graph:
-        """The simple graph reflecting node-hyperedge incidences in the anklet graph."""
+        """The simple graph reflecting node-hyperedge incidences in the anklet graph.
+
+        The returned graph has the *nodes* and *hyperedges* of the anklet graph for nodes
+        and edges between "node" nodes and "hyperedge" nodes when they are incident:
+        this is a simple, bipartite graph.
+
+        Since hyperedges of the anklet graph can have multiplicities larger than one,
+        the "hyperedge" nodes in the returned simple graph are pairs `(anklet, index)`
+        where `index` is a unique integer.
+
+        Returns
+        -------
+        networkx.Graph
+            A simple, bipartite graph on the nodes and hyperedges of the anklet graph.
+
+        See Also
+        --------
+        :meth:`incidence`,
+        :meth:`to_adjacency_graph`,
+        :meth:`to_wheel_graph`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> inc_graph = g.to_incidence_graph()
+        >>> list(inc_graph.nodes)
+        [0, 1, 2, 3, (A(0, 1), 0), (A(1, 2, 3), 0), (A(1, 2, 3), 1)]
+        >>> inc_graph.number_of_edges()
+        8
+        >>> nx.is_bipartite(inc_graph)
+        True
+        """
         g = nx.Graph()
         g.add_nodes_from(self._node)
         for hype, k in self._edge.items():
