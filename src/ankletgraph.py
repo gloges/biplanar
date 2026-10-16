@@ -389,6 +389,11 @@ class AnkletGraph[T: Hashable]:
     #   Hyperedges
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
+    @property
+    def hyperedges(self) -> tuple[tuple[Anklet[T], int], ...]:
+        """The hyperedges and their multiplicities."""
+        return tuple((hype, k) for hype, k in self._edge.items())
+
     def number_of_hyperedges(self) -> int:
         """Return the number of hyperedges (counted with multiplicity).
 
