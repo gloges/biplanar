@@ -222,6 +222,10 @@ class AnkletGraph[T: Hashable]:
         attr : keyword arguments, optional
             Set or change node attributes using key=value.
 
+        See Also
+        -------
+        :meth:`add_nodes_from`
+
         Examples
         --------
         >>> g = AnkletGraph()
@@ -389,31 +393,217 @@ class AnkletGraph[T: Hashable]:
     #   Hyperedges
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
+    @property
+    def hyperedges(self) -> tuple[tuple[Anklet[T], int], ...]:
+        """The hyperedges and their multiplicities."""
+        return tuple((hype, k) for hype, k in self._edge.items())
+
     def number_of_hyperedges(self) -> int:
         """Return the number of hyperedges (counted with multiplicity).
+
+        Returns
+        -------
+        int
+            The total number of hyperedges in the graph.
 
         See Also
         --------
         :meth:`number_of_unique_hyperedges`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g.number_of_hyperedges()
+        6
         """
-        return len(self._edge)
+        return sum(self._edge.values())
 
     def number_of_unique_hyperedges(self) -> int:
         """Return the number of unique hyperedges (i.e. counted without multiplicity).
 
+        Returns
+        -------
+        int
+            The number of unique hyperedges in the graph.
+
         See Also
         --------
         :meth:`number_of_hyperedges`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g.number_of_unique_hyperedges()
+        3
         """
-        return sum(self._edge.values())
+        return len(self._edge)
 
     def add_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
-        """Add a hyperedge."""
-        raise NotImplementedError()
+        """Add a hyperedge.
+
+        If the hyperedge is already present then its multiplicity is increased by `k`.
+        Otherwise, the hyperedge is added to the graph and its multiplicity set to `k`.
+        The hyperedge's incident nodes will be automatically added to the graph
+        if they are not already present.
+
+        Parameters
+        ----------
+        hype : Anklet[T]
+            The hyperedge to add to the graph.
+        k : int, optional (default=1)
+            The number of copies of `hype` to add.
+
+        Raises
+        ------
+        ValueError
+            If `k` is not a positive integer.
+
+        See Also
+        --------
+        :meth:`add_hyperedges_from`
+
+        Examples
+        --------
+        >>> hype = Anklet(0, 1, 2)
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedge(hype, 2)
+        >>> g.nodes
+        {0, 1, 2}
+        >>> g.hyperedges
+        ((A(0, 1, 2), 2),)
+        >>> g.add_hyperedge(hype, 3)
+        >>> g.hyperedges
+        ((A(0, 1, 2), 5),)
+        """
+        if not isinstance(k, int) or k <= 0:
+            raise ValueError(f"k={k} is not a positive integer")
+
+        self.add_nodes_from(hype)
+        if hype not in self._edge:
+            self._edge[hype] = 0
+        self._edge[hype] += k
+
+    def add_hyperedges_from(self, hypes: Iterable[Anklet[T]]) -> None:
+        """Add multiple hyperedges.
+
+        Parameters
+        ----------
+        hypes: Iterable[Anklet[T]]
+            A container (list, dict, set, etc.) of hyperedges.
+            If `hypes` is a Mapping then the values are interpreted as the number of copies
+            of each hyperedge to add; otherwise, one instance of each hyperedge is added.
+
+        See Also
+        --------
+        :meth:`add_hyperedge`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from([Anklet(0, 1), Anklet(1, 2, 3, 4)])
+        >>> g.nodes
+        {0, 1, 2, 3, 4}
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(1, 2, 3, 4), 1))
+        >>> g.add_hyperedges_from({Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 2})
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(1, 2, 3, 4), 3), (A(0, 2), 2))
+        """
+        if isinstance(hypes, Mapping):
+            for hype, k in hypes.items():
+                self.add_hyperedge(hype, k)
+        else:
+            for hype in hypes:
+                self.add_hyperedge(hype)
 
     def remove_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
-        """Remove a hyperedge."""
-        raise NotImplementedError()
+        """Remove a hyperedge.
+
+        The hyperedge `hype` must be present in the graph. The multiplicity of `hype` is reduced
+        by `k` and if it drops to zero the hyperedge is removed.
+
+        Parameters
+        ----------
+        hype : Anklet[T]
+            The hyperedge to remove from the graph.
+        k : int, optional (default=1)
+            The number of copies of `hype` to remove.
+
+        Raises
+        ------
+        ValueError
+            If `hype` is not a hyperedge in the graph, if `k` is not a positive integer,
+            or if `k` exceeds the multiplicity of `hype`.
+
+        See Also
+        --------
+        :meth:`remove_hyperedges_from`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1, 2, 3, 4): 3, Anklet(0, 2): 4})
+        >>> g.hyperedges
+        ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 4))
+        >>> g.remove_hyperedge(Anklet(1, 0))
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(1, 2, 3, 4), 3), (A(0, 2), 4))
+        >>> g.remove_hyperedge(Anklet(4, 3, 2, 1), 3)
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(0, 2), 4))
+        >>> g.remove_hyperedge(Anklet(0, 2), 5)
+        Traceback (most recent call last):
+        ...
+        ValueError: 5 > 4 is larger than the multiplicity of hyperedge A(0, 2)
+        """
+        if hype not in self._edge:
+            raise ValueError(f"{hype} is not a hyperedge in the graph")
+        if not isinstance(k, int) or k <= 0:
+            raise ValueError(f"k={k} is not a positive integer")
+        if k > self._edge[hype]:
+            raise ValueError(
+                f"{k} > {self._edge[hype]} is larger than the multiplicity of hyperedge {hype}"
+            )
+
+        self._edge[hype] -= k
+        if self._edge[hype] == 0:
+            self._edge.pop(hype)
+
+    def remove_hyperedges_from(self, hypes: Iterable[Anklet[T]]) -> None:
+        """Remove multiple hyperedges.
+
+        Parameters
+        ----------
+        hypes : Iterable[Anklet[T]]
+            A container (list, dict, set, etc.) of hyperedges.
+            If `hypes` is a Mapping then the values are interpreted as the number of copies
+            of each hyperedge to remove; otherwise, one instance of each hyperedge is removed.
+
+        See Also
+        --------
+        :meth:`remove_hyperedge`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 3})
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(1, 2, 3, 4), 2), (A(0, 2), 3))
+        >>> g.remove_hyperedges_from([Anklet(0, 2), Anklet(0, 1)])
+        >>> g.hyperedges
+        ((A(1, 2, 3, 4), 2), (A(0, 2), 2))
+        >>> g.remove_hyperedges_from({Anklet(2, 0): 1, Anklet(3, 2, 1, 4): 2})
+        >>> g.hyperedges
+        ((A(0, 2), 1),)
+        """
+        if isinstance(hypes, Mapping):
+            for hype, k in hypes.items():
+                self.remove_hyperedge(hype, k)
+        else:
+            for hype in hypes:
+                self.remove_hyperedge(hype)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence / adjacency
