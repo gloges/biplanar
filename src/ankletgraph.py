@@ -222,6 +222,10 @@ class AnkletGraph[T: Hashable]:
         attr : keyword arguments, optional
             Set or change node attributes using key=value.
 
+        See Also
+        -------
+        :meth:`add_nodes_from`
+
         Examples
         --------
         >>> g = AnkletGraph()
@@ -400,8 +404,15 @@ class AnkletGraph[T: Hashable]:
         See Also
         --------
         :meth:`number_of_unique_hyperedges`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g.number_of_hyperedges()
+        6
         """
-        return len(self._edge)
+        return sum(self._edge.values())
 
     def number_of_unique_hyperedges(self) -> int:
         """Return the number of unique hyperedges (i.e. counted without multiplicity).
@@ -409,8 +420,15 @@ class AnkletGraph[T: Hashable]:
         See Also
         --------
         :meth:`number_of_hyperedges`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g.number_of_unique_hyperedges()
+        3
         """
-        return sum(self._edge.values())
+        return len(self._edge)
 
     def add_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
         """Add a hyperedge.
