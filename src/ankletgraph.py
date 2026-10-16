@@ -933,7 +933,7 @@ class AnkletGraph[T: Hashable]:
         for n in self._node:
             if isinstance(n, int) and shift <= n:
                 shift = n + 1
-        nx.relabel_nodes(g, dict(enumerate(g, start=shift)), copy=False)
+        nx.relabel_nodes(g, {i: i + shift for i in g}, copy=False)
 
         # Add the anklet graph nodes to 'g' and join the labeled wheel graph nodes
         # to the node recorded by their 'anklet' attribute
