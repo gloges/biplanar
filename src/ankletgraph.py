@@ -844,15 +844,6 @@ class AnkletGraph[T: Hashable]:
     #   Associated graphs
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def to_undirected(self) -> nx.Graph:
-        """The simple graph reflecting node adjacencies in the anklet graph."""
-        g = nx.Graph()
-        g.add_nodes_from(self._node)
-        for n, nbrs in self.adjacency().items():
-            for nbr in nbrs:
-                g.add_edge(n, nbr)
-        return g
-
     def to_incidence_graph(self) -> nx.Graph:
         """The simple graph reflecting node-hyperedge incidences in the anklet graph."""
         g = nx.Graph()
@@ -860,6 +851,15 @@ class AnkletGraph[T: Hashable]:
         for hype, k in self._edge.items():
             for i in range(k):
                 g.add_edges_from((n, (hype, i)) for n in hype)
+        return g
+
+    def to_adjacency_graph(self) -> nx.Graph:
+        """The simple graph reflecting node adjacencies in the anklet graph."""
+        g = nx.Graph()
+        g.add_nodes_from(self._node)
+        for n, nbrs in self.adjacency().items():
+            for nbr in nbrs:
+                g.add_edge(n, nbr)
         return g
 
     def to_wheel_graph(self) -> nx.Graph:
