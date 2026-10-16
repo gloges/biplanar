@@ -2,6 +2,7 @@
 
 from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
 from itertools import combinations
+from types import NotImplementedType
 from typing import Any
 import networkx as nx
 from anklet import Anklet
@@ -1075,3 +1076,52 @@ class AnkletGraph[T: Hashable]:
         False
         """
         return nx.is_biconnected(self.to_adjacency_graph())
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Partial order
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+
+        if not set(self._node) <= set(other._node):
+            return False
+
+        return NotImplemented
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `self <= other` and not `other <= self`.
+
+        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+        return self <= other and not other <= self
+
+    def __ge__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `other <= self`.
+
+        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+        return other <= self
+
+    def __gt__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `other <= self` and not `self <= other`.
+
+        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+        return other <= self and not self <= other
+
+    def __eq__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `self <= other` and `other <= self`.
+
+        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+        return self <= other <= self
