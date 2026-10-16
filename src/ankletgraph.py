@@ -974,5 +974,23 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def is_planar(self) -> bool:
-        """Return whether the anklet graph is planar."""
+        """Return whether the anklet graph is planar.
+
+        The anklet structure of the hyperedges plays a key role: each hyperedge must
+        be embedded into the plane as a topological disk with incident nodes organized
+        on the boundary in the prescribed order.
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedge(Anklet(0, 1, 2))
+        >>> g.is_planar()
+        True
+        >>> g.add_hyperedge(Anklet(0, 1, 2))
+        >>> g.is_planar()
+        True
+        >>> g.add_hyperedge(Anklet(0, 1, 2))
+        >>> g.is_planar()
+        False
+        """
         return nx.is_planar(self.to_wheel_graph())
