@@ -838,7 +838,7 @@ class AnkletGraph[T: Hashable]:
 
     def connected_components(self) -> Iterator[set[T]]:
         """Generate connected components."""
-        return nx.connected_components(self.to_undirected())
+        return nx.connected_components(self.to_adjacency_graph())
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Associated graphs
