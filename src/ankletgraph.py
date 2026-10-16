@@ -838,20 +838,159 @@ class AnkletGraph[T: Hashable]:
 
     def connected_components(self) -> Iterator[set[T]]:
         """Generate connected components."""
-        return nx.connected_components(self.to_undirected())
+        return nx.connected_components(self.to_adjacency_graph())
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Associated graphs
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def to_undirected(self) -> nx.Graph:
-        """The simple graph reflecting node adjacencies in the anklet graph."""
-        raise NotImplementedError()
+    def to_incidence_graph(self) -> nx.Graph:
+        """The simple graph reflecting node-hyperedge incidences in the anklet graph.
 
-    def skeleton_graph(self) -> nx.MultiGraph:
-        """The multi-graph formed by replacing each hyperedge by a cycle."""
-        raise NotImplementedError()
+        The returned graph has the *nodes* and *hyperedges* of the anklet graph for nodes
+        and edges between "node" nodes and "hyperedge" nodes when they are incident:
+        this is a simple, bipartite graph.
 
-    def wheel_graph(self) -> nx.MultiGraph:
-        """The multi-graph formed by replacing each hyperedge by a wheel."""
-        raise NotImplementedError()
+        Since hyperedges of the anklet graph can have multiplicities larger than one,
+        the "hyperedge" nodes in the returned simple graph are pairs `(anklet, index)`
+        where `index` is a unique integer.
+
+        Returns
+        -------
+        networkx.Graph
+            A simple, bipartite graph on the nodes and hyperedges of the anklet graph.
+
+        See Also
+        --------
+        :meth:`incidence`,
+        :meth:`to_adjacency_graph`,
+        :meth:`to_wheel_graph`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> inc_graph = g.to_incidence_graph()
+        >>> list(inc_graph.nodes)
+        [0, 1, 2, 3, (A(0, 1), 0), (A(1, 2, 3), 0), (A(1, 2, 3), 1)]
+        >>> inc_graph.number_of_edges()
+        8
+        >>> nx.is_bipartite(inc_graph)
+        True
+        """
+        g = nx.Graph()
+        g.add_nodes_from(self._node)
+        for hype, k in self._edge.items():
+            for i in range(k):
+                g.add_edges_from((n, (hype, i)) for n in hype)
+        return g
+
+    def to_adjacency_graph(self) -> nx.Graph:
+        """The simple graph reflecting node adjacencies in the anklet graph.
+
+        The returned graph has the same nodes as the anklet graph but two nodes are joined
+        by an edge if they appear together in one or more hyperedge of the anklet graph.
+
+        Returns
+        -------
+        networkx.Graph
+            A simple graph on the nodes of the anklet graph.
+
+        See Also
+        --------
+        :meth:`adjacency`,
+        :meth:`to_incidence_graph`,
+        :meth:`to_wheel_graph`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> adj_graph = g.to_adjacency_graph()
+        >>> sorted(adj_graph.nodes)
+        [0, 1, 2, 3]
+        >>> sorted(adj_graph.edges)
+        [(0, 1), (1, 2), (1, 3), (2, 3)]
+        """
+        g = nx.Graph()
+        g.add_nodes_from(self._node)
+        for n, nbrs in self.adjacency().items():
+            for nbr in nbrs:
+                g.add_edge(n, nbr)
+        return g
+
+    def to_wheel_graph(self) -> nx.Graph:
+        """The simple graph formed by representing each hyperedge by a wheel.
+
+        Each hyperedge is turned into a wheel graph using :meth:`Anklet.to_wheel_graph`.
+        The nodes in the outer cycles of the wheels are then joined via edges to the node
+        of the anklet graph according to the anklet structure of the hyperedge.
+
+        Returns
+        -------
+        networkx.Graph
+            A simple graph with nodes both the nodes of the anklet graph
+            as well as `n + 1` integer nodes for each hyperedge of size `n`.
+
+        See Also
+        --------
+        :meth:`to_incidence_graph`,
+        :meth:`to_adjacency_graph`,
+        :meth:`Anklet.to_wheel_graph`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedge(Anklet('a', 'b', 'c'))
+        >>> wh_graph = g.to_wheel_graph()
+        >>> sorted(wh_graph.nodes, key=lambda x: (isinstance(x, int), x))
+        ['a', 'b', 'c', 0, 1, 2, 3]
+        >>> sorted(wh_graph.edges, key=lambda x: (isinstance(x[1], int), x))
+        [(1, 'a'), (2, 'b'), (3, 'c'), (0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
+        """
+
+        # Turn each hyperedge into a (labeled) wheel graph and take their disjoint union
+        hypes_all = [k * [hype] for hype, k in self._edge.items()]
+        hypes_all = [hype for hype_copies in hypes_all for hype in hype_copies]
+        g: nx.Graph = nx.disjoint_union_all([hype.to_wheel_graph() for hype in hypes_all])
+
+        # To avoid collisions, relabel the nodes of 'g' (in place)
+        # by shifting above the largest int in self._node (if any)
+        shift = 0
+        for n in self._node:
+            if isinstance(n, int) and shift <= n:
+                shift = n + 1
+        nx.relabel_nodes(g, {i: i + shift for i in g}, copy=False)
+
+        # Add the anklet graph nodes to 'g' and join the labeled wheel graph nodes
+        # to the node recorded by their 'anklet' attribute
+        g.add_nodes_from(self._node)
+        g.add_edges_from(nx.get_node_attributes(g, 'anklet').items())
+
+        return g
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Planarity
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def is_planar(self) -> bool:
+        """Return whether the anklet graph is planar.
+
+        The anklet structure of the hyperedges plays a key role: each hyperedge must
+        be embedded into the plane as a topological disk with incident nodes organized
+        on the boundary in the prescribed order.
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedge(Anklet(0, 1, 2))
+        >>> g.is_planar()
+        True
+        >>> g.add_hyperedge(Anklet(0, 1, 2))
+        >>> g.is_planar()
+        True
+        >>> g.add_hyperedge(Anklet(0, 1, 2))
+        >>> g.is_planar()
+        False
+        """
+        return nx.is_planar(self.to_wheel_graph())

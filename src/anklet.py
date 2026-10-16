@@ -3,6 +3,7 @@
 from collections.abc import Container, Hashable, Iterable, Iterator
 from types import NotImplementedType
 from typing import Self
+import networkx as nx
 
 
 class Anklet[T: Hashable](tuple[T, ...]):
@@ -246,3 +247,31 @@ class Anklet[T: Hashable](tuple[T, ...]):
         TypeError: '<' not supported between instances of 'complex' and 'complex'
         """
         return type(self).from_iterable(min(self.representatives()))
+
+    def to_wheel_graph(self) -> nx.Graph:
+        """Return a wheel graph representation of the anklet.
+
+        An anklet of length `n` is represented by the wheel graph `Wₙ` on the nodes `0, 1, ..., n`;
+        the central node is `0` and the nodes `1, 2, ..., n` form the outer `n`-cycle.
+        Note that for `n = 1` and `n = 2` the graph degenerates and has fewer than `2n` edges.
+
+        The nodes in the `n`-cycle have an 'anklet' attribute with values the beads of the anklet.
+
+        Returns
+        -------
+        networkx.Graph
+            A wheel graph labeled by the anklet.
+
+        Examples
+        --------
+        >>> g = Anklet('a', 'b', 'c', 'd').to_wheel_graph()
+        >>> print(g)
+        Graph with 5 nodes and 8 edges
+        >>> nx.get_node_attributes(g, 'anklet')
+        {1: 'a', 2: 'b', 3: 'c', 4: 'd'}
+        >>> sorted(g.edges)
+        [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (2, 3), (3, 4)]
+        """
+        g = nx.wheel_graph(len(self) + 1)
+        nx.set_node_attributes(g, dict(enumerate(self, start=1)), 'anklet')
+        return g
