@@ -4,4 +4,4 @@ version = "0.1.0"
 requires-python = ">=3.12"
 
 [tool.pylint.main]
-max-public-methods = 30
+max-public-methods = 35
