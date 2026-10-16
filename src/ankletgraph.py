@@ -1,6 +1,7 @@
 """Anklet graphs."""
 
 from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
+from itertools import combinations
 from typing import Any
 import networkx as nx
 from anklet import Anklet
@@ -745,13 +746,95 @@ class AnkletGraph[T: Hashable]:
     #   Incidence / adjacency
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def incidence(self) -> dict[T, Anklet[T]]:
-        """Return the incidence data of the graph."""
-        raise NotImplementedError()
+    def incidence(self) -> dict[T, set[Anklet[T]]]:
+        """Return the incidence data.
+
+        Returns
+        -------
+        dict[T, set[Anklet[T]]]
+            Dictionary keyed by nodes.
+            Values are the sets of hyperedges in the graph containing that node.
+
+        See Also
+        --------
+        :meth:`adjacency`,
+        :meth:`anklet_adjacency`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(4))
+        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2): 4})
+        >>> g.incidence()
+        {0: {A(0, 1), A(0, 2)}, 1: {A(0, 1), A(1)}, 2: {A(0, 2)}, 3: set()}
+        """
+        inc = {n: set() for n in self}
+        for hype in self._edge:
+            for n in hype:
+                inc[n].add(hype)
+        return inc
 
     def adjacency(self) -> dict[T, set[T]]:
-        """Return the adjacency data of the graph."""
-        raise NotImplementedError()
+        """Return the adjacency data.
+
+        Two nodes are adjacent if they appear together in one or more hyperedge.
+
+        Note that a node is never adjacent to itself.
+
+        Returns
+        -------
+        dict[T, set[T]]
+            Dictionary keyed by nodes. Values are the sets of adjacent nodes.
+
+        See Also
+        --------
+        :meth:`incidence`,
+        :meth:`anklet_adjacency`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5))
+        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2, 3): 4})
+        >>> g.adjacency()
+        {0: {1, 2, 3}, 1: {0}, 2: {0, 3}, 3: {0, 2}, 4: set()}
+        """
+        adj = {n: set() for n in self}
+        for hype in self._edge:
+            for u, v in combinations(hype, 2):
+                adj[u].add(v)
+                adj[v].add(u)
+        return adj
+
+    def anklet_adjacency(self) -> dict[T, set[T]]:
+        """Return the anklet adjacency data.
+
+        Nodes are anklet-adjacent if they appear sequentially in one or more hyperedge.
+
+        Note that a node `n` is anklet-adjacent to itself *if and only if* the hyperedge `A(n)`
+        is present in the graph.
+
+        Returns
+        -------
+        dict[T, set[T]]
+            Dictionary keyed by nodes. Values are the sets of anklet-adjacent nodes.
+
+        See Also
+        --------
+        :meth:`incidence`,
+        :meth:`adjacency`
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(6))
+        >>> g.add_hyperedges_from({Anklet(0, 1, 2, 3, 4): 2, Anklet(1): 3})
+        >>> g.anklet_adjacency()
+        {0: {1, 4}, 1: {0, 1, 2}, 2: {1, 3}, 3: {2, 4}, 4: {0, 3}, 5: set()}
+        """
+        adj = {n: set() for n in self}
+        for hype in self._edge:
+            for i, n in enumerate(hype):
+                adj[n].add(hype[i-1])
+                adj[hype[i-1]].add(n)
+        return adj
 
     def connected_components(self) -> Iterator[set[T]]:
         """Generate connected components."""
