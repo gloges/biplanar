@@ -920,7 +920,34 @@ class AnkletGraph[T: Hashable]:
         return g
 
     def to_wheel_graph(self) -> nx.Graph:
-        """The simple graph formed by representing each hyperedge by a wheel."""
+        """The simple graph formed by representing each hyperedge by a wheel.
+
+        Each hyperedge is turned into a wheel graph using :meth:`Anklet.to_wheel_graph`.
+        The nodes in the outer cycles of the wheels are then joined via edges to the node
+        of the anklet graph according to the anklet structure of the hyperedge.
+
+        Returns
+        -------
+        networkx.Graph
+            A simple graph with nodes both the nodes of the anklet graph
+            as well as `n + 1` integer nodes for each hyperedge of size `n`.
+
+        See Also
+        --------
+        :meth:`to_incidence_graph`,
+        :meth:`to_adjacency_graph`,
+        :meth:`Anklet.to_wheel_graph`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedge(Anklet('a', 'b', 'c'))
+        >>> wh_graph = g.to_wheel_graph()
+        >>> sorted(wh_graph.nodes, key=lambda x: (isinstance(x, int), x))
+        ['a', 'b', 'c', 0, 1, 2, 3]
+        >>> sorted(wh_graph.edges, key=lambda x: (isinstance(x[1], int), x))
+        [(1, 'a'), (2, 'b'), (3, 'c'), (0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
+        """
 
         # Turn each hyperedge into a (labeled) wheel graph and take their disjoint union
         hypes_all = [k * [hype] for hype, k in self._edge.items()]
