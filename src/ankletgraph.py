@@ -413,12 +413,43 @@ class AnkletGraph[T: Hashable]:
         return sum(self._edge.values())
 
     def add_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
-        """Add a hyperedge."""
-        raise NotImplementedError()
+        if not isinstance(k, int) or k <= 0:
+            raise ValueError(f"k={k} is not a positive integer")
+
+        self.add_nodes_from(hype)
+        if hype not in self._edge:
+            self._edge[hype] = 0
+        self._edge[hype] += k
+
+    def add_hyperedges_from(self, hypes: Iterable[Anklet[T]]) -> None:
+        if isinstance(hypes, Mapping):
+            for hype, k in hypes.items():
+                self.add_hyperedge(hype, k)
+        else:
+            for hype in hypes:
+                self.add_hyperedge(hype)
 
     def remove_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
-        """Remove a hyperedge."""
-        raise NotImplementedError()
+        if hype not in self._edge:
+            raise ValueError(f"{hype} is not a hyperedge in the graph")
+        if not isinstance(k, int) or k <= 0:
+            raise ValueError(f"k={k} is not a positive integer")
+        if k > self._edge[hype]:
+            raise ValueError(
+                f"{k} > {self._edge[hype]} is larger than the multiplicity of hyperedge {hype}"
+            )
+
+        self._edge[hype] -= k
+        if self._edge[hype] == 0:
+            self._edge.pop(hype)
+
+    def remove_hyperedges_from(self, hypes: Iterable[Anklet[T]]) -> None:
+        if isinstance(hypes, Mapping):
+            for hype, k in hypes.items():
+                self.remove_hyperedge(hype, k)
+        else:
+            for hype in hypes:
+                self.remove_hyperedge(hype)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence / adjacency
