@@ -886,7 +886,32 @@ class AnkletGraph[T: Hashable]:
         return g
 
     def to_adjacency_graph(self) -> nx.Graph:
-        """The simple graph reflecting node adjacencies in the anklet graph."""
+        """The simple graph reflecting node adjacencies in the anklet graph.
+
+        The returned graph has the same nodes as the anklet graph but two nodes are joined
+        by an edge if they appear together in one or more hyperedge of the anklet graph.
+
+        Returns
+        -------
+        networkx.Graph
+            A simple graph on the nodes of the anklet graph.
+
+        See Also
+        --------
+        :meth:`adjacency`,
+        :meth:`to_incidence_graph`,
+        :meth:`to_wheel_graph`
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> adj_graph = g.to_adjacency_graph()
+        >>> sorted(adj_graph.nodes)
+        [0, 1, 2, 3]
+        >>> sorted(adj_graph.edges)
+        [(0, 1), (1, 2), (1, 3), (2, 3)]
+        """
         g = nx.Graph()
         g.add_nodes_from(self._node)
         for n, nbrs in self.adjacency().items():
