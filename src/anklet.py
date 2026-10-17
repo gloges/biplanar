@@ -1,6 +1,7 @@
 """Combinatorial anklets."""
 
 from collections.abc import Container, Hashable, Iterable, Iterator
+from itertools import combinations
 from types import NotImplementedType
 from typing import Self
 import networkx as nx
@@ -275,3 +276,67 @@ class Anklet[T: Hashable](tuple[T, ...]):
         g = nx.wheel_graph(len(self) + 1)
         nx.set_node_attributes(g, dict(enumerate(self, start=1)), 'anklet')
         return g
+
+    def noncrossing(self, x: set[T], y: set[T]) -> bool:
+        """Return whether the sets `x` and `y` in the anklet are non-crossing.
+
+        Returns `False` if the anklet does not contain all elements from both `x` and `y`.
+
+        Otherwise, consider arranging the beads of the anklet on the boundary of a disk
+        in the prescribed cyclic order and joining the elements of `x` and `y` into sub-anklets
+        via a series of chords. Return `True` if the interiors of the chord cycles corresponding
+        to `x` and y` are disjoint and `False` if they intersect.
+
+        Note that the sets `x` and `y` need not be disjoint;
+        their corresponding sub-anklets may meet at up to two points without forcing a crossing.
+
+        Examples
+        --------
+        >>> a = Anklet.from_iterable(range(6))
+
+        A triangle and digon which are disjoint:
+
+        >>> a.noncrossing({0, 1, 2}, {3, 4})
+        True
+
+        Two triangles which meet at a vertex:
+
+        >>> a.noncrossing({0, 1, 2}, {2, 3, 4})
+        True
+
+        Two triangles which meet at two vertices:
+
+        >>> a.noncrossing({0, 2, 5}, {2, 3, 5})
+        True
+
+        Two triangles which cross:
+
+        >>> a.noncrossing({0, 1, 4}, {2, 3, 5})
+        False
+
+        Two coincident triangles:
+
+        >>> a.noncrossing({0, 1, 2}, {0, 1, 2})
+        False
+        """
+        if not x <= set(self) or not y <= set(self):
+            # The anklet does not contain all of the elements of both 'x' and 'y'
+            return False
+
+        # Form the disjoint union of three labeled wheel graphs,
+        # one for the parent anklet and one each for the subanklets corresponding to 'x' and 'y'
+        subanklet_x = Anklet.from_iterable(bead for bead in self if bead in x)
+        subanklet_y = Anklet.from_iterable(bead for bead in self if bead in y)
+        g = nx.disjoint_union_all(a.to_wheel_graph() for a in [self, subanklet_x, subanklet_y])
+
+        # Join nodes which share a bead label
+        label_groups = {}
+        for n, label in nx.get_node_attributes(g, 'anklet').items():
+            if label not in label_groups:
+                label_groups[label] = set()
+            label_groups[label].add(n)
+        for node_group in label_groups.values():
+            for u, v in combinations(node_group, 2):
+                g.add_edge(u, v)
+
+        return nx.is_planar(g)
