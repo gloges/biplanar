@@ -2,6 +2,7 @@
 
 from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
 from itertools import combinations
+from types import NotImplementedType
 from typing import Any
 import networkx as nx
 from anklet import Anklet
@@ -535,6 +536,10 @@ class AnkletGraph[T: Hashable]:
         """The hyperedges and their multiplicities."""
         return tuple((hype, k) for hype, k in self._edge.items())
 
+    def _all_hyperedges(self) -> list[Anklet[T]]:
+        """Return a list of the hyperedges with multiplicity."""
+        return [hype for hypes in [k * [hype] for hype, k in self._edge.items()] for hype in hypes]
+
     def number_of_hyperedges(self) -> int:
         """Return the number of hyperedges (counted with multiplicity).
 
@@ -946,9 +951,7 @@ class AnkletGraph[T: Hashable]:
         """
 
         # Turn each hyperedge into a (labeled) wheel graph and take their disjoint union
-        hypes_all = [k * [hype] for hype, k in self._edge.items()]
-        hypes_all = [hype for hype_copies in hypes_all for hype in hype_copies]
-        g: nx.Graph = nx.disjoint_union_all([hype.to_wheel_graph() for hype in hypes_all])
+        g = nx.disjoint_union_all([hype.to_wheel_graph() for hype in self._all_hyperedges()])
 
         # To avoid collisions, relabel the nodes of 'g' (in place)
         # by shifting above the largest int in self._node (if any)
@@ -1075,3 +1078,101 @@ class AnkletGraph[T: Hashable]:
         False
         """
         return nx.is_biconnected(self.to_adjacency_graph())
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Partial order
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        """Return whether the anklet graph embeds into another anklet graph.
+
+        An anklet graph `g` embeds into an anklet graph `h` if the nodes of `g`are a subset
+        of the nodes of `h` and there exists an embedding of the hyperedges of `g` into
+        the hyperedges of `h` such that the images of the hyperedges do not cross.
+
+        Parameters
+        ----------
+        other : object
+            An anklet graph.
+
+        Returns
+        -------
+        NotImplementedType or bool
+            Returns `NotImplemented` if `other` is not an anklet graph.
+            Otherwise, returns whether there exists an embedding of the anklet graph into `other`.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+
+        if not set(self._node) <= set(other._node):
+            return False
+
+        # Collect lists of all hyperedges, with multiplicity
+        hypes_s = self._all_hyperedges()
+        hypes_o = other._all_hyperedges()
+
+        # Build a graph where the nodes are all pairs of indices (i, j)
+        # for which hypes_s[i] is a subanklet of hypes_o[j] (see Anklet.__le__)
+        g = nx.Graph()
+        for i, hype_s in enumerate(hypes_s):
+            new_nodes = [(i, j) for j, hype_o in enumerate(hypes_o) if hype_s <= hype_o]
+            if not new_nodes:
+                # This individual hyperedge cannot embed into *any* hyperedges of 'other'
+                return False
+            g.add_nodes_from(new_nodes)
+
+        # Add an edge between (i1, j1) and (i2, j2) if the embedding of hyperedges i1 and i2
+        # of 'self' can embed into the hyperedges j1 and j2 of 'other' simultaneously without
+        # crossing. This requires i1 != i2 (else one is assigning two embeddings to only
+        # one hyperedge) and then either j1 != j2 or checking Anklet.noncrossing for embedding
+        # two hyperedges of 'self' into the same hyperedge of 'other'
+        for (i1, j1), (i2, j2) in combinations(g, 2):
+            if i1 != i2 and (j1 != j2 or hypes_o[j1].noncrossing(hypes_s[i1], hypes_s[i2])):
+                g.add_edge((i1, j1), (i2, j2))
+
+        # Find the size of the largest clique (weight=None for all node weights equal to 1).
+        # If it matches the number of hyperedges of 'self' that means that there is a choice
+        # of embedding for all hyperedges which ensures they pair-wise don't cross
+        _, clique_size = nx.max_weight_clique(g, weight=None)  # type: ignore
+        return clique_size == len(hypes_s)
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `self <= other` and not `other <= self`.
+
+        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+        return self <= other and not other <= self
+
+    def __ge__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `other <= self`.
+
+        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+        return other <= self
+
+    def __gt__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `other <= self` and not `self <= other`.
+
+        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+        return other <= self and not self <= other
+
+    def __eq__(self, other: object) -> NotImplementedType | bool:
+        """Return whether `self <= other` and `other <= self`.
+
+        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+
+        Two anklet graphs are equal if each embeds into the other. This clearly requires that they
+        have the same set of nodes, but it does not mean that they have the same set of hyperedges.
+        However, it *is* the case that two equal anklet graphs must have all hyperedges
+        of length `n ≥ 3` in common.
+        """
+        if not isinstance(other, AnkletGraph):
+            return NotImplemented
+        return self <= other <= self
