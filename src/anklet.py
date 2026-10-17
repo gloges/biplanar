@@ -1,13 +1,13 @@
 """Combinatorial anklets."""
 
-from collections.abc import Container, Hashable, Iterable, Iterator
+from collections.abc import Container, Iterable, Iterator
 from itertools import combinations
 from types import NotImplementedType
 from typing import Self
 import networkx as nx
 
 
-class Anklet[T: Hashable](tuple[T, ...]):
+class Anklet[T](tuple[T, ...]):
     """An anklet is a combinatorial bracelet with all beads distinct.
 
     Examples
