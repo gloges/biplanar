@@ -1084,6 +1084,23 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def __le__(self, other: object) -> NotImplementedType | bool:
+        """Return whether the anklet graph embeds into another anklet graph.
+
+        An anklet graph `g` embeds into an anklet graph `h` if the nodes of `g`are a subset
+        of the nodes of `h` and there exists an embedding of the hyperedges of `g` into
+        the hyperedges of `h` such that the images of the hyperedges do not cross.
+
+        Parameters
+        ----------
+        other : object
+            An anklet graph.
+
+        Returns
+        -------
+        NotImplementedType or bool
+            Returns `NotImplemented` if `other` is not an anklet graph.
+            Otherwise, returns whether there exists an embedding of the anklet graph into `other`.
+        """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
 
@@ -1095,7 +1112,7 @@ class AnkletGraph[T: Hashable]:
         hypes_o = other._all_hyperedges()
 
         # Build a graph where the nodes are all pairs of indices (i, j)
-        # for which hypes_self[i] <= hypes_other[j]
+        # for which hypes_s[i] is a subanklet of hypes_o[j] (see Anklet.__le__)
         g = nx.Graph()
         for i, hype_s in enumerate(hypes_s):
             new_nodes = [(i, j) for j, hype_o in enumerate(hypes_o) if hype_s <= hype_o]
@@ -1104,18 +1121,18 @@ class AnkletGraph[T: Hashable]:
                 return False
             g.add_nodes_from(new_nodes)
 
-        # Add an edge between (i1, j1) and (i2, j2) if the embedding of hyperedges i1 and i2 of self
-        # can embed into the hyperedges j1 and j2 of other simultaneously without crossing.
-        # This requires i1 != i2 (else one is assigning two embeddings to only one hyperedge)
-        # and then either j1 != j2 or checking Anklet.noncrossing for embedding two hyperedges
-        # of self into the same hyperedge of other
+        # Add an edge between (i1, j1) and (i2, j2) if the embedding of hyperedges i1 and i2
+        # of 'self' can embed into the hyperedges j1 and j2 of 'other' simultaneously without
+        # crossing. This requires i1 != i2 (else one is assigning two embeddings to only
+        # one hyperedge) and then either j1 != j2 or checking Anklet.noncrossing for embedding
+        # two hyperedges of 'self' into the same hyperedge of 'other'
         for (i1, j1), (i2, j2) in combinations(g, 2):
             if i1 != i2 and (j1 != j2 or hypes_o[j1].noncrossing(hypes_s[i1], hypes_s[i2])):
                 g.add_edge((i1, j1), (i2, j2))
 
         # Find the size of the largest clique (weight=None for all node weights equal to 1).
-        # If it matches the number of hyperedges of self that means that there is a way to embed
-        # *all* hyperedges simultaneously in such a way that no two cross.
+        # If it matches the number of hyperedges of 'self' that means that there is a choice
+        # of embedding for all hyperedges which ensures they pair-wise don't cross
         _, clique_size = nx.max_weight_clique(g, weight=None)  # type: ignore
         return clique_size == len(hypes_s)
 
