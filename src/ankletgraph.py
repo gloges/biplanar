@@ -1090,7 +1090,34 @@ class AnkletGraph[T: Hashable]:
         if not set(self._node) <= set(other._node):
             return False
 
-        return NotImplemented
+        # Collect lists of all hyperedges, with multiplicity
+        hypes_s = self._all_hyperedges()
+        hypes_o = other._all_hyperedges()
+
+        # Build a graph where the nodes are all pairs of indices (i, j)
+        # for which hypes_self[i] <= hypes_other[j]
+        g = nx.Graph()
+        for i, hype_s in enumerate(hypes_s):
+            new_nodes = [(i, j) for j, hype_o in enumerate(hypes_o) if hype_s <= hype_o]
+            if not new_nodes:
+                # This individual hyperedge cannot embed into *any* hyperedges of 'other'
+                return False
+            g.add_nodes_from(new_nodes)
+
+        # Add an edge between (i1, j1) and (i2, j2) if the embedding of hyperedges i1 and i2 of self
+        # can embed into the hyperedges j1 and j2 of other simultaneously without crossing.
+        # This requires i1 != i2 (else one is assigning two embeddings to only one hyperedge)
+        # and then either j1 != j2 or checking Anklet.noncrossing for embedding two hyperedges
+        # of self into the same hyperedge of other
+        for (i1, j1), (i2, j2) in combinations(g, 2):
+            if i1 != i2 and (j1 != j2 or hypes_o[j1].noncrossing(hypes_s[i1], hypes_s[i2])):
+                g.add_edge((i1, j1), (i2, j2))
+
+        # Find the size of the largest clique (weight=None for all node weights equal to 1).
+        # If it matches the number of hyperedges of self that means that there is a way to embed
+        # *all* hyperedges simultaneously in such a way that no two cross.
+        _, clique_size = nx.max_weight_clique(g, weight=None)  # type: ignore
+        return clique_size == len(hypes_s)
 
     def __lt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and not `other <= self`.
