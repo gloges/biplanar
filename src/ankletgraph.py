@@ -1080,15 +1080,63 @@ class AnkletGraph[T: Hashable]:
         return nx.is_biconnected(self.to_adjacency_graph())
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Reduction
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def reduce(self) -> None:
+        """Remove hyperedge which have no bearing on anklet graph equality.
+
+        First, all hyperedges of length `n ≤ 1` are removed.
+        Next, each hyperedge of length `n = 2` is either removed or has its multiplicity set to one;
+        those whose two elements appear adjacent in another hyperedge are removed.
+        All hyperedges of length `≥ 3` are left unaltered.
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from(
+        ...     {Anklet(0): 2, Anklet(0, 1): 3, Anklet(1, 2): 4, Anklet(1, 2, 3): 2}
+        ... )
+        >>> g.reduce()
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(1, 2, 3), 2))
+        """
+
+        # Remove hyperedges of length ≤ 1
+        self._edge = {hype: k for hype, k in self._edge.items() if len(hype) > 1}
+
+        def adjacent_pair(x: T, y: T, a: Anklet[T]) -> bool:
+            """Determine if `x` and `y` appear adjacent in the bracelet `a`."""
+            try:
+                i = a.index(x)
+                j = a.index(y)
+                return abs(i - j) == 1 or (0, len(a) - 1) in [(i, j), (j, i)]
+            except ValueError:
+                # Either x or y is not in the anklet
+                return False
+
+        # For each hyperedge of length 2 either remove entirely or set multiplicity to one
+        for hype in list(self._edge):
+            if len(hype) == 2:
+                if any(
+                    adjacent_pair(hype[0], hype[1], hype2)
+                    for hype2 in self._edge
+                    if hype2 is not hype
+                ):
+                    self._edge.pop(hype)
+                else:
+                    self._edge[hype] = 1
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Partial order
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def __le__(self, other: object) -> NotImplementedType | bool:
         """Return whether the anklet graph embeds into another anklet graph.
 
-        An anklet graph `g` embeds into an anklet graph `h` if the nodes of `g`are a subset
-        of the nodes of `h` and there exists an embedding of the hyperedges of `g` into
-        the hyperedges of `h` such that the images of the hyperedges do not cross.
+        An anklet graph *g* embeds into an anklet graph *h* if the nodes of *g* are a subset of the
+        nodes of *h* and there exists an embedding of the non-trivial (length > 1) hyperedges 
+        of *g* into the hyperedges of *h* such that the images of the hyperedges do not cross.
 
         Parameters
         ----------
@@ -1107,9 +1155,9 @@ class AnkletGraph[T: Hashable]:
         if not set(self._node) <= set(other._node):
             return False
 
-        # Collect lists of all hyperedges, with multiplicity
-        hypes_s = self._all_hyperedges()
-        hypes_o = other._all_hyperedges()
+        # Collect lists of all non-trivial hyperedges, with multiplicity
+        hypes_s = [hype for hype in self._all_hyperedges() if len(hype) > 1]
+        hypes_o = [hype for hype in other._all_hyperedges() if len(hype) > 1]
 
         # Build a graph where the nodes are all pairs of indices (i, j)
         # for which hypes_s[i] is a subanklet of hypes_o[j] (see Anklet.__le__)
