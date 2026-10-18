@@ -1155,20 +1155,19 @@ class AnkletGraph[T: Hashable]:
         if not set(self._node) <= set(other._node):
             return False
 
-        # Collect lists of all hyperedges, with multiplicity
-        hypes_s = self._all_hyperedges()
-        hypes_o = other._all_hyperedges()
+        # Collect lists of all non-trivial hyperedges, with multiplicity
+        hypes_s = [hype for hype in self._all_hyperedges() if len(hype) > 1]
+        hypes_o = [hype for hype in other._all_hyperedges() if len(hype) > 1]
 
         # Build a graph where the nodes are all pairs of indices (i, j)
         # for which hypes_s[i] is a subanklet of hypes_o[j] (see Anklet.__le__)
         g = nx.Graph()
         for i, hype_s in enumerate(hypes_s):
-            if len(hype_s) > 1:
-                new_nodes = [(i, j) for j, hype_o in enumerate(hypes_o) if hype_s <= hype_o]
-                if not new_nodes:
-                    # This individual hyperedge cannot embed into *any* hyperedges of 'other'
-                    return False
-                g.add_nodes_from(new_nodes)
+            new_nodes = [(i, j) for j, hype_o in enumerate(hypes_o) if hype_s <= hype_o]
+            if not new_nodes:
+                # This individual hyperedge cannot embed into *any* hyperedges of 'other'
+                return False
+            g.add_nodes_from(new_nodes)
 
         # Add an edge between (i1, j1) and (i2, j2) if the embedding of hyperedges i1 and i2
         # of 'self' can embed into the hyperedges j1 and j2 of 'other' simultaneously without
