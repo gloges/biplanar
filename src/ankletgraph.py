@@ -1134,9 +1134,9 @@ class AnkletGraph[T: Hashable]:
     def __le__(self, other: object) -> NotImplementedType | bool:
         """Return whether the anklet graph embeds into another anklet graph.
 
-        An anklet graph `g` embeds into an anklet graph `h` if the nodes of `g`are a subset
-        of the nodes of `h` and there exists an embedding of the hyperedges of `g` into
-        the hyperedges of `h` such that the images of the hyperedges do not cross.
+        An anklet graph *g* embeds into an anklet graph *h* if the nodes of *g* are a subset of the
+        nodes of *h* and there exists an embedding of the non-trivial (length > 1) hyperedges 
+        of *g* into the hyperedges of *h* such that the images of the hyperedges do not cross.
 
         Parameters
         ----------
@@ -1163,11 +1163,12 @@ class AnkletGraph[T: Hashable]:
         # for which hypes_s[i] is a subanklet of hypes_o[j] (see Anklet.__le__)
         g = nx.Graph()
         for i, hype_s in enumerate(hypes_s):
-            new_nodes = [(i, j) for j, hype_o in enumerate(hypes_o) if hype_s <= hype_o]
-            if not new_nodes:
-                # This individual hyperedge cannot embed into *any* hyperedges of 'other'
-                return False
-            g.add_nodes_from(new_nodes)
+            if len(hype_s) > 1:
+                new_nodes = [(i, j) for j, hype_o in enumerate(hypes_o) if hype_s <= hype_o]
+                if not new_nodes:
+                    # This individual hyperedge cannot embed into *any* hyperedges of 'other'
+                    return False
+                g.add_nodes_from(new_nodes)
 
         # Add an edge between (i1, j1) and (i2, j2) if the embedding of hyperedges i1 and i2
         # of 'self' can embed into the hyperedges j1 and j2 of 'other' simultaneously without
