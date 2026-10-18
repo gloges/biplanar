@@ -1080,6 +1080,38 @@ class AnkletGraph[T: Hashable]:
         return nx.is_biconnected(self.to_adjacency_graph())
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Reduction
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def reduce(self) -> None:
+        """Remove all hyperedge which have no bearing on anklet graph equality."""
+
+        # Remove hyperedges of length ≤ 1
+        self._edge = {hype: k for hype, k in self._edge.items() if len(hype) > 1}
+
+        def adjacent_pair(x: T, y: T, a: Anklet[T]) -> bool:
+            """Determine if `x` and `y` appear adajcent in the bracelet `a`."""
+            try:
+                i = a.index(x)
+                j = a.index(y)
+                return abs(i - j) == 1 or (0, len(a) - 1) in [(i, j), (j, i)]
+            except ValueError:
+                # Either x or y is not in the anklet
+                return False
+
+        # For each hyperedge of length 2 either remove entirely or set multiplicity to one
+        for hype in list(self._edge):
+            if len(hype) == 2:
+                if any(
+                    adjacent_pair(hype[0], hype[1], hype2)
+                    for hype2 in self._edge
+                    if hype2 is not hype
+                ):
+                    self._edge.pop(hype)
+                else:
+                    self._edge[hype] = 1
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Partial order
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
