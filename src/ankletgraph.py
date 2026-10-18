@@ -3,7 +3,7 @@
 from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
 from itertools import combinations
 from types import NotImplementedType
-from typing import Any
+from typing import Any, Self
 import networkx as nx
 from anklet import Anklet
 
@@ -86,6 +86,22 @@ class AnkletGraph[T: Hashable]:
         :meth:`number_of_nodes` : identical method
         """
         return len(self._node)
+
+    def copy(self) -> Self:
+        """Return a copy of the anklet graph.
+
+        Graph attributes, nodes, node attributes and hyperedges are copied.
+        If the graph has a name then '-copy' is appended: otherwise the copy remains unnamed.
+
+        Returns
+        -------
+        Self
+            A copy of the anklet graph.
+        """
+        g = type(self)(name=self.name + '-copy' if self.name else '', **self._attr.copy())
+        g.add_nodes_from(self._node.copy())
+        g.add_hyperedges_from(self._edge.copy())
+        return g
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Graph attributes
