@@ -1,8 +1,9 @@
 """Methods for generating anklets and anklet graphs."""
 
-from collections.abc import Collection, Iterable
-from itertools import chain, combinations, permutations
+from collections.abc import Collection, Hashable, Iterable
+from itertools import chain, combinations, combinations_with_replacement, permutations
 from anklet import Anklet
+from ankletgraph import AnkletGraph
 
 
 def powerset[T](iterable: Iterable[T]) -> chain[tuple[T, ...]]:
@@ -50,3 +51,49 @@ def get_anklets[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet
     if subsets:
         return set.union(*[get_anklets(bead_subset) for bead_subset in powerset(beads)])
     return {Anklet.from_iterable(bead_perm) for bead_perm in permutations(beads)}
+
+
+def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
+    """Return all reduced, connected, planar anklet graphs on subsets of the given nodes."""
+
+    # Fix an order for the non-trivial anklets
+    anklets = [a for a in get_anklets(nodes, subsets=True) if len(a) > 1]
+
+    # Record which pairs of anklets taken together as hyperedges give a reduced planar anklet graph
+    compatible = {i: set[int]() for i in range(len(anklets))}
+    for (i, a), (j, b) in combinations_with_replacement(enumerate(anklets), 2):
+        g = AnkletGraph[T]()
+        g.add_hyperedges_from([a, b])
+        g.reduce()
+        if g.number_of_hyperedges() == 2 and g.is_planar():
+            compatible[i].add(j)
+
+    # Init queue with single-hyperedge anklet graphs
+    queue = []
+    for i, a in enumerate(anklets):
+        g = AnkletGraph[T](indices=(i,))
+        g.add_hyperedge(a)
+        queue.append(g)
+
+    # Add single-node anklet graphs to list of connected graphs
+    # (but not to the queue to have edges added)
+    ankletgraphs = [AnkletGraph[T]([n]) for n in nodes]
+
+    while queue:
+        g = queue.pop(0)
+
+        # Only need to consider adding new hyperedges which are pairwise
+        # compatible with the pre-existing hyperedges of 'g'
+        g_indices = g.get_attribute('indices')
+        for i_new in set.intersection(*[compatible[i] for i in g_indices]):
+            g_new = g.copy()
+            g_new.add_hyperedge(anklets[i_new])
+            if g_new.is_planar():
+                g_new.set_attributes(indices=(*g_indices, i_new))
+                queue.append(g_new)
+
+        if g.is_connected():
+            g.clear_attributes()
+            ankletgraphs.append(g)
+
+    return ankletgraphs
