@@ -54,7 +54,19 @@ def get_anklets[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet
 
 
 def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
-    """Return all reduced, connected, planar anklet graphs on subsets of the given nodes."""
+    """Return all reduced, connected, planar anklet graphs on subsets of `nodes`.
+
+    Parameters
+    ----------
+    nodes : Collection[T]
+        Nodes for the anklet graphs.
+
+    Returns
+    -------
+    list[AnkletGraph[T]]
+        Anklet graphs on subsets of `nodes` which are reduced
+        (i.e. unchanged by :meth:`AnkletGraph.reduce`), connected and planar.
+    """
 
     # Fix an order for the non-trivial anklets
     anklets = [a for a in get_anklets(nodes, subsets=True) if len(a) > 1]
