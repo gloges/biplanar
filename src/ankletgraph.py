@@ -1084,13 +1084,29 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def reduce(self) -> None:
-        """Remove all hyperedge which have no bearing on anklet graph equality."""
+        """Remove hyperedge which have no bearing on anklet graph equality.
+
+        First, all hyperedges of length `n ≤ 1` are removed.
+        Next, each hyperedge of length `n = 2` is either removed or has its multiplicity set to one;
+        those whose two elements appear adjacent in another hyperedge are removed.
+        All hyperedges of length `≥ 3` are left unaltered.
+
+        Examples
+        --------
+        >>> g = AnkletGraph()
+        >>> g.add_hyperedges_from(
+        ...     {Anklet(0): 2, Anklet(0, 1): 3, Anklet(1, 2): 4, Anklet(1, 2, 3): 2}
+        ... )
+        >>> g.reduce()
+        >>> g.hyperedges
+        ((A(0, 1), 1), (A(1, 2, 3), 2))
+        """
 
         # Remove hyperedges of length ≤ 1
         self._edge = {hype: k for hype, k in self._edge.items() if len(hype) > 1}
 
         def adjacent_pair(x: T, y: T, a: Anklet[T]) -> bool:
-            """Determine if `x` and `y` appear adajcent in the bracelet `a`."""
+            """Determine if `x` and `y` appear adjacent in the bracelet `a`."""
             try:
                 i = a.index(x)
                 j = a.index(y)
