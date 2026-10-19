@@ -989,7 +989,10 @@ class AnkletGraph[T: Hashable]:
         """
 
         # Turn each hyperedge into a (labeled) wheel graph and take their disjoint union
-        g = nx.disjoint_union_all([hype.to_wheel_graph() for hype in self._all_hyperedges()])
+        if self._edge:
+            g = nx.disjoint_union_all([hype.to_wheel_graph() for hype in self._all_hyperedges()])
+        else:
+            g = nx.Graph()
 
         # To avoid collisions, relabel the nodes of 'g' (in place)
         # by shifting above the largest int in self._node (if any)
@@ -1019,7 +1022,9 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
+        >>> g = AnkletGraph(range(3))
+        >>> g.is_planar()
+        True
         >>> g.add_hyperedge(Anklet(0, 1, 2))
         >>> g.is_planar()
         True
