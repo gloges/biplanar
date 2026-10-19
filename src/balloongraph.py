@@ -33,12 +33,12 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     def check_structure(self) -> None:
         """Validate the structure of the balloon graph.
 
-        Two conditions must be met for the structure of a balloon graph to be considered valid:
+        Two conditions must be met for the structure of the balloon graph to be considered valid:
         - The component anklet graphs have 'balloon' attributes which are equal
         for components which share a node.
-        - The *incidence* graph with nodes both the nodes and components of the balloon graph
+        - The *incidence* graph, with nodes both the nodes and components of the balloon graph
         and with edges between "node" nodes and "component" nodes when that component contains
-        that node is acyclic (i.e. a forest graph).
+        that node, is acyclic (i.e. a forest graph).
 
         Returns quietly if the structure is valid.
 
