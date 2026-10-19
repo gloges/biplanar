@@ -47,8 +47,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         KeyError
             If an component anklet graph does not have a 'balloon' attribute.
         ValueError
-            If two components with a node in common have different values
-            for their 'balloon' attributes or if the incidence graph is not a forest.
+            If two components with a node in common have different values for their 'balloon'
+            attributes or if the node-component incidence graph described above is not a forest.
         """
 
         g = nx.Graph()
@@ -80,6 +80,6 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
                 for n, _ in nx.find_cycle(g)
             ]
             raise ValueError(
-                "Invalid structure. Meta-graph contains the cycle\n" +
+                "Invalid structure. the node-component incidence graph contains the cycle\n" +
                 " → ".join([*cycle_data, cycle_data[0]])
             )
