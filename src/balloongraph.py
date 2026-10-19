@@ -1,17 +1,20 @@
 """Balloon graphs."""
 
 from collections.abc import Hashable
+from typing import Self
 import networkx as nx
 from ankletgraph import AnkletGraph
 
 
-class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
+class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
 
-    def __init__(self, *, name: str = "") -> None:
-        self._name = name
+    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "") -> Self:
+        bg = super().__new__(cls, ankletgraphs)
+        bg.name = name
+        return bg
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -25,6 +28,38 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     @name.setter
     def name(self, s: str) -> None:
         self._name = s
+
+    def get_data_string(self) -> str:
+        """Return a string encoding of the balloon graph's data.
+
+        The balloon attribute and two data strings of each anklet graph are formated
+        as `"[{ballon} | {node_data} | {hyperedge_data}]"` and then joined via `", "`.
+
+        Returns
+        -------
+        str
+            String encoding of the data needed to reconstruct the balloon graph.
+
+        Raises
+        ------
+        ValueError
+            If the balloon graph does not have a valid structure.
+
+        Examples
+        --------
+        >>> from anklet import Anklet
+        >>> ag1 = AnkletGraph(range(0, 4), balloon='a')
+        >>> ag2 = AnkletGraph(range(4, 7), balloon='b')
+        >>> ag1.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> ag2.add_hyperedge(Anklet(4, 5), 3)
+        >>> bg = BalloonGraph(ag1, ag2)
+        >>> bg.get_data_string()
+        '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
+        """
+        return ", ".join(
+            '[' + " | ".join([str(g.get_attribute('balloon')), *g.get_data_strings()]) + ']'
+            for g in self
+        )
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
@@ -44,11 +79,10 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         Raises
         ------
-        KeyError
-            If an component anklet graph does not have a 'balloon' attribute.
         ValueError
-            If two components with a node in common have different values for their 'balloon'
-            attributes or if the node-component incidence graph described above is not a forest.
+            If (i) an component anklet graph does not have a 'balloon' attribute, (ii) two
+            components with a node in common have different values for their 'balloon' attributes
+            or (iii) the node-component incidence graph described above is not a forest.
         """
 
         g = nx.Graph()
@@ -56,7 +90,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
             try:
                 component.get_attribute('balloon')
             except KeyError as exc:
-                raise KeyError(
+                raise ValueError(
                     f"the anklet graph at index {i} does not have a 'balloon' attribute"
                 ) from exc
 
