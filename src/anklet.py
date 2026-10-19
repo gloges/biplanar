@@ -1,6 +1,6 @@
 """Combinatorial anklets."""
 
-from collections.abc import Container, Iterable, Iterator
+from collections.abc import Collection, Container, Iterable, Iterator
 from itertools import combinations
 from types import NotImplementedType
 from typing import Self
@@ -277,8 +277,8 @@ class Anklet[T](tuple[T, ...]):
         nx.set_node_attributes(g, dict(enumerate(self, start=1)), 'anklet')
         return g
 
-    def noncrossing(self, x: set[T], y: set[T]) -> bool:
-        """Return whether the sets `x` and `y` in the anklet are non-crossing.
+    def noncrossing(self, x: Collection[T], y: Collection[T]) -> bool:
+        """Return whether the collections of beads `x` and `y` in the anklet are non-crossing.
 
         Returns `False` if the anklet does not contain all elements from both `x` and `y`.
 
@@ -319,7 +319,7 @@ class Anklet[T](tuple[T, ...]):
         >>> a.noncrossing({0, 1, 2}, {0, 1, 2})
         False
         """
-        if not x <= set(self) or not y <= set(self):
+        if not set(x) <= set(self) or not set(y) <= set(self):
             # The anklet does not contain all of the elements of both 'x' and 'y'
             return False
 
