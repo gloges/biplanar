@@ -1,6 +1,6 @@
 """Combinatorial anklets."""
 
-from collections.abc import Container, Iterable, Iterator
+from collections.abc import Collection, Container, Iterable, Iterator
 from itertools import combinations
 from types import NotImplementedType
 from typing import Self
@@ -277,8 +277,8 @@ class Anklet[T](tuple[T, ...]):
         nx.set_node_attributes(g, dict(enumerate(self, start=1)), 'anklet')
         return g
 
-    def noncrossing(self, x: set[T], y: set[T]) -> bool:
-        """Return whether the sets `x` and `y` in the anklet are non-crossing.
+    def noncrossing(self, x: Collection[T], y: Collection[T]) -> bool:
+        """Return whether the collections of beads `x` and `y` in the anklet are non-crossing.
 
         Returns `False` if the anklet does not contain all elements from both `x` and `y`.
 
@@ -287,8 +287,18 @@ class Anklet[T](tuple[T, ...]):
         via a series of chords. Return `True` if the interiors of the chord cycles corresponding
         to `x` and y` are disjoint and `False` if they intersect.
 
-        Note that the sets `x` and `y` need not be disjoint;
+        Note that `x` and `y` need not be disjoint;
         their corresponding sub-anklets may meet at up to two points without forcing a crossing.
+
+        Parameters
+        ----------
+        x, y : Collection[T]
+            Two sets of beads.
+
+        Returns
+        -------
+        bool
+            Whether `x` and `y` are non-crossing subsets of beads in the anklet.
 
         Examples
         --------
@@ -301,17 +311,17 @@ class Anklet[T](tuple[T, ...]):
 
         Two triangles which meet at a vertex:
 
-        >>> a.noncrossing({0, 1, 2}, {2, 3, 4})
+        >>> a.noncrossing([0, 1, 2], {2, 3, 4})
         True
 
         Two triangles which meet at two vertices:
 
-        >>> a.noncrossing({0, 2, 5}, {2, 3, 5})
+        >>> a.noncrossing((0, 2, 5), {2, 3, 5})
         True
 
         Two triangles which cross:
 
-        >>> a.noncrossing({0, 1, 4}, {2, 3, 5})
+        >>> a.noncrossing(Anklet(0, 1, 4), {2, 3, 5})
         False
 
         Two coincident triangles:
@@ -319,7 +329,7 @@ class Anklet[T](tuple[T, ...]):
         >>> a.noncrossing({0, 1, 2}, {0, 1, 2})
         False
         """
-        if not x <= set(self) or not y <= set(self):
+        if not set(x) <= set(self) or not set(y) <= set(self):
             # The anklet does not contain all of the elements of both 'x' and 'y'
             return False
 
