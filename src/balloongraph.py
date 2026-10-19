@@ -47,11 +47,10 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
 
         Raises
         ------
-        KeyError
-            If an component anklet graph does not have a 'balloon' attribute.
         ValueError
-            If two components with a node in common have different values for their 'balloon'
-            attributes or if the node-component incidence graph described above is not a forest.
+            If (i) an component anklet graph does not have a 'balloon' attribute, (ii) two
+            components with a node in common have different values for their 'balloon' attributes
+            or (iii) the node-component incidence graph described above is not a forest.
         """
 
         g = nx.Graph()
@@ -59,7 +58,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
             try:
                 component.get_attribute('balloon')
             except KeyError as exc:
-                raise KeyError(
+                raise ValueError(
                     f"the anklet graph at index {i} does not have a 'balloon' attribute"
                 ) from exc
 
