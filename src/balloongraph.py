@@ -10,10 +10,12 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
+    _valid_structure_hash: int
 
     def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "") -> Self:
         bg = super().__new__(cls, ankletgraphs)
-        bg.name = name
+        bg._name = name
+        bg._valid_structure_hash = 0
         return bg
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
@@ -80,16 +82,21 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         Raises
         ------
         ValueError
-            If (i) an component anklet graph does not have a 'balloon' attribute, (ii) two
-            components with a node in common have different values for their 'balloon' attributes
-            or (iii) the node-component incidence graph described above is not a forest.
+            If (i) an component anklet graph does not have a 'balloon' attribute,
+            (ii) two components with a node in common have different values for their 'balloon'
+            attributes or (iii) the node-component incidence graph described above is not a forest.
         """
+        if hash(self) == self._valid_structure_hash:
+            # If the hash has not changed since the last successful structure check,
+            # there is no need to check again
+            return
 
         g = nx.Graph()
         for i, component in enumerate(self):
             try:
                 component.get_attribute('balloon')
             except KeyError as exc:
+                self._valid_structure_hash = 0
                 raise ValueError(
                     f"the anklet graph at index {i} does not have a 'balloon' attribute"
                 ) from exc
@@ -103,6 +110,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         for n in nx.get_node_attributes(g, 'node'):
             nbr_indices = [nbr[1] for nbr in g.neighbors(n)]
             if len({self[i].get_attribute('balloon') for i in nbr_indices}) != 1:
+                self._valid_structure_hash = 0
                 raise ValueError(
                     f"the anklet graphs containing node {n} (indices: {nbr_indices})"
                     " do not all have the same values for their 'balloon' attribute"
@@ -113,7 +121,12 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
                 f"(node {n})" if 'node' in g.nodes[n] else f"(component {n[1]})"
                 for n, _ in nx.find_cycle(g)
             ]
+            self._valid_structure_hash = 0
             raise ValueError(
                 "Invalid structure. the node-component incidence graph contains the cycle\n" +
                 " → ".join([*cycle_data, cycle_data[0]])
             )
+
+        # The structure is valid:
+        # save the hash to avoid checking the structure again if it doesn't change
+        self._valid_structure_hash = hash(self)
