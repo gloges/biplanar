@@ -103,6 +103,28 @@ class AnkletGraph[T: Hashable]:
         g.add_hyperedges_from(self._edge.copy())
         return g
 
+    def get_data_strings(self) -> tuple[str, str]:
+        """Return two strings summarizing the node and hyperedge data of the anklet graph.
+
+        Returns
+        -------
+        node_data, hyperedge_data : str
+            The first returned string is a comma-separated list of the nodes.
+            The second returned string contains the hyperedges with their multiplicities,
+            each formated as `"k × A(...)"` (or simply `"A(...)"` if `k = 1`), joined by `" + "`.
+
+        Examples
+        --------
+        >>> g = AnkletGraph(range(5))
+        >>> g.add_hyperedges_from({Anklet(0): 3, Anklet(0, 1): 2, Anklet(1, 2, 3): 1})
+        >>> g.get_data_strings()
+        ('0, 1, 2, 3, 4', '3 × A(0) + 2 × A(0, 1) + A(1, 2, 3)')
+        """
+        return (
+            ", ".join(str(n) for n in self._node),
+            " + ".join(f"{k} × {hype}" if k > 1 else str(hype) for hype, k in self._edge.items())
+        )
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Graph attributes
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
