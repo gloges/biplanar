@@ -4,15 +4,13 @@ from collections.abc import Hashable
 from ankletgraph import AnkletGraph
 
 
-class BalloonGraph[T: Hashable]:
+class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
-    _component: list[AnkletGraph[T]]
 
     def __init__(self, *, name: str = "") -> None:
         self._name = name
-        self._component = []
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -26,14 +24,6 @@ class BalloonGraph[T: Hashable]:
     @name.setter
     def name(self, s: str) -> None:
         self._name = s
-
-    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Components
-    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-
-    def add_component(self, g: AnkletGraph[T]) -> None:
-        """Add a graph component."""
-        raise NotImplementedError()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
