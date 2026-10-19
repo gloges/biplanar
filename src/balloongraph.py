@@ -91,7 +91,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
             (ii) two components with a node in common have different values for their 'balloon'
             attributes or (iii) the node-component incidence graph described above is not a forest.
         """
-        if hash(self) == self._valid_structure_hash:
+        if hash(g.get_data_strings() for g in self) == self._valid_structure_hash:
             # If the hash has not changed since the last successful structure check,
             # there is no need to check again
             return
@@ -134,4 +134,4 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
 
         # The structure is valid:
         # save the hash to avoid checking the structure again if it doesn't change
-        self._valid_structure_hash = hash(self)
+        self._valid_structure_hash = hash(g.get_data_strings() for g in self)
