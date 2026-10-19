@@ -298,7 +298,7 @@ class Anklet[T](tuple[T, ...]):
         Returns
         -------
         bool
-            Whether `x` and `y` are noncrossing subsets of beads in the anklet.
+            Whether `x` and `y` are non-crossing subsets of beads in the anklet.
 
         Examples
         --------
@@ -311,17 +311,17 @@ class Anklet[T](tuple[T, ...]):
 
         Two triangles which meet at a vertex:
 
-        >>> a.noncrossing({0, 1, 2}, {2, 3, 4})
+        >>> a.noncrossing([0, 1, 2], {2, 3, 4})
         True
 
         Two triangles which meet at two vertices:
 
-        >>> a.noncrossing({0, 2, 5}, {2, 3, 5})
+        >>> a.noncrossing((0, 2, 5), {2, 3, 5})
         True
 
         Two triangles which cross:
 
-        >>> a.noncrossing({0, 1, 4}, {2, 3, 5})
+        >>> a.noncrossing(Anklet(0, 1, 4), {2, 3, 5})
         False
 
         Two coincident triangles:
