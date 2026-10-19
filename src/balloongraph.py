@@ -63,6 +63,11 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
             for g in self
         )
 
+    @property
+    def nodes(self) -> set[T]:
+        """The set of nodes."""
+        return set.union(*[g.nodes for g in self])
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
@@ -85,8 +90,34 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
             If (i) an component anklet graph does not have a 'balloon' attribute,
             (ii) two components with a node in common have different values for their 'balloon'
             attributes or (iii) the node-component incidence graph described above is not a forest.
+
+        Examples
+        --------
+        >>> from anklet import Anklet
+        >>> g1 = AnkletGraph(balloon='a')
+        >>> g1.add_hyperedge(Anklet(0, 1, 2))
+        >>> g2 = AnkletGraph()
+        >>> g2.add_hyperedge(Anklet(2, 3, 4))
+        >>> BalloonGraph(g1, g2).check_structure()
+        Traceback (most recent call last):
+        ...
+        ValueError: the anklet graph at index 1 does not have a 'balloon' attribute
+        >>> g2.set_attributes(balloon='b')
+        >>> BalloonGraph(g1, g2).check_structure()
+        Traceback (most recent call last):
+        ...
+        ValueError: the anklet graphs containing node 2 (indices: [0, 1])
+        do not all have the same values for their 'balloon' attribute
+        >>> g2.set_attributes(balloon='a')
+        >>> BalloonGraph(g1, g2).check_structure()
+        >>> g2.add_hyperedge(Anklet(1, 2))
+        >>> BalloonGraph(g1, g2).check_structure()
+        Traceback (most recent call last):
+        ...
+        ValueError: Invalid structure. the node-component incidence graph contains the cycle
+        (component 0) → (node 1) → (component 1) → (node 2) → (component 0)
         """
-        if hash(self) == self._valid_structure_hash:
+        if hash(g.get_data_strings() for g in self) == self._valid_structure_hash:
             # If the hash has not changed since the last successful structure check,
             # there is no need to check again
             return
@@ -113,7 +144,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
                 self._valid_structure_hash = 0
                 raise ValueError(
                     f"the anklet graphs containing node {n} (indices: {nbr_indices})"
-                    " do not all have the same values for their 'balloon' attribute"
+                    "\ndo not all have the same values for their 'balloon' attribute"
                 )
 
         if not nx.is_forest(g):
@@ -129,4 +160,4 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
 
         # The structure is valid:
         # save the hash to avoid checking the structure again if it doesn't change
-        self._valid_structure_hash = hash(self)
+        self._valid_structure_hash = hash(g.get_data_strings() for g in self)
