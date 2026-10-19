@@ -287,8 +287,18 @@ class Anklet[T](tuple[T, ...]):
         via a series of chords. Return `True` if the interiors of the chord cycles corresponding
         to `x` and y` are disjoint and `False` if they intersect.
 
-        Note that the sets `x` and `y` need not be disjoint;
+        Note that `x` and `y` need not be disjoint;
         their corresponding sub-anklets may meet at up to two points without forcing a crossing.
+
+        Parameters
+        ----------
+        x, y : Collection[T]
+            Two sets of beads.
+
+        Returns
+        -------
+        bool
+            Whether `x` and `y` are noncrossing subsets of beads in the anklet.
 
         Examples
         --------
