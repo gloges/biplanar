@@ -66,7 +66,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     @property
     def nodes(self) -> set[T]:
         """The set of nodes."""
-        return set.union(*[g.nodes for g in self])
+        return set().union(*[g.nodes for g in self])
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
