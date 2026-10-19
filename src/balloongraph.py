@@ -56,7 +56,6 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         >>> bg.get_data_string()
         '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
         """
-        self.check_structure()
         return ", ".join(
             '[' + " | ".join([str(g.get_attribute('balloon')), *g.get_data_strings()]) + ']'
             for g in self
