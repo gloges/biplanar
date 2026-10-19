@@ -75,7 +75,9 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     def check_structure(self) -> None:
         """Validate the structure of the balloon graph.
 
-        Two conditions must be met for the structure of the balloon graph to be considered valid:
+        Several conditions must be met for the structure of a balloon graph to be considered valid:
+        - All components must be non-empty and planar.
+        - If a component has a single node then that node does not appear in any other component.
         - The component anklet graphs have 'balloon' attributes which are equal
         for components which share a node.
         - The *incidence* graph, with nodes both the nodes and components of the balloon graph
@@ -87,9 +89,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         Raises
         ------
         ValueError
-            If (i) an component anklet graph does not have a 'balloon' attribute,
-            (ii) two components with a node in common have different values for their 'balloon'
-            attributes or (iii) the node-component incidence graph described above is not a forest.
+            If any of the above conditions are not met (a short message explains the issue).
 
         Examples
         --------
@@ -124,6 +124,18 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
 
         g = nx.Graph()
         for i, component in enumerate(self):
+            if not component:
+                raise ValueError(f"the anklet graph at index {i} is empty")
+            if len(component) == 1:
+                for j, comp2 in enumerate(self):
+                    if i != j and component.nodes <= comp2.nodes:
+                        raise ValueError(
+                            f"the anklet graph at index {i} has only one node {component.nodes}"
+                            f"\nand this node also appears in the graph at index {j}"
+                        )
+            if not component.is_planar():
+                raise ValueError(f"the anklet graph at index {i} is not planar")
+
             try:
                 component.get_attribute('balloon')
             except KeyError as exc:
