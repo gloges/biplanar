@@ -29,6 +29,39 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     def name(self, s: str) -> None:
         self._name = s
 
+    def get_data_string(self) -> str:
+        """Return a string encoding of the balloon graph's data.
+
+        The balloon attribute and two data strings of each anklet graph are formated
+        as `"[{ballon} | {node_data} | {hyperedge_data}]"` and then joined via `", "`.
+
+        Returns
+        -------
+        str
+            String encoding of the data needed to reconstruct the balloon graph.
+
+        Raises
+        ------
+        ValueError
+            If the balloon graph does not have a valid structure.
+
+        Examples
+        --------
+        >>> from anklet import Anklet
+        >>> ag1 = AnkletGraph(range(0, 4), balloon='a')
+        >>> ag2 = AnkletGraph(range(4, 7), balloon='b')
+        >>> ag1.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> ag2.add_hyperedge(Anklet(4, 5), 3)
+        >>> bg = BalloonGraph(ag1, ag2)
+        >>> bg.get_data_string()
+        '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
+        """
+        self.check_structure()
+        return ", ".join(
+            '[' + " | ".join([str(g.get_attribute('balloon')), *g.get_data_strings()]) + ']'
+            for g in self
+        )
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
