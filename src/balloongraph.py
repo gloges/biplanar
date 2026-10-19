@@ -1,17 +1,20 @@
 """Balloon graphs."""
 
 from collections.abc import Hashable
+from typing import Self
 import networkx as nx
 from ankletgraph import AnkletGraph
 
 
-class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
+class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
 
-    def __init__(self, *, name: str = "") -> None:
-        self._name = name
+    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "") -> Self:
+        bg = super().__new__(cls, ankletgraphs)
+        bg.name = name
+        return bg
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
