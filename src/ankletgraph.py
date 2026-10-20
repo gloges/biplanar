@@ -226,11 +226,15 @@ class AnkletGraph[T: Hashable]:
     def clear_attributes(self) -> None:
         """Remove all graph attributes.
 
+        The graph's name, nodes and hyperedges are left unchanged.
+
         See Also
         --------
         :meth:`get_attribute`,
         :meth:`set_attributes`,
-        :meth:`remove_attribute`
+        :meth:`remove_attribute`,
+        :meth:`clear_hyperedges`,
+        :meth:`clear`
         """
         self._attr.clear()
 
@@ -784,6 +788,35 @@ class AnkletGraph[T: Hashable]:
         else:
             for hype in hypes:
                 self.remove_hyperedge(hype)
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Clear nodes / hyperedges
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def clear_hyperedges(self) -> None:
+        """Remove all hyperedges.
+
+        The graph's name, attributes and nodes are left unchanged.
+
+        See Also
+        --------
+        :meth:`clear_attributes`,
+        :meth:`clear`
+        """
+        self._edge.clear()
+
+    def clear(self) -> None:
+        """Remove all nodes and hyperedges.
+
+        The graph's name and attributes are left unchanged.
+
+        See Also
+        --------
+        :meth:`clear_attributes`,
+        :meth:`clear_hyperedges`
+        """
+        self._node.clear()
+        self._edge.clear()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence / adjacency
