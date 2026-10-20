@@ -1192,8 +1192,8 @@ class AnkletGraph[T: Hashable]:
         """
         if self._reduced:
             # The graph has previously been determined to be reduced (either by calling this method
-            # or removing all hyperedges) and since then no reduction-spoiling
-            # operations have been performed: no need to do anything
+            # or removing all hyperedges) and since then no reduction-spoiling operationrs
+            # (adding edges or erasing nodes) have been performed: no need to do anything
             return
 
         # Remove hyperedges of length ≤ 1
