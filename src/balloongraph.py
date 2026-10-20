@@ -10,12 +10,12 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
-    _valid_structure_hash: int
+    _valid_structure_hash: int | None
 
     def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "") -> Self:
         bg = super().__new__(cls, ankletgraphs)
         bg._name = name
-        bg._valid_structure_hash = 0
+        bg._reset_valid_structure_hash()
         return bg
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
@@ -131,6 +131,12 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
+    def _get_check_structure_hash(self) -> int:
+        return hash(ag.get_data_strings() for ag in self)
+
+    def _reset_valid_structure_hash(self) -> None:
+        self._valid_structure_hash = None
+
     def check_structure(self) -> None:
         """Validate the structure of the balloon graph.
 
@@ -176,7 +182,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         ValueError: Invalid structure. the node-component incidence graph contains the cycle
         (component 0) → (node 1) → (component 1) → (node 2) → (component 0)
         """
-        if hash(g.get_data_strings() for g in self) == self._valid_structure_hash:
+        if self._get_check_structure_hash() == self._valid_structure_hash:
             # If the hash has not changed since the last successful structure check,
             # there is no need to check again
             return
@@ -231,4 +237,4 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
 
         # The structure is valid:
         # save the hash to avoid checking the structure again if it doesn't change
-        self._valid_structure_hash = hash(g.get_data_strings() for g in self)
+        self._valid_structure_hash = self._get_check_structure_hash()
