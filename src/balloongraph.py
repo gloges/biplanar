@@ -59,14 +59,14 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
         """
         return ", ".join(
-            '[' + " | ".join([str(g.get_attribute('balloon')), *g.get_data_strings()]) + ']'
-            for g in self
+            '[' + " | ".join([str(ag.get_attribute('balloon')), *ag.get_data_strings()]) + ']'
+            for ag in self
         )
 
     @property
     def nodes(self) -> set[T]:
         """The set of nodes."""
-        return set().union(*[g.nodes for g in self])
+        return set().union(*[ag.nodes for ag in self])
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence
