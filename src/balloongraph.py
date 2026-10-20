@@ -75,18 +75,82 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def get_attribute(self, attr_name: str) -> Any:
+        """Return a balloon graph attribute.
+
+        Parameters
+        ----------
+        attr_name : str
+            Attribute name.
+
+        Returns
+        -------
+        Any
+            Attribute value.
+
+        Raises
+        ------
+        KeyError
+            If the graph has no attribute `attr_name`.
+
+        See Also
+        --------
+        :meth:`set_attributes`,
+        :meth:`remove_attribute`,
+        :meth:`clear_attributes`
+        """
         return self._attr[attr_name]
 
     def set_attributes(self, **attr: Any) -> None:
+        """Set or overwrite balloon graph attributes.
+
+        Parameters
+        ----------
+        attr : keyword arguments
+            Set or change attributes using key=value.
+
+        Raises
+        ------
+        KeyError
+            If the attribute keys include "name".
+
+        See Also
+        --------
+        :meth:`get_attribute`,
+        :meth:`remove_attribute`,
+        :meth:`clear_attributes`
+        """
         if 'name' in attr:
             raise KeyError("'name' cannot be an attribute.")
         self._attr.update(attr)
 
     def remove_attribute(self, attr_name: str) -> None:
+        """Remove a balloon graph attribute.
+
+        Returns quietly if the attribute does not exist.
+
+        Parameters
+        ----------
+        attr_name : str
+            Attribute name.
+
+        See Also
+        --------
+        :meth:`get_attribute`,
+        :meth:`set_attributes`,
+        :meth:`clear_attributes`
+        """
         if attr_name in self._attr:
             self._attr.pop(attr_name)
 
     def clear_attributes(self) -> None:
+        """Remove all balloon graph attributes.
+
+        See Also
+        --------
+        :meth:`get_attribute`,
+        :meth:`set_attributes`,
+        :meth:`remove_attribute`
+        """
         self._attr.clear()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
