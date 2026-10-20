@@ -18,10 +18,9 @@ class AnkletGraph[T: Hashable]:
     Forgetting the anklet structure of the hyperedges yields an ordinary multi-hypergraph:
     each hyperedge is simply incident to the set of nodes appearing in its sequence.
 
-    An embedding of an anklet graph into a surface must preserve the anklet structure of its
-    hyperedges. This means that a hyperedge of size `n` must be embedded as a topological disk
-    whose boundary is subdivided into an `n`-gon with the incident nodes appearing at the vertices
-    in the prescribed cyclic order.
+    An embedding of an anklet graph into a surface must preserve the anklet structure
+    of its hyperedges. This means that a hyperedge must be embedded as a topological disk
+    with the incident nodes appearing on the boundary in the prescribed cyclic order.
     """
 
     _name: str
@@ -56,8 +55,9 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph(range(5), name='myGraph', color='b', type='foo')
+        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 1, Anklet(2, 3, 4): 2})
         >>> print(g)
-        AnkletGraph named myGraph with attribute(s) (color, type), 5 nodes and 0 hyperedges
+        AnkletGraph named myGraph with attribute(s) (color, type), 5 nodes and 3 hyperedges
         """
         return "".join([
             type(self).__name__,
@@ -834,7 +834,8 @@ class AnkletGraph[T: Hashable]:
         See Also
         --------
         :meth:`adjacency`,
-        :meth:`anklet_adjacency`
+        :meth:`anklet_adjacency`,
+        :meth:`to_incidence_graph`
 
         Examples
         --------
@@ -864,7 +865,8 @@ class AnkletGraph[T: Hashable]:
         See Also
         --------
         :meth:`incidence`,
-        :meth:`anklet_adjacency`
+        :meth:`anklet_adjacency`,
+        :meth:`to_adjacency_graph`
 
         Examples
         --------
@@ -917,7 +919,7 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def to_incidence_graph(self) -> nx.Graph:
-        """The simple graph reflecting node-hyperedge incidences in the anklet graph.
+        """Return the simple graph reflecting node-hyperedge incidences in the anklet graph.
 
         The returned graph has the *nodes* and *hyperedges* of the anklet graph for nodes
         and edges between "node" nodes and "hyperedge" nodes when they are incident:
@@ -992,7 +994,7 @@ class AnkletGraph[T: Hashable]:
         return g
 
     def to_wheel_graph(self) -> nx.Graph:
-        """The simple graph formed by representing each hyperedge by a wheel.
+        """The simple graph formed by representing each hyperedge by a wheel graph.
 
         Each hyperedge is turned into a wheel graph using :meth:`Anklet.to_wheel_graph`.
         The nodes in the outer cycles of the wheels are then joined via edges to the node
@@ -1001,7 +1003,7 @@ class AnkletGraph[T: Hashable]:
         Returns
         -------
         networkx.Graph
-            A simple graph with nodes both the nodes of the anklet graph
+            A simple graph whose nodes are both the nodes of the anklet graph
             as well as `n + 1` integer nodes for each hyperedge of size `n`.
 
         See Also
@@ -1126,7 +1128,8 @@ class AnkletGraph[T: Hashable]:
         """Return whether the anklet graph is biconnected.
 
         An anklet graph is biconnected *if and only if* it cannot be disconnected by *erasing*
-        one node. Note that in erasing a node its incident hyperedges are *not* removed.
+        one node. Note that in erasing a node its incident hyperedges are *not* removed
+        if they are incident to other other nodes.
 
         Returns
         -------
@@ -1144,11 +1147,11 @@ class AnkletGraph[T: Hashable]:
         >>> g.add_hyperedge(Anklet(0, 1, 2))
         >>> g.is_biconnected()
         True
-        >>> g = AnkletGraph()
+        >>> g.clear_hyperedges()
         >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(0, 1, 3)])
         >>> g.is_biconnected()
         True
-        >>> g = AnkletGraph()
+        >>> g.clear_hyperedges()
         >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(0, 3, 4)])
         >>> g.is_biconnected()
         False
