@@ -133,7 +133,7 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def get_attribute(self, attr_name: str) -> Any:
-        """Return a graph attribute.
+        """Return an anklet graph attribute.
 
         Parameters
         ----------
@@ -172,7 +172,7 @@ class AnkletGraph[T: Hashable]:
         return self._attr[attr_name]
 
     def set_attributes(self, **attr: Any) -> None:
-        """Set or overwrite graph attributes.
+        """Set or overwrite anklet graph attributes.
 
         Parameters
         ----------
@@ -208,7 +208,7 @@ class AnkletGraph[T: Hashable]:
         self._attr.update(attr)
 
     def remove_attribute(self, attr_name: str) -> None:
-        """Remove a graph attribute.
+        """Remove an anklet graph attribute.
 
         Returns quietly if the attribute does not exist.
 
@@ -227,7 +227,7 @@ class AnkletGraph[T: Hashable]:
             self._attr.pop(attr_name)
 
     def clear_attributes(self) -> None:
-        """Remove all graph attributes.
+        """Remove all anklet graph attributes.
 
         The graph's name, nodes and hyperedges are left unchanged.
 
