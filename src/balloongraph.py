@@ -80,12 +80,52 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         dict[T, set[int]]
             Dictionary keyed by nodes.
             Values are the sets of indices for the anklet graph components containing that node.
+
+        See Also
+        --------
+        :meth:`to_incidence_graph`
         """
         inc = {n: set() for n in self.nodes}
         for i, ag in enumerate(self):
             for n in ag.nodes:
                 inc[n].add(i)
         return inc
+
+    def to_incidence_graph(self) -> nx.Graph:
+        """Return the simple graph reflecting node-component incidences in the balloon graph.
+
+        The returned graph has the *nodes* and *components* of the balloon graph for nodes and edges
+        between "node" nodes and "component" nodes when a node belongs to a component anklet graph:
+        this is a simple, bipartite graph.
+
+        All nodes in the bipartite graph are integers: "node" nodes have an attribute with name
+        'node' which stores the balloon graph nodes. Nodes without a 'node' attribute are
+        "component" nodes and are simply the integer index into the balloon graph.
+
+        Returns
+        -------
+        networkx.Graph
+            A simple, bipartite graph on the nodes and component anklet graphs of the balloon graph.
+
+        See Also
+        --------
+        :meth:`incidence`
+        """
+
+        # Add integer nodes to the graph:
+        # - For component-nodes use the indices of the component anklet graphs
+        # - For node-node just use the next 'n' integers (store the correspondence in 'node_ids')
+        g = nx.Graph()
+        g.add_nodes_from(range(len(self)))
+        node_ids = {n: len(self) + i for i, n in enumerate(self.nodes)}
+        g.add_nodes_from((i, {'node': n}) for n, i in node_ids.items())
+
+        # Add edges between component-nodes and node-nodes when one contains the other
+        for i, ag in enumerate(self):
+            for n in ag:
+                g.add_edge(i, node_ids[n])
+
+        return g
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
