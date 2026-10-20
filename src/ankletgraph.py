@@ -3,7 +3,7 @@
 from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
 from itertools import combinations
 from types import NotImplementedType
-from typing import Any, Self
+from typing import Any, Self, Literal
 import networkx as nx
 from anklet import Anklet
 
@@ -27,6 +27,7 @@ class AnkletGraph[T: Hashable]:
     _attr: dict[str, Any]
     _node: dict[T, dict[str, Any]]
     _edge: dict[Anklet[T], int]
+    _reduced: None | Literal[True]
 
     def __init__(self, nodes: Iterable[T] = (), *, name: str = "", **attr: Any) -> None:
         self._name = name
@@ -35,6 +36,7 @@ class AnkletGraph[T: Hashable]:
         self._edge = {}
 
         self.add_nodes_from(nodes)
+        self._reduced = True
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -101,6 +103,7 @@ class AnkletGraph[T: Hashable]:
         g = type(self)(name=self.name + '-copy' if self.name else '', **self._attr.copy())
         g.add_nodes_from(self._node.copy())
         g.add_hyperedges_from(self._edge.copy())
+        g._reduced = self._reduced  # pylint: disable=W0212:protected-access
         return g
 
     def get_data_strings(self) -> tuple[str, str]:
@@ -434,6 +437,9 @@ class AnkletGraph[T: Hashable]:
         if Anklet() in self._edge:
             self._edge.pop(Anklet())
 
+        # Erasing a node from a reduced graph may make it reducible
+        self._reduced = None
+
     def erase_nodes_from(self, nodes: Iterable[T]) -> None:
         """Erase multiple nodes.
 
@@ -669,6 +675,9 @@ class AnkletGraph[T: Hashable]:
             self._edge[hype] = 0
         self._edge[hype] += k
 
+        # Adding a hyperedge can make a reduced graph reducible
+        self._reduced = None
+
     def add_hyperedges_from(self, hypes: Iterable[Anklet[T]]) -> None:
         """Add multiple hyperedges.
 
@@ -804,6 +813,7 @@ class AnkletGraph[T: Hashable]:
         :meth:`clear`
         """
         self._edge.clear()
+        self._reduced = None
 
     def clear(self) -> None:
         """Remove all nodes and hyperedges.
@@ -815,8 +825,8 @@ class AnkletGraph[T: Hashable]:
         :meth:`clear_attributes`,
         :meth:`clear_hyperedges`
         """
+        self.clear_hyperedges()
         self._node.clear()
-        self._edge.clear()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence / adjacency
@@ -1180,6 +1190,10 @@ class AnkletGraph[T: Hashable]:
         >>> g.hyperedges
         ((A(0, 1), 1), (A(1, 2, 3), 2))
         """
+        if self._reduced:
+            # The graph has previously been reduced and since then no reduction-spoiling
+            # operations have been performed: no need to do anything
+            return
 
         # Remove hyperedges of length ≤ 1
         self._edge = {hype: k for hype, k in self._edge.items() if len(hype) > 1}
@@ -1205,6 +1219,9 @@ class AnkletGraph[T: Hashable]:
                     self._edge.pop(hype)
                 else:
                     self._edge[hype] = 1
+
+        # Record that the graph has been reduced
+        self._reduced = True
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Partial order
