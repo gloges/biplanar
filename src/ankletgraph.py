@@ -813,7 +813,7 @@ class AnkletGraph[T: Hashable]:
         :meth:`clear`
         """
         self._edge.clear()
-        self._reduced = None
+        self._reduced = True
 
     def clear(self) -> None:
         """Remove all nodes and hyperedges.
@@ -1191,7 +1191,8 @@ class AnkletGraph[T: Hashable]:
         ((A(0, 1), 1), (A(1, 2, 3), 2))
         """
         if self._reduced:
-            # The graph has previously been reduced and since then no reduction-spoiling
+            # The graph has previously been determined to be reduced (either by calling this method
+            # or removing all hyperedges) and since then no reduction-spoiling
             # operations have been performed: no need to do anything
             return
 
