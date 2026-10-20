@@ -172,7 +172,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         Traceback (most recent call last):
         ...
         ValueError: the anklet graphs containing node 2 (indices: [0, 1])
-        do not all have the same values for their 'balloon' attribute
+        do not all have the same value for their 'balloon' attribute
         >>> g2.set_attributes(balloon='a')
         >>> BalloonGraph(g1, g2).check_structure()
         >>> g2.add_hyperedge(Anklet(1, 2))
@@ -180,56 +180,71 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         Traceback (most recent call last):
         ...
         ValueError: Invalid structure. the node-component incidence graph contains the cycle
-        (component 0) → (node 1) → (component 1) → (node 2) → (component 0)
+        (graph 0) → (node 1) → (graph 1) → (node 2) → (graph 0)
         """
         if self._get_check_structure_hash() == self._valid_structure_hash:
             # If the hash has not changed since the last successful structure check,
             # there is no need to check again
             return
 
-        g = nx.Graph()
-        for i, component in enumerate(self):
-            if not component:
+        # Check the basic structure of individual components. Each component anklet graph...
+        for i, ag in enumerate(self):
+            # 1) is non-empty
+            if not ag.nodes:
+                self._reset_valid_structure_hash()
                 raise ValueError(f"the anklet graph at index {i} is empty")
-            if len(component) == 1:
-                for j, comp2 in enumerate(self):
-                    if i != j and component.nodes <= comp2.nodes:
-                        raise ValueError(
-                            f"the anklet graph at index {i} has only one node {component.nodes}"
-                            f"\nand this node also appears in the graph at index {j}"
-                        )
-            if not component.is_planar():
+
+            # 2) is planar
+            if not ag.is_planar():
+                self._reset_valid_structure_hash()
                 raise ValueError(f"the anklet graph at index {i} is not planar")
 
+            # 3) has a 'balloon' attribute
             try:
-                component.get_attribute('balloon')
+                ag.get_attribute('balloon')
             except KeyError as exc:
-                self._valid_structure_hash = 0
+                self._reset_valid_structure_hash()
                 raise ValueError(
                     f"the anklet graph at index {i} does not have a 'balloon' attribute"
                 ) from exc
 
-            component_node = ("component", i)
-            g.add_node(component_node, component=True)
-            for n in component:
-                g.add_node(n, node=True)
-                g.add_edge(n, component_node)
+        # Check structure of the incidence graph:
+        inc_graph = self.to_incidence_graph()
 
-        for n in nx.get_node_attributes(g, 'node'):
-            nbr_indices = [nbr[1] for nbr in g.neighbors(n)]
-            if len({self[i].get_attribute('balloon') for i in nbr_indices}) != 1:
-                self._valid_structure_hash = 0
-                raise ValueError(
-                    f"the anklet graphs containing node {n} (indices: {nbr_indices})"
-                    "\ndo not all have the same values for their 'balloon' attribute"
-                )
+        # 1) If a component anklet graph has a single node then that node
+        #    is not contained in any other component.
+        for i, ag in enumerate(self):
+            if len(ag.nodes) == 1:
+                # The node 'n' of 'g' corresponds to the unique node of 'ag'. It should only have
+                # one neighbor in the incidence graph, namely node 'i' (corresponding to 'ag')
+                n = list(inc_graph.adj[i])[0]
+                if set(inc_graph.adj[n]) != {i}:
+                    self._reset_valid_structure_hash()
+                    raise ValueError(
+                        f"the anklet graph at index {i} has only one node {ag.nodes}"
+                        f"\nand this node appears in multiple components: {inc_graph.adj[n]}"
+                    )
 
-        if not nx.is_forest(g):
+        # 2) For each node the components containing it must all have the same value for 'balloon'.
+        for i in inc_graph:
+            if 'node' in inc_graph.nodes[i]:
+                if len({self[j].get_attribute('balloon') for j in inc_graph.neighbors(i)}) != 1:
+                    self._reset_valid_structure_hash()
+                    raise ValueError(
+                        f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"
+                        f" (indices: {sorted(inc_graph.neighbors(i))})\n"
+                        "do not all have the same value for their 'balloon' attribute"
+                    )
+
+        # 3) There are no cycles.
+        if not nx.is_forest(inc_graph):
             cycle_data = [
-                f"(node {n})" if 'node' in g.nodes[n] else f"(component {n[1]})"
-                for n, _ in nx.find_cycle(g)
+                f"(node {inc_graph.nodes[i]['node']})"
+                if 'node' in inc_graph.nodes[i]
+                else f"(graph {i})"
+                for i, _ in nx.find_cycle(inc_graph)
             ]
-            self._valid_structure_hash = 0
+            self._reset_valid_structure_hash()
             raise ValueError(
                 "Invalid structure. the node-component incidence graph contains the cycle\n" +
                 " → ".join([*cycle_data, cycle_data[0]])
