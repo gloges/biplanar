@@ -74,7 +74,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
         """
         return ", ".join(
-            '[' + " | ".join([str(ag.get_attribute('balloon')), *ag.get_data_strings()]) + ']'
+            '[' + " | ".join([str(ag.attributes['balloon']), *ag.get_data_strings()]) + ']'
             for ag in self
         )
 
@@ -191,13 +191,13 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         Traceback (most recent call last):
         ...
         ValueError: the anklet graph at index 1 does not have a 'balloon' attribute
-        >>> g2.set_attributes(balloon='b')
+        >>> g2.attributes['balloon'] = 'b'
         >>> BalloonGraph(g1, g2).check_structure()
         Traceback (most recent call last):
         ...
         ValueError: the anklet graphs containing node 2 (indices: [0, 1])
         do not all have the same value for their 'balloon' attribute
-        >>> g2.set_attributes(balloon='a')
+        >>> g2.attributes['balloon'] = 'a'
         >>> BalloonGraph(g1, g2).check_structure()
         >>> g2.add_hyperedge(Anklet(1, 2))
         >>> BalloonGraph(g1, g2).check_structure()
@@ -224,13 +224,11 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
                 raise ValueError(f"the anklet graph at index {i} is not planar")
 
             # 3) has a 'balloon' attribute
-            try:
-                ag.get_attribute('balloon')
-            except KeyError as exc:
+            if 'balloon' not in ag.attributes:
                 self._reset_valid_structure_hash()
                 raise ValueError(
                     f"the anklet graph at index {i} does not have a 'balloon' attribute"
-                ) from exc
+                )
 
         # Check structure of the incidence graph:
         inc_graph = self.to_incidence_graph()
@@ -252,7 +250,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         # 2) For each node the components containing it must all have the same value for 'balloon'.
         for i in inc_graph:
             if 'node' in inc_graph.nodes[i]:
-                if len({self[j].get_attribute('balloon') for j in inc_graph.neighbors(i)}) != 1:
+                if len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1:
                     self._reset_valid_structure_hash()
                     raise ValueError(
                         f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"

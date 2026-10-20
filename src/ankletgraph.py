@@ -708,8 +708,7 @@ class AnkletGraph[T: Hashable]:
         The graph's name, attributes and nodes are left unchanged.
 
         See Also
-        --------
-        :meth:`clear_attributes`,
+        -------
         :meth:`clear`
         """
         self._edge.clear()
@@ -722,7 +721,6 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`clear_attributes`,
         :meth:`clear_hyperedges`
         """
         self.clear_hyperedges()
