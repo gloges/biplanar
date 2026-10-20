@@ -1,7 +1,7 @@
 """Balloon graphs."""
 
-from collections.abc import Hashable
-from typing import Self
+from collections.abc import Hashable, Mapping
+from typing import Any, Self
 import networkx as nx
 from ankletgraph import AnkletGraph
 
@@ -10,11 +10,13 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
+    _attr: dict[str, Any]
     _valid_structure_hash: int | None
 
-    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "") -> Self:
+    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> Self:
         bg = super().__new__(cls, ankletgraphs)
         bg._name = name
+        bg._attr = attr
         bg._reset_valid_structure_hash()
         return bg
 
@@ -30,6 +32,19 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     @name.setter
     def name(self, s: str) -> None:
         self._name = s
+
+    @property
+    def attributes(self) -> dict[str, Any]:
+        """The balloon graph's mutable attribute dictionary.
+
+        Changes to the returned dictionary modify this graphs's attributes.
+        Assigning a mapping replaces the dictionary with a shallow copy of that mapping.
+        """
+        return self._attr
+
+    @attributes.setter
+    def attributes(self, value: Mapping[str, Any]) -> None:
+        self._attr = dict(value)
 
     def get_data_string(self) -> str:
         """Return a string encoding of the balloon graph's data.
@@ -59,7 +74,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
         """
         return ", ".join(
-            '[' + " | ".join([str(ag.get_attribute('balloon')), *ag.get_data_strings()]) + ']'
+            '[' + " | ".join([str(ag.attributes['balloon']), *ag.get_data_strings()]) + ']'
             for ag in self
         )
 
@@ -176,13 +191,13 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         Traceback (most recent call last):
         ...
         ValueError: the anklet graph at index 1 does not have a 'balloon' attribute
-        >>> g2.set_attributes(balloon='b')
+        >>> g2.attributes['balloon'] = 'b'
         >>> BalloonGraph(g1, g2).check_structure()
         Traceback (most recent call last):
         ...
         ValueError: the anklet graphs containing node 2 (indices: [0, 1])
         do not all have the same value for their 'balloon' attribute
-        >>> g2.set_attributes(balloon='a')
+        >>> g2.attributes['balloon'] = 'a'
         >>> BalloonGraph(g1, g2).check_structure()
         >>> g2.add_hyperedge(Anklet(1, 2))
         >>> BalloonGraph(g1, g2).check_structure()
@@ -209,13 +224,11 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
                 raise ValueError(f"the anklet graph at index {i} is not planar")
 
             # 3) has a 'balloon' attribute
-            try:
-                ag.get_attribute('balloon')
-            except KeyError as exc:
+            if 'balloon' not in ag.attributes:
                 self._reset_valid_structure_hash()
                 raise ValueError(
                     f"the anklet graph at index {i} does not have a 'balloon' attribute"
-                ) from exc
+                )
 
         # Check structure of the incidence graph:
         inc_graph = self.to_incidence_graph()
@@ -237,7 +250,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         # 2) For each node the components containing it must all have the same value for 'balloon'.
         for i in inc_graph:
             if 'node' in inc_graph.nodes[i]:
-                if len({self[j].get_attribute('balloon') for j in inc_graph.neighbors(i)}) != 1:
+                if len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1:
                     self._reset_valid_structure_hash()
                     raise ValueError(
                         f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"

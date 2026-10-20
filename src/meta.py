@@ -97,16 +97,16 @@ def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
 
         # Only need to consider adding new hyperedges which are pairwise
         # compatible with the pre-existing hyperedges of 'g'
-        g_indices = g.get_attribute('indices')
+        g_indices = g.attributes['indices']
         for i_new in set.intersection(*[compatible[i] for i in g_indices]):
             g_new = g.copy()
             g_new.add_hyperedge(anklets[i_new])
             if g_new.is_planar():
-                g_new.set_attributes(indices=(*g_indices, i_new))
+                g_new.attributes['indices'] = (*g_indices, i_new)
                 queue.append(g_new)
 
         if g.is_connected():
-            g.clear_attributes()
+            g.attributes.clear()
             ankletgraphs.append(g)
 
     return ankletgraphs
@@ -133,7 +133,7 @@ def get_balloongraphs[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
     # Store indices into the array with the anklet graphs themselves
     ankletgraphs = get_ankletgraphs(nodes)
     for i, ag in enumerate(ankletgraphs):
-        ag.set_attributes(index=i)
+        ag.attributes['index'] = i
 
     # Init a queue with the empty balloon graph
     queue = [BalloonGraph[T]()]
@@ -144,14 +144,14 @@ def get_balloongraphs[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
 
         # Iterate over anklet graphs with index larger than those already present
         # that share at most one node with 'bg'
-        i_start = 0 if not bg else max(g.get_attribute('index') for g in bg) + 1
+        i_start = 0 if not bg else max(g.attributes['index'] for g in bg) + 1
         for ag in ankletgraphs[i_start:]:
             if len(ag.nodes & bg.nodes) <= 1:
                 # Assign balloon attribute to the new component - up to one past the current largest
-                b_max = 0 if not bg else max(g.get_attribute('balloon') for g in bg) + 1
+                b_max = 0 if not bg else max(g.attributes['balloon'] for g in bg) + 1
                 for b in range(b_max + 1):
                     bg_new = BalloonGraph(*(g.copy() for g in bg), ag.copy())
-                    bg_new[-1].set_attributes(balloon=b)
+                    bg_new[-1].attributes['balloon'] = b
                     try:
                         bg_new.check_structure()
                         queue.append(bg_new)
@@ -161,7 +161,7 @@ def get_balloongraphs[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
         # Add to list of balloon graphs to return if all nodes are present
         if bg.nodes == set(nodes):
             for ag in bg:
-                ag.remove_attribute('index')
+                ag.attributes.pop('index')
             balloongraphs.append(bg)
 
     return balloongraphs
