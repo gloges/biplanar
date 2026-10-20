@@ -69,6 +69,25 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         return set().union(*[g.nodes for g in self])
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Incidence
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def incidence(self) -> dict[T, set[int]]:
+        """Return the incidence data.
+
+        Returns
+        -------
+        dict[T, set[int]]
+            Dictionary keyed by nodes.
+            Values are the sets of indices for the anklet graph components containing that node.
+        """
+        inc = {n: set() for n in self.nodes}
+        for i, ag in enumerate(self):
+            for n in ag.nodes:
+                inc[n].add(i)
+        return inc
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
