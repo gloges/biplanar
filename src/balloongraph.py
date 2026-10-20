@@ -1,7 +1,7 @@
 """Balloon graphs."""
 
-from collections.abc import Hashable
-from typing import Self
+from collections.abc import Hashable, Mapping
+from typing import Any, Self
 import networkx as nx
 from ankletgraph import AnkletGraph
 
@@ -10,11 +10,13 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
+    _attr: dict[str, Any]
     _valid_structure_hash: int | None
 
-    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "") -> Self:
+    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> Self:
         bg = super().__new__(cls, ankletgraphs)
         bg._name = name
+        bg._attr = attr
         bg._reset_valid_structure_hash()
         return bg
 
@@ -30,6 +32,19 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     @name.setter
     def name(self, s: str) -> None:
         self._name = s
+
+    @property
+    def attributes(self) -> dict[str, Any]:
+        """The balloon graph's mutable attribute dictionary.
+
+        Changes to the returned dictionary modify this graphs's attributes.
+        Assigning a mapping replaces the dictionary with a shallow copy of that mapping.
+        """
+        return self._attr
+
+    @attributes.setter
+    def attributes(self, value: Mapping[str, Any]) -> None:
+        self._attr = dict(value)
 
     def get_data_string(self) -> str:
         """Return a string encoding of the balloon graph's data.
