@@ -1,7 +1,7 @@
 """Balloon graphs."""
 
 from collections.abc import Hashable
-from typing import Self
+from typing import Any, Self
 import networkx as nx
 from ankletgraph import AnkletGraph
 
@@ -10,11 +10,13 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
+    _attr: dict[str, Any]
     _valid_structure_hash: int | None
 
-    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "") -> Self:
+    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> Self:
         bg = super().__new__(cls, ankletgraphs)
         bg._name = name
+        bg._attr = attr
         bg._reset_valid_structure_hash()
         return bg
 
@@ -67,6 +69,25 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     def nodes(self) -> set[T]:
         """The set of nodes."""
         return set().union(*[ag.nodes for ag in self])
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Graph attributes
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def get_attribute(self, attr_name: str) -> Any:
+        return self._attr[attr_name]
+
+    def set_attributes(self, **attr: Any) -> None:
+        if 'name' in attr:
+            raise KeyError("'name' cannot be an attribute.")
+        self._attr.update(attr)
+
+    def remove_attribute(self, attr_name: str) -> None:
+        if attr_name in self._attr:
+            self._attr.pop(attr_name)
+
+    def clear_attributes(self) -> None:
+        self._attr.clear()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Reduction
