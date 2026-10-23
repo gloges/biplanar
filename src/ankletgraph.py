@@ -43,7 +43,8 @@ class AnkletGraph[T: Hashable]:
         cls,
         node_data: str,
         hyperedge_data: str,
-        interpreter: Callable[[str], T]
+        interpreter: Callable[[str], T],
+        **attr: Any
     ) -> Self:
         """Construct an anklet graph from string encodings of the nodes and hyperedges.
 
@@ -59,6 +60,8 @@ class AnkletGraph[T: Hashable]:
             with the latter indicating a multiplicity of one.
         interpreter : Callable[[str], T]
             A function that converts a node's string representation into a node of type `T`.
+        attr : keyword arguments, optional
+            Set graph attributes using key=value.
 
         Returns
         -------
@@ -92,6 +95,7 @@ class AnkletGraph[T: Hashable]:
         ValueError: beads are not distinct
         """
         g = cls()
+        g.attributes = attr
         if node_data:
             g.add_nodes_from(interpreter(n) for n in node_data.split(', '))
         if hyperedge_data:
