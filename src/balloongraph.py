@@ -298,14 +298,16 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
 
         # 2) For each node the components containing it must all have the same value for 'balloon'.
         for i in inc_graph:
-            if 'node' in inc_graph.nodes[i]:
-                if len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1:
-                    self._reset_valid_structure_hash()
-                    raise ValueError(
-                        f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"
-                        f" (indices: {sorted(inc_graph.neighbors(i))})\n"
-                        "do not all have the same value for their 'balloon' attribute"
-                    )
+            if (
+                'node' in inc_graph.nodes[i]
+                and len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1
+            ):
+                self._reset_valid_structure_hash()
+                raise ValueError(
+                    f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"
+                    f" (indices: {sorted(inc_graph.neighbors(i))})\n"
+                    "do not all have the same value for their 'balloon' attribute"
+                )
 
         # 3) There are no cycles.
         if not nx.is_forest(inc_graph):
