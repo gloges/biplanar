@@ -35,7 +35,9 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         ----------
         data_string : str
             String representation of the anklet graphs,
-        interpreter : Callable[[str], T]
+        balloon_interpreter : Callable[[str], Ant]
+            A function that converts a balloon's string representation into the desired type.
+        node_interpreter : Callable[[str], T]
             A function that converts a node's string representation into a node of type `T`.
 
         Returns
@@ -51,20 +53,31 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         Examples
         --------
         >>> g = BalloonGraph.from_data_string(
-        ...     "[0, 1, 2 | 3 × A(0, 1) + A(1, 2)], [2, 3 | A(2, 3)]",
-        ...     int
+        ...     "[a | 0, 1, 2 | 3 × A(0, 1) + A(1, 2)], [a | 2, 3 | A(2, 3)]", str, int
         ... )
-        >>> len(g)
-        2
-        >>> g[0].hyperedges
-        ((A(0, 1), 3), (A(1, 2), 1))
-        >>> g[1].hyperedges
-        ((A(2, 3), 1),)
+        >>> for ag in g:
+        ...    print(ag.attributes['balloon'], str(ag.nodes).ljust(9), ag.hyperedges)
+        a {0, 1, 2} ((A(0, 1), 3), (A(1, 2), 1))
+        a {2, 3}    ((A(2, 3), 1),)
+        >>> BalloonGraph.from_data_string(
+        ...     "[a | 0, 1, 2 | 3 × A(0, 1) + A(1, 2)], [2, 3 | A(2, 3)]", str, int
+        ... )
+        Traceback (most recent call last):
+        ...
+        ValueError: the string '2, 3 | A(2, 3)' does not contain exactly
+        two instances of ' | ' separating the balloon, node data and hyperedge data
         """
         agraphs = []
+        if data_string[0] != '[' or data_string[-1] != ']':
+            raise ValueError(
+                "data for individual anklet graphs must be enclosed by '[]' and separated by ', '"
+            )
         for agraph_strings in data_string[1:-1].split('], ['):
             if agraph_strings.count(' | ') != 2:
-                raise ValueError("balloon, node and hyperedge strings are not separated by ' | '")
+                raise ValueError(
+                    f"the string '{agraph_strings}' does not contain exactly\n"
+                    "two instances of ' | ' separating the balloon, node data and hyperedge data"
+                )
             balloon, node_data, hyperedge_data = agraph_strings.split(' | ')
             agraphs.append(
                 AnkletGraph.from_data_strings(
