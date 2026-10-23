@@ -46,6 +46,11 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
     def attributes(self, value: Mapping[str, Any]) -> None:
         self._attr = dict(value)
 
+    @property
+    def nodes(self) -> set[T]:
+        """The set of nodes."""
+        return set().union(*[ag.nodes for ag in self])
+
     def get_data_string(self) -> str:
         """Return a string encoding of the balloon graph's data.
 
@@ -77,11 +82,6 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
             '[' + " | ".join([str(ag.attributes['balloon']), *ag.get_data_strings()]) + ']'
             for ag in self
         )
-
-    @property
-    def nodes(self) -> set[T]:
-        """The set of nodes."""
-        return set().union(*[ag.nodes for ag in self])
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Reduction
