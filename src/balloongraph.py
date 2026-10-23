@@ -209,7 +209,7 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         """Validate the structure of the balloon graph.
 
         Several conditions must be met for the structure of a balloon graph to be considered valid:
-        - All components must be non-empty and planar.
+        - All components must be non-empty, connected and planar.
         - If a component has a single node then that node does not appear in any other component.
         - The component anklet graphs have 'balloon' attributes which are equal
         for components which share a node.
@@ -255,19 +255,24 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
             # there is no need to check again
             return
 
-        # Check the basic structure of individual components. Each component anklet graph...
+        # Check the basic structure of individual components. Each component anklet graph must...
         for i, ag in enumerate(self):
-            # 1) is non-empty
+            # 1) be non-empty
             if not ag.nodes:
                 self._reset_valid_structure_hash()
                 raise ValueError(f"the anklet graph at index {i} is empty")
 
-            # 2) is planar
+            # 2) be connected
+            if not ag.is_connected():
+                self._reset_valid_structure_hash()
+                raise ValueError(f"the anklet graph at index {i} is not connected")
+
+            # 3) be planar
             if not ag.is_planar():
                 self._reset_valid_structure_hash()
                 raise ValueError(f"the anklet graph at index {i} is not planar")
 
-            # 3) has a 'balloon' attribute
+            # 4) have a 'balloon' attribute
             if 'balloon' not in ag.attributes:
                 self._reset_valid_structure_hash()
                 raise ValueError(
@@ -293,14 +298,16 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
 
         # 2) For each node the components containing it must all have the same value for 'balloon'.
         for i in inc_graph:
-            if 'node' in inc_graph.nodes[i]:
-                if len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1:
-                    self._reset_valid_structure_hash()
-                    raise ValueError(
-                        f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"
-                        f" (indices: {sorted(inc_graph.neighbors(i))})\n"
-                        "do not all have the same value for their 'balloon' attribute"
-                    )
+            if (
+                'node' in inc_graph.nodes[i]
+                and len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1
+            ):
+                self._reset_valid_structure_hash()
+                raise ValueError(
+                    f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"
+                    f" (indices: {sorted(inc_graph.neighbors(i))})\n"
+                    "do not all have the same value for their 'balloon' attribute"
+                )
 
         # 3) There are no cycles.
         if not nx.is_forest(inc_graph):
