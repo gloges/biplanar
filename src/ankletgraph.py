@@ -43,7 +43,8 @@ class AnkletGraph[T: Hashable]:
         cls,
         node_data: str,
         hyperedge_data: str,
-        interpreter: Callable[[str], T]
+        interpreter: Callable[[str], T],
+        **attr: Any
     ) -> Self:
         """Construct an anklet graph from string encodings of the nodes and hyperedges.
 
@@ -59,6 +60,8 @@ class AnkletGraph[T: Hashable]:
             with the latter indicating a multiplicity of one.
         interpreter : Callable[[str], T]
             A function that converts a node's string representation into a node of type `T`.
+        attr : keyword arguments, optional
+            Set graph attributes using key=value.
 
         Returns
         -------
@@ -73,36 +76,60 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(5))
-        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
-        >>> g == AnkletGraph.from_data_strings(*g.get_data_strings(), int)
-        True
+        A typical use case:
+
         >>> g = AnkletGraph.from_data_strings('1, 3, 5', '2 × A(1, 3) + A(1, 3, 5)', int)
         >>> sorted(g.nodes)
         [1, 3, 5]
         >>> g.hyperedges
         ((A(1, 3), 2), (A(1, 3, 5), 1))
+
+        If the node / hyperedge data strings are empty no nodes / hyperedges are added:
+
+        >>> g = AnkletGraph.from_data_strings('', '', int)
+        >>> g.nodes
+        set()
+        >>> g.hyperedges
+        ()
+
+        An anklet graph is equal to the anklet graph created from its data strings:
+
+        >>> g = AnkletGraph(range(5))
+        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
+        >>> g == AnkletGraph.from_data_strings(*g.get_data_strings(), int)
+        True
+
+        Parsing errors result in a `ValueError`:
+
         >>> AnkletGraph.from_data_strings('1, 3, 5', '2 × (1, 3) + (1, 3, 5)', int)
         Traceback (most recent call last):
         ...
         ValueError: unexpected format for hyperedge: '(1, 3)'
+
+        In the following example all of `'0'`, `'1'` and `'2'` are interpreted by 'bool' as `True`,
+        and the hyperedge `Anklet(True, True)` is invalid:
+
         >>> AnkletGraph.from_data_strings('0, 1, 2', '3 × A(0, 1)', bool)
         Traceback (most recent call last):
         ...
         ValueError: beads are not distinct
         """
-        g = cls(interpreter(n) for n in node_data.split(', '))
-        for hype_string in hyperedge_data.split(' + '):
-            if '×' in hype_string:
-                k, hype_string = hype_string.split(' × ')
-            else:
-                k = 1
-            if hype_string[:2] != 'A(' or hype_string[-1] != ')':
-                raise ValueError(f"unexpected format for hyperedge: '{hype_string}'")
-            g.add_hyperedge(
-                Anklet.from_iterable(interpreter(n) for n in hype_string[2:-1].split(', ')),
-                int(k)
-            )
+        g = cls()
+        g.attributes = attr
+        if node_data:
+            g.add_nodes_from(interpreter(n) for n in node_data.split(', '))
+        if hyperedge_data:
+            for hype_string in hyperedge_data.split(' + '):
+                if '×' in hype_string:
+                    k, hype_string = hype_string.split(' × ')
+                else:
+                    k = 1
+                if hype_string[:2] != 'A(' or hype_string[-1] != ')':
+                    raise ValueError(f"unexpected format for hyperedge: '{hype_string}'")
+                g.add_hyperedge(
+                    Anklet.from_iterable(interpreter(n) for n in hype_string[2:-1].split(', ')),
+                    int(k)
+                )
         return g
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
