@@ -91,18 +91,21 @@ class AnkletGraph[T: Hashable]:
         ...
         ValueError: beads are not distinct
         """
-        g = cls(interpreter(n) for n in node_data.split(', '))
-        for hype_string in hyperedge_data.split(' + '):
-            if '×' in hype_string:
-                k, hype_string = hype_string.split(' × ')
-            else:
-                k = 1
-            if hype_string[:2] != 'A(' or hype_string[-1] != ')':
-                raise ValueError(f"unexpected format for hyperedge: '{hype_string}'")
-            g.add_hyperedge(
-                Anklet.from_iterable(interpreter(n) for n in hype_string[2:-1].split(', ')),
-                int(k)
-            )
+        g = cls()
+        if node_data:
+            g.add_nodes_from(interpreter(n) for n in node_data.split(', '))
+        if hyperedge_data:
+            for hype_string in hyperedge_data.split(' + '):
+                if '×' in hype_string:
+                    k, hype_string = hype_string.split(' × ')
+                else:
+                    k = 1
+                if hype_string[:2] != 'A(' or hype_string[-1] != ')':
+                    raise ValueError(f"unexpected format for hyperedge: '{hype_string}'")
+                g.add_hyperedge(
+                    Anklet.from_iterable(interpreter(n) for n in hype_string[2:-1].split(', ')),
+                    int(k)
+                )
         return g
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
