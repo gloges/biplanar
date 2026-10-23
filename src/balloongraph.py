@@ -21,7 +21,12 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         return bg
 
     @classmethod
-    def from_data_string(cls, data_string: str, interpreter: Callable[[str], T]) -> Self:
+    def from_data_string(
+        cls,
+        data_string: str,
+        balloon_interpreter: Callable[[str], Any],
+        node_interpreter: Callable[[str], T]
+    ) -> Self:
         """Construct a balloon graph from a string encoding of the component anklet graphs.
 
         The input string must follow the format produced by :meth:`BalloonGraph.get_data_string`.
@@ -58,10 +63,17 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         """
         agraphs = []
         for agraph_strings in data_string[1:-1].split('], ['):
-            if agraph_strings.count(' | ') != 1:
-                raise ValueError("node and hyperedge strings are not separated by ' | '")
-            node_data, hyperedge_data = agraph_strings.split(' | ')
-            agraphs.append(AnkletGraph.from_data_strings(node_data, hyperedge_data, interpreter))
+            if agraph_strings.count(' | ') != 2:
+                raise ValueError("balloon, node and hyperedge strings are not separated by ' | '")
+            balloon, node_data, hyperedge_data = agraph_strings.split(' | ')
+            agraphs.append(
+                AnkletGraph.from_data_strings(
+                    node_data,
+                    hyperedge_data,
+                    node_interpreter,
+                    balloon=balloon_interpreter(balloon)
+                )
+            )
         return cls(*agraphs)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
