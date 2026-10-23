@@ -76,19 +76,39 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(5))
-        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
-        >>> g == AnkletGraph.from_data_strings(*g.get_data_strings(), int)
-        True
+        A typical use case:
+
         >>> g = AnkletGraph.from_data_strings('1, 3, 5', '2 × A(1, 3) + A(1, 3, 5)', int)
         >>> sorted(g.nodes)
         [1, 3, 5]
         >>> g.hyperedges
         ((A(1, 3), 2), (A(1, 3, 5), 1))
+
+        If the node / hyperedge data strings are empty no nodes / hyperedges are added:
+
+        >>> g = AnkletGraph.from_data_strings('', '', int)
+        >>> g.nodes
+        set()
+        >>> g.hyperedges
+        ()
+
+        An anklet graph is equal to the anklet graph created from its data strings:
+
+        >>> g = AnkletGraph(range(5))
+        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
+        >>> g == AnkletGraph.from_data_strings(*g.get_data_strings(), int)
+        True
+
+        Parsing errors result in a `ValueError`:
+
         >>> AnkletGraph.from_data_strings('1, 3, 5', '2 × (1, 3) + (1, 3, 5)', int)
         Traceback (most recent call last):
         ...
         ValueError: unexpected format for hyperedge: '(1, 3)'
+
+        In the following example all of `'0'`, `'1'` and `'2'` are interpreted by 'bool' as `True`,
+        and the hyperedge `Anklet(True, True)` is invalid:
+
         >>> AnkletGraph.from_data_strings('0, 1, 2', '3 × A(0, 1)', bool)
         Traceback (most recent call last):
         ...
