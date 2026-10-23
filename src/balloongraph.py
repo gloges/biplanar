@@ -1,6 +1,6 @@
 """Balloon graphs."""
 
-from collections.abc import Hashable, Mapping
+from collections.abc import Callable, Hashable, Mapping
 from typing import Any, Self
 import networkx as nx
 from ankletgraph import AnkletGraph
@@ -19,6 +19,50 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         bg._attr = attr
         bg._reset_valid_structure_hash()
         return bg
+
+    @classmethod
+    def from_data_string(cls, data_string: str, interpreter: Callable[[str], T]) -> Self:
+        """Construct a balloon graph from a string encoding of the component anklet graphs.
+
+        The input string must follow the format produced by :meth:`BalloonGraph.get_data_string`.
+
+        Parameters
+        ----------
+        data_string : str
+            String representation of the anklet graphs,
+        interpreter : Callable[[str], T]
+            A function that converts a node's string representation into a node of type `T`.
+
+        Returns
+        -------
+        Self
+            A balloon graph.
+
+        Raises
+        ------
+        ValueError
+            If there is a parsing error (a short message explains the issue).
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[0, 1, 2 | 3 × A(0, 1) + A(1, 2)], [2, 3 | A(2, 3)]",
+        ...     int
+        ... )
+        >>> len(g)
+        2
+        >>> g[0].hyperedges
+        ((A(0, 1), 3), (A(1, 2), 1))
+        >>> g[1].hyperedges
+        ((A(2, 3), 1),)
+        """
+        agraphs = []
+        for agraph_strings in data_string[1:-1].split('], ['):
+            if agraph_strings.count(' | ') != 1:
+                raise ValueError("node and hyperedge strings are not separated by ' | '")
+            node_data, hyperedge_data = agraph_strings.split(' | ')
+            agraphs.append(AnkletGraph.from_data_strings(node_data, hyperedge_data, interpreter))
+        return cls(*agraphs)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
