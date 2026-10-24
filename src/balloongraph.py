@@ -4,21 +4,21 @@ from collections.abc import Callable, Hashable, Mapping
 from typing import Any, Self
 import networkx as nx
 from ankletgraph import AnkletGraph
+from ankletgraph import disjoint_union as ankletgraph_disjoint_union
 
 
-class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
+class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
     _attr: dict[str, Any]
     _valid_structure_hash: int | None
 
-    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> Self:
-        bg = super().__new__(cls, ankletgraphs)
-        bg._name = name
-        bg._attr = attr
-        bg._reset_valid_structure_hash()
-        return bg
+    def __init__(self, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> None:
+        super().__init__(ankletgraphs)
+        self._name = name
+        self._attr = attr
+        self._reset_valid_structure_hash()
 
     @classmethod
     def from_data_string(
@@ -120,6 +120,23 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         """The set of nodes."""
         return set().union(*[ag.nodes for ag in self])
 
+    def copy(self) -> Self:
+        """Return a copy of the balloon graph.
+
+        Graph attributes and each component anklet graph is copied.
+        If the graph has a name then '-copy' is appended: otherwise the copy remains unnamed.
+
+        Returns
+        -------
+        Self
+            A copy of the balloon graph.
+        """
+        return type(self)(
+            *[ag.copy() for ag in self],
+            name=self.name + '-copy' if self.name else '',
+            **self._attr.copy()
+        )
+
     def get_data_string(self) -> str:
         """Return a string encoding of the balloon graph's data.
 
@@ -153,13 +170,57 @@ class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
         )
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Reduction
+    #   Graph operations
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def reduce(self) -> None:
         """Reduce each component anklet graph: see :meth:`AnkletGraph.reduce`."""
         for ag in self:
             ag.reduce()
+
+    def _combine(self, i: int, j: int) -> None:
+        """Combine two component anklet graphs.
+
+        The anklet graphs at indices `i` and `j` must (i) belong to different balloons and
+        (ii) have no nodes in common. Note that (ii) follows from (i) if the balloon graph
+        has valid structure (see :meth:`BalloonGraph.check_structure`).
+
+        In order, the following changes are made:
+        - The graph at index `i` is replaced by the *disjoint* union
+        of itself and the graph at index `j`
+        - The anklet graphs in the same balloon as that at index `j` have their balloon attributes
+        updated to match that of the graph at index `i`.
+        - The graph at index `j` is removed.
+
+        Note that since the disjoint union produces an anklet graph which is not connected,
+        the balloon graph will *not* have a valid structure after calling this method.
+
+        Parameters
+        ----------
+        i, j : int
+            Indicies for the anklet graphs to combine.
+
+        Raises
+        ------
+        ValueError
+            If `i == j`, if any anklet graph does not have a 'balloon' attribute
+            or if anklet graph `i` and anklet graph `j` belong to the same balloon.
+        """
+        if i == j:
+            raise ValueError('i and j must be distinct')
+        for index, ag in enumerate(self):
+            if 'balloon' not in ag.attributes:
+                raise ValueError(f"the graph at index {index} does not have a 'balloon' attribute")
+        if self[i].attributes['balloon'] == self[j].attributes['balloon']:
+            raise ValueError(f"graphs {i} and {j} do not belong to different balloons")
+
+        self[i] = ankletgraph_disjoint_union(self[i], self[j])
+
+        for ag in self:
+            if ag.attributes['balloon'] == self[j].attributes['balloon']:
+                ag.attributes['balloon'] = self[i].attributes['balloon']
+
+        self.pop(j)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence
