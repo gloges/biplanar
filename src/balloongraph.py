@@ -186,10 +186,10 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         has valid structure (see :meth:`BalloonGraph.check_structure`).
 
         In order, the following changes are made:
-        - The anklet graphs in the same balloon as that at index `j` have their balloon attributes
-        updated to match that of the graph at index `i`.
         - The graph at index `i` is replaced by the *disjoint* union
         of itself and the graph at index `j`
+        - The anklet graphs in the same balloon as that at index `j` have their balloon attributes
+        updated to match that of the graph at index `i`.
         - The graph at index `j` is removed.
 
         Note that since the disjoint union produces an anklet graph which is not connected,
@@ -214,11 +214,12 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         if self[i].attributes['balloon'] == self[j].attributes['balloon']:
             raise ValueError(f"graphs {i} and {j} do not belong to different balloons")
 
+        self[i] = ankletgraph_disjoint_union(self[i], self[j])
+
         for ag in self:
             if ag.attributes['balloon'] == self[j].attributes['balloon']:
                 ag.attributes['balloon'] = self[i].attributes['balloon']
 
-        self[i] = ankletgraph_disjoint_union(self[i], self[j])
         self.pop(j)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
