@@ -6,19 +6,18 @@ import networkx as nx
 from ankletgraph import AnkletGraph
 
 
-class BalloonGraph[T: Hashable](tuple[AnkletGraph[T], ...]):
+class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
     _attr: dict[str, Any]
     _valid_structure_hash: int | None
 
-    def __new__(cls, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> Self:
-        bg = super().__new__(cls, ankletgraphs)
-        bg._name = name
-        bg._attr = attr
-        bg._reset_valid_structure_hash()
-        return bg
+    def __init__(self, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> None:
+        super().__init__(ankletgraphs)
+        self._name = name
+        self._attr = attr
+        self._reset_valid_structure_hash()
 
     @classmethod
     def from_data_string(
