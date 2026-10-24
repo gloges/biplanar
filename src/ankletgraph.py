@@ -1371,6 +1371,29 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     return union_all([g, h])
 
 
+def disjoint_union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
+    """Return the union of a collection of anklet graphs on disjoint sets of nodes.
+
+    Parameters
+    ----------
+    graphs : Iterable[AnkletGraph[T]]
+        A sequence of anklet graphs with pairwise no nodes in common.
+
+    Returns
+    -------
+    AnkletGraph[T]
+        The union of the anklet graphs.
+
+    Raises
+    ------
+    ValueError
+        If any two graphs have nodes in common.
+    """
+    if len(set().union(g.nodes for g in graphs)) != sum(g.number_of_nodes() for g in graphs):
+        raise ValueError("two or more anklet graphs have node(s) in common")
+    return union_all(graphs)
+
+
 def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     """Return the union of two anklet graphs on disjoint sets of nodes.
 
