@@ -1354,6 +1354,39 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
 
 
 def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
+    """Return the union of two anklet graphs on disjoint sets of nodes.
+
+    Parameters
+    ----------
+    g, h : AnkletGraph[T]
+        Two anklet graphs with no nodes in common.
+
+    Returns
+    -------
+    AnkletGraph[T]
+        The union of `g` and `h`.
+
+    Raises
+    ------
+    ValueError
+        If `g` and `h` have nodes in common.
+
+    Examples
+    --------
+    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
+    >>> h = AnkletGraph.from_data_strings("3, 4, 5", "A(3, 4)", int)
+    >>> gh = disjoint_union(g, h)
+    >>> gh.nodes
+    {0, 1, 2, 3, 4, 5}
+    >>> gh.hyperedges
+    ((A(0, 1, 2), 1), (A(1, 2), 2), (A(3, 4), 1))
+    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
+    >>> h = AnkletGraph.from_data_strings("1, 2, 3, 4, 5", "A(1, 2) + A(1, 3, 4)", int)
+    >>> disjoint_union(g, h)
+    Traceback (most recent call last):
+    ...
+    ValueError: the two anklet graphs share the node(s) {1, 2}
+    """
     if g.nodes & h.nodes:
-        raise ValueError(f"the two anklet graphs share the nodes {g.nodes & h.nodes}")
+        raise ValueError(f"the two anklet graphs share the node(s) {g.nodes & h.nodes}")
     return union(g, h)
