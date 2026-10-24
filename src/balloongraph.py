@@ -203,12 +203,16 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         Raises
         ------
         ValueError
-            If `i == j` or if anklet graph `i` and anklet graph `j` belong to the same balloon.
+            If `i == j`, if any anklet graph does not have a 'balloon' attribute
+            or if anklet graph `i` and anklet graph `j` belong to the same balloon.
         """
         if i == j:
             raise ValueError('i and j must be distinct')
+        for index, ag in enumerate(self):
+            if 'balloon' not in ag.attributes:
+                raise ValueError(f"the graph at index {index} does not have a 'balloon' attribute")
         if self[i].attributes['balloon'] == self[j].attributes['balloon']:
-            raise ValueError(f"elements {i} and {j} do not belong to different balloons")
+            raise ValueError(f"graphs {i} and {j} do not belong to different balloons")
 
         for ag in self:
             if ag.attributes['balloon'] == self[j].attributes['balloon']:
