@@ -4,7 +4,7 @@ from collections.abc import Callable, Hashable, Mapping
 from typing import Any, Self
 import networkx as nx
 from ankletgraph import AnkletGraph
-from ankletgraph import disjoint_union as ankletgraph_disjoint_union
+from ankletgraph_union import disjoint_union as ankletgraph_disjoint_union
 
 
 class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
