@@ -1319,6 +1319,29 @@ class AnkletGraph[T: Hashable]:
 #   Unions
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
+def union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
+    """Return the union of a collection of anklet graphs.
+
+    The union for nodes the union of the nodes of the individual anklet graphs and for its multiset
+    of hyperedges the union of the hyperedge multisets of the individual anklet graphs.
+
+    Parameters
+    ----------
+    graphs : Iterable[AnkletGraph[T]]
+        A sequence of anklet graphs.
+
+    Returns
+    -------
+    AnkletGraph[T]
+        The union of the anklet graphs.
+    """
+    graph_union = AnkletGraph[T]()
+    for g in graphs:
+        graph_union.add_nodes_from(g)
+        graph_union.add_hyperedges_from(dict(g.hyperedges))
+    return graph_union
+
+
 def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     """Return the union of two anklet graphs.
 
@@ -1345,12 +1368,7 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     >>> gh.hyperedges
     ((A(0, 1, 2), 1), (A(1, 2), 3), (A(1, 3, 4), 1))
     """
-    graph_union = AnkletGraph[T]()
-    graph_union.add_nodes_from(g)
-    graph_union.add_nodes_from(h)
-    graph_union.add_hyperedges_from(dict(g.hyperedges))
-    graph_union.add_hyperedges_from(dict(h.hyperedges))
-    return graph_union
+    return union_all([g, h])
 
 
 def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
