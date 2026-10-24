@@ -1320,6 +1320,31 @@ class AnkletGraph[T: Hashable]:
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
 def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
+    """Return the union of two anklet graphs.
+
+    The union of `g` and `h` has for nodes the union of the nodes of `g` and `h`
+    and for its multiset of hyperedges the union of the hyperedge multisets of `g` and `h`.
+
+    Parameters
+    ----------
+    g, h : AnkletGraph[T]
+        Two anklet graphs.
+
+    Returns
+    -------
+    AnkletGraph[T]
+        The union of `g` and `h`.
+
+    Examples
+    --------
+    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
+    >>> h = AnkletGraph.from_data_strings("1, 2, 3, 4, 5", "A(1, 2) + A(1, 3, 4)", int)
+    >>> gh = union(g, h)
+    >>> gh.nodes
+    {0, 1, 2, 3, 4, 5}
+    >>> gh.hyperedges
+    ((A(0, 1, 2), 1), (A(1, 2), 3), (A(1, 3, 4), 1))
+    """
     graph_union = AnkletGraph[T]()
     graph_union.add_nodes_from(g)
     graph_union.add_nodes_from(h)
