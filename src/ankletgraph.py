@@ -1313,3 +1313,22 @@ class AnkletGraph[T: Hashable]:
         if not isinstance(other, AnkletGraph):
             return NotImplemented
         return self <= other <= self
+
+
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+#   Unions
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
+    graph_union = AnkletGraph[T]()
+    graph_union.add_nodes_from(g)
+    graph_union.add_nodes_from(h)
+    graph_union.add_hyperedges_from(dict(g.hyperedges))
+    graph_union.add_hyperedges_from(dict(h.hyperedges))
+    return graph_union
+
+
+def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
+    if g.nodes & h.nodes:
+        raise ValueError(f"the two anklet graphs share the nodes {g.nodes & h.nodes}")
+    return union(g, h)
