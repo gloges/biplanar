@@ -185,7 +185,15 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         (ii) have no nodes in common. Note that (ii) follows from (i) if the balloon graph
         has valid structure (see :meth:`BalloonGraph.check_structure`).
 
-        After merging all elements in the balloon of `j` are updated to be in the balloon of `i`.
+        In order, the following changes are made:
+        - The anklet graphs in the same balloon as that at index `j` have their balloon attributes
+        updated to match that of the graph at index `i`.
+        - The graph at index `i` is replaced by the *disjoint* union
+        of itself and the graph at index `j`
+        - The graph at index `j` is removed.
+
+        Note that since the disjoint union produces an anklet graph which is not connected,
+        the balloon graph will *not* have a valid structure after calling this method.
 
         Parameters
         ----------
