@@ -4,6 +4,7 @@ from collections.abc import Callable, Hashable, Mapping
 from typing import Any, Self
 import networkx as nx
 from ankletgraph import AnkletGraph
+from ankletgraph import disjoint_union as ankletgraph_disjoint_union
 
 
 class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
@@ -169,13 +170,44 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         )
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Reduction
+    #   Graph operations
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def reduce(self) -> None:
         """Reduce each component anklet graph: see :meth:`AnkletGraph.reduce`."""
         for ag in self:
             ag.reduce()
+
+    def _combine(self, i: int, j: int) -> None:
+        """Combine two component anklet graphs.
+
+        The anklet graphs at indices `i` and `j` must (i) belong to different balloons and
+        (ii) have no nodes in common. Note that (ii) follows from (i) if the balloon graph
+        has valid structure (see :meth:`BalloonGraph.check_structure`).
+
+        After merging all elements in the balloon of `j` are updated to be in the balloon of `i`.
+
+        Parameters
+        ----------
+        i, j : int
+            Indicies for the anklet graphs to combine.
+
+        Raises
+        ------
+        ValueError
+            If `i == j` or if anklet graph `i` and anklet graph `j` belong to the same balloon.
+        """
+        if i == j:
+            raise ValueError('i and j must be distinct')
+        if self[i].attributes['balloon'] == self[j].attributes['balloon']:
+            raise ValueError(f"elements {i} and {j} do not belong to different balloons")
+
+        for ag in self:
+            if ag.attributes['balloon'] == self[j].attributes['balloon']:
+                ag.attributes['balloon'] = self[i].attributes['balloon']
+
+        self[i] = ankletgraph_disjoint_union(self[i], self[j])
+        self.pop(j)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence
