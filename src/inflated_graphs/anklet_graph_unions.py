@@ -1,7 +1,7 @@
 """Unions of anklet graphs."""
 
 from collections.abc import Hashable, Iterable
-from ankletgraph import AnkletGraph
+from .anklet_graph import AnkletGraph
 
 
 def union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:

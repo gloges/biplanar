@@ -1,10 +1,10 @@
-"""Methods for generating anklets and anklet graphs."""
+"""Methods for generating anklets, anklet graphs and balloon graphs."""
 
 from collections.abc import Collection, Hashable, Iterable
 from itertools import chain, combinations, combinations_with_replacement, permutations
-from anklet import Anklet
-from ankletgraph import AnkletGraph
-from balloongraph import BalloonGraph
+from .anklet import Anklet
+from .anklet_graph import AnkletGraph
+from .balloon_graph import BalloonGraph
 
 
 def powerset[T](iterable: Iterable[T]) -> chain[tuple[T, ...]]:

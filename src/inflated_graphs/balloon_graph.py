@@ -3,8 +3,8 @@
 from collections.abc import Callable, Hashable, Mapping
 from typing import Any, Self
 import networkx as nx
-from ankletgraph import AnkletGraph
-from ankletgraph_union import disjoint_union as ankletgraph_disjoint_union
+from .anklet_graph import AnkletGraph
+from .anklet_graph_unions import disjoint_union as anklet_graph_disjoint_union
 
 
 class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
@@ -155,7 +155,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         Examples
         --------
-        >>> from anklet import Anklet
+        >>> from inflated_graphs import Anklet
         >>> ag1 = AnkletGraph(range(0, 4), balloon='a')
         >>> ag2 = AnkletGraph(range(4, 7), balloon='b')
         >>> ag1.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
@@ -214,7 +214,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         if self[i].attributes['balloon'] == self[j].attributes['balloon']:
             raise ValueError(f"graphs {i} and {j} do not belong to different balloons")
 
-        self[i] = ankletgraph_disjoint_union(self[i], self[j])
+        self[i] = anklet_graph_disjoint_union(self[i], self[j])
 
         for ag in self:
             if ag.attributes['balloon'] == self[j].attributes['balloon']:
@@ -312,7 +312,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         Examples
         --------
-        >>> from anklet import Anklet
+        >>> from inflated_graphs import Anklet
         >>> g1 = AnkletGraph(balloon='a')
         >>> g1.add_hyperedge(Anklet(0, 1, 2))
         >>> g2 = AnkletGraph()
