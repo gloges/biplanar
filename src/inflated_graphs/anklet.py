@@ -88,10 +88,10 @@ class Anklet[T](tuple[T, ...]):
         [()]
         >>> list(Anklet(0).representatives())
         [(0,)]
-        >>> sorted(Anklet(0, 1).representatives())
+        >>> list(Anklet(0, 1).representatives())
         [(0, 1), (1, 0)]
-        >>> sorted(Anklet(0, 1, 2).representatives())
-        [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
+        >>> list(Anklet(0, 1, 2).representatives())
+        [(0, 1, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0), (1, 0, 2), (0, 2, 1)]
         >>> len(list(Anklet.from_iterable(range(100)).representatives()))
         200
         """
@@ -295,13 +295,23 @@ class Anklet[T](tuple[T, ...]):
 
         Examples
         --------
-        >>> g = Anklet('a', 'b', 'c', 'd').to_wheel_graph()
-        >>> print(g)
-        Graph with 5 nodes and 8 edges
-        >>> nx.get_node_attributes(g, 'anklet')
-        {1: 'a', 2: 'b', 3: 'c', 4: 'd'}
+        >>> g = Anklet.from_iterable('abcd').to_wheel_graph()
+        >>> sorted(g.nodes)
+        [0, 1, 2, 3, 4]
         >>> sorted(g.edges)
         [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (2, 3), (3, 4)]
+        >>> nx.get_node_attributes(g, 'anklet')
+        {1: 'a', 2: 'b', 3: 'c', 4: 'd'}
+
+        For `n = 1` and `n = 2` beads the wheel graph degenerates and has fewer than `2n` edges:
+
+        >>> for n in range(5):
+        ...     print(f'{n} beads:', Anklet.from_iterable(range(n)).to_wheel_graph())
+        0 beads: Graph with 1 nodes and 0 edges
+        1 beads: Graph with 2 nodes and 1 edges
+        2 beads: Graph with 3 nodes and 3 edges
+        3 beads: Graph with 4 nodes and 6 edges
+        4 beads: Graph with 5 nodes and 8 edges
         """
         g = nx.wheel_graph(len(self) + 1)
         nx.set_node_attributes(g, dict(enumerate(self, start=1)), 'anklet')
