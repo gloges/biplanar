@@ -1309,10 +1309,13 @@ class AnkletGraph[T: Hashable]:
         See :meth:`AnkletGraph.__le__` for the definition
         of the underlying relation on anklet graphs.
 
-        Two anklet graphs are equal if each embeds into the other. This clearly requires that they
-        have the same set of nodes, but it does not mean that they have the same set of hyperedges.
-        However, it *is* the case that two equal anklet graphs must have all hyperedges
-        of length `n ≥ 3` in common.
+        Two anklet graphs are equal if each embeds into the other.
+        This clearly requires that they have the same set of nodes,
+        but it does not necessarily mean that they have the same hyperedges.
+
+        Rather, two anklet graphs are equal *if and only if* they have the same nodes and their
+        sets of hyperedges are equal *after having being reduced* (see :meth:`AnkletGraph.reduce`).
+        In particular, they must have the same hyperedges with three or more nodes.
         """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
