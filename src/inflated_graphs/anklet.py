@@ -250,21 +250,7 @@ class Anklet[T](tuple[T, ...]):
         """
         if not isinstance(other, Anklet):
             return NotImplemented
-
-        # Edge case for empty anklet to avoid IndexError below
-        if not self:
-            return True
-
-        # Scan through 'other', collecting the next bead for each representative of 'self'
-        # as they are passed. If a rep manages to collect all of its beads then it is a sub-anklet.
-        states = {rep: 0 for rep in self.representatives()}
-        for bead in other:
-            for rep, index in states.items():
-                if bead == rep[index]:
-                    states[rep] += 1
-                    if states[rep] == len(self):
-                        return True
-        return False
+        return self == other.restrict_beads(self)
 
     def __lt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and `self != other`.
@@ -420,8 +406,8 @@ class Anklet[T](tuple[T, ...]):
 
         # Form the disjoint union of three labeled wheel graphs,
         # one for the parent anklet and one each for the subanklets corresponding to 'x' and 'y'
-        subanklet_x = Anklet.from_iterable(bead for bead in self if bead in x)
-        subanklet_y = Anklet.from_iterable(bead for bead in self if bead in y)
+        subanklet_x = self.restrict_beads(x)
+        subanklet_y = self.restrict_beads(y)
         g = nx.disjoint_union_all(a.to_wheel_graph() for a in [self, subanklet_x, subanklet_y])
 
         # Join nodes which share a bead label
@@ -430,6 +416,7 @@ class Anklet[T](tuple[T, ...]):
             if label not in label_groups:
                 label_groups[label] = set()
             label_groups[label].add(n)
+
         for node_group in label_groups.values():
             for u, v in combinations(node_group, 2):
                 g.add_edge(u, v)
