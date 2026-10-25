@@ -155,7 +155,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         Examples
         --------
-        >>> from anklet import Anklet
+        >>> from inflated_graphs import Anklet
         >>> ag1 = AnkletGraph(range(0, 4), balloon='a')
         >>> ag2 = AnkletGraph(range(4, 7), balloon='b')
         >>> ag1.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
@@ -312,7 +312,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         Examples
         --------
-        >>> from anklet import Anklet
+        >>> from inflated_graphs import Anklet
         >>> g1 = AnkletGraph(balloon='a')
         >>> g1.add_hyperedge(Anklet(0, 1, 2))
         >>> g2 = AnkletGraph()
