@@ -1,10 +1,10 @@
-name: Doctest
+name: Python tests
 
 on: [pull_request]
 
 jobs:
   doctest:
-    name: Run doctests
+    name: Run pytest
     runs-on: ubuntu-latest
 
     steps:
@@ -21,6 +21,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Run doctest
+      - name: Run pytest
         run: |
           python -m pytest
