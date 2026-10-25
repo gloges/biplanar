@@ -5,7 +5,7 @@ from itertools import combinations
 from types import NotImplementedType
 from typing import Any, Self, Literal
 import networkx as nx
-from anklet import Anklet
+from .anklet import Anklet
 
 
 class AnkletGraph[T: Hashable]:
