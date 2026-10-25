@@ -19,20 +19,35 @@ class Anklet[T](tuple[T, ...]):
     >>> Anklet(0, 1, 2, 1)
     Traceback (most recent call last):
     ...
-    ValueError: beads are not distinct
+    ValueError: the beads (0, 1, 2, 1) are not distinct
     """
 
     def __new__(cls, *beads: T) -> Self:
         if len(set(beads)) != len(beads):
-            raise ValueError("beads are not distinct")
+            raise ValueError(f"the beads {beads} are not distinct")
         return super().__new__(cls, beads)
 
     @classmethod
-    def from_iterable(cls, beads: Iterable[T] = (), /) -> Self:
-        """Construct an anklet from an iterable of beads.
+    def from_iterable(cls, beads: Iterable[T], /) -> Self:
+        """Construct an anklet from a finite sequence of beads.
 
         Unlike `Anklet(x)`, this method treats `x` as a source of beads
         rather than as the lone bead of the anklet.
+
+        Parameters
+        ----------
+        beads : Iterable[T]
+            A finite sequence of distinct beads.
+
+        Returns
+        -------
+        Self
+            An anklet with the given beads.
+
+        Raises
+        ------
+        ValueError
+            If the beads are not distinct.
 
         Examples
         --------
@@ -56,14 +71,15 @@ class Anklet[T](tuple[T, ...]):
     def representatives(self) -> Iterator[tuple[T, ...]]:
         """Generate all representative tuples of the anklet.
 
-        For an anklet of length `n ≥ 3`, yields the `2n` images of its defining tuple under
-        the action of `Dihₙ`. Anklets of length `n ≤ 1` and `n = 2` yield only one and two
-        representatives, respectively.
+        For an anklet of length `n ≥ 3`, this yields the `2n` images
+        of its defining tuple under the action of `Dihₙ`.
+        Anklets of length `n ≤ 1` and `n = 2` yield only one and two representatives, respectively,
+        since in these cases cyclic rotation and reversal are not distinct operations.
 
         Yields
         ------
         tuple[T, ...]
-            A representative tuple, equivalent to the defining tuple
+            A representative tuple of the anklet, equivalent to the defining tuple
             up to cyclic permutation and reversal.
 
         Examples
@@ -72,10 +88,10 @@ class Anklet[T](tuple[T, ...]):
         [()]
         >>> list(Anklet(0).representatives())
         [(0,)]
-        >>> sorted(Anklet(0, 1).representatives())
+        >>> list(Anklet(0, 1).representatives())
         [(0, 1), (1, 0)]
-        >>> sorted(Anklet(0, 1, 2).representatives())
-        [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
+        >>> list(Anklet(0, 1, 2).representatives())
+        [(0, 1, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0), (1, 0, 2), (0, 2, 1)]
         >>> len(list(Anklet.from_iterable(range(100)).representatives()))
         200
         """
@@ -99,14 +115,19 @@ class Anklet[T](tuple[T, ...]):
         return self in other.representatives()
 
     def __le__(self, other: object) -> NotImplementedType | bool:
-        """Return whether the anklet is a sub-anklet of `other`.
+        """Return whether the anklet is a *sub-anklet* of `other`.
 
-        This "sub-anklet" partial order has the empty anklet of length zero as its least element.
+        An anklet `a` is a sub-anklet of another anklet `b` (*i.e.* `a <= b`) if the beads of `a`
+        appear in the prescribed cyclic order as a subsequence of `b`. Equivalently, `a <= b` means
+        that it is possible to delete beads from `b` to produce `a`.
+
+        This "sub-anklet" relation is a partial order on anklets
+        with the empty anklet of length zero as its least element.
 
         Parameters
         ----------
         other : object
-            Anklet against which to compare this anklet.
+            An anklet.
 
         Returns
         -------
@@ -122,6 +143,14 @@ class Anklet[T](tuple[T, ...]):
         False
         >>> Anklet() <= Anklet(0, 1, 2)
         True
+
+        Note that comparing against a tuple reverts to `tuple.__le__`
+        using the defining tuple of the anklet:
+
+        >>> Anklet(0, 1, 2) <= (1, 2, 3, 4)
+        True
+        >>> (0, 2, 1) <= Anklet(0, 1, 2)
+        False
         """
         if not isinstance(other, Anklet):
             return NotImplemented
@@ -144,7 +173,7 @@ class Anklet[T](tuple[T, ...]):
     def __lt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and `self != other`.
 
-        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
         """
         if not isinstance(other, Anklet):
             return NotImplemented
@@ -153,7 +182,7 @@ class Anklet[T](tuple[T, ...]):
     def __ge__(self, other: object) -> NotImplementedType:
         """Return whether `other <= self`.
 
-        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
         """
         if not isinstance(other, Anklet):
             return NotImplemented
@@ -162,7 +191,7 @@ class Anklet[T](tuple[T, ...]):
     def __gt__(self, other: object) -> NotImplementedType:
         """Return whether `other <= self` and `self != other`.
 
-        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
         """
         if not isinstance(other, Anklet):
             return NotImplemented
@@ -185,7 +214,7 @@ class Anklet[T](tuple[T, ...]):
 
         See Also
         --------
-        :meth:`without_beads`
+        :meth:`Anklet.without_beads`
 
         Examples
         --------
@@ -212,7 +241,7 @@ class Anklet[T](tuple[T, ...]):
 
         See Also
         --------
-        :meth:`without_bead`
+        :meth:`Anklet.without_bead`
 
         Examples
         --------
@@ -252,40 +281,51 @@ class Anklet[T](tuple[T, ...]):
     def to_wheel_graph(self) -> nx.Graph:
         """Return a wheel graph representation of the anklet.
 
-        An anklet of length `n` is represented by the wheel graph `Wₙ` on the nodes `0, 1, ..., n`;
-        the central node is `0` and the nodes `1, 2, ..., n` form the outer `n`-cycle.
+        An anklet with `n` beads is represented by the wheel graph `Wₙ` on the nodes `0, 1, ..., n`;
+        the node `0` is the central 'hub' and the nodes `1, 2, ..., n` form the outer `n`-cycle.
         Note that for `n = 1` and `n = 2` the graph degenerates and has fewer than `2n` edges.
 
-        The nodes in the `n`-cycle have an 'anklet' attribute with values the beads of the anklet.
+        The nodes in the `n`-cycle have an 'anklet' attribute with values
+        the corresponding beads of the anklet.
 
         Returns
         -------
         networkx.Graph
-            A wheel graph labeled by the anklet.
+            A wheel graph with nodes labeled by the anklet.
 
         Examples
         --------
-        >>> g = Anklet('a', 'b', 'c', 'd').to_wheel_graph()
-        >>> print(g)
-        Graph with 5 nodes and 8 edges
-        >>> nx.get_node_attributes(g, 'anklet')
-        {1: 'a', 2: 'b', 3: 'c', 4: 'd'}
+        >>> g = Anklet.from_iterable('abcd').to_wheel_graph()
+        >>> sorted(g.nodes)
+        [0, 1, 2, 3, 4]
         >>> sorted(g.edges)
         [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (2, 3), (3, 4)]
+        >>> nx.get_node_attributes(g, 'anklet')
+        {1: 'a', 2: 'b', 3: 'c', 4: 'd'}
+
+        For `n = 1` and `n = 2` beads the wheel graph degenerates and has fewer than `2n` edges:
+
+        >>> for n in range(5):
+        ...     print(f'{n} beads:', Anklet.from_iterable(range(n)).to_wheel_graph())
+        0 beads: Graph with 1 nodes and 0 edges
+        1 beads: Graph with 2 nodes and 1 edges
+        2 beads: Graph with 3 nodes and 3 edges
+        3 beads: Graph with 4 nodes and 6 edges
+        4 beads: Graph with 5 nodes and 8 edges
         """
         g = nx.wheel_graph(len(self) + 1)
         nx.set_node_attributes(g, dict(enumerate(self, start=1)), 'anklet')
         return g
 
     def noncrossing(self, x: Collection[T], y: Collection[T]) -> bool:
-        """Return whether the collections of beads `x` and `y` in the anklet are non-crossing.
+        """Return whether two collections of beads in the anklet are non-crossing.
 
         Returns `False` if the anklet does not contain all elements from both `x` and `y`.
 
         Otherwise, consider arranging the beads of the anklet on the boundary of a disk
         in the prescribed cyclic order and joining the elements of `x` and `y` into sub-anklets
-        via a series of chords. Return `True` if the interiors of the chord cycles corresponding
-        to `x` and y` are disjoint and `False` if they intersect.
+        via a series of chords. Return `True` if the *interiors* of the two chord cycles
+        are disjoint and `False` if they intersect.
 
         Note that `x` and `y` need not be disjoint;
         their corresponding sub-anklets may meet at up to two points without forcing a crossing.

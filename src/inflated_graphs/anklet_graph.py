@@ -112,7 +112,7 @@ class AnkletGraph[T: Hashable]:
         >>> AnkletGraph.from_data_strings('0, 1, 2', '3 × A(0, 1)', bool)
         Traceback (most recent call last):
         ...
-        ValueError: beads are not distinct
+        ValueError: the beads (True, True) are not distinct
         """
         g = cls()
         g.attributes = attr
