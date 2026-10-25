@@ -68,6 +68,102 @@ class Anklet[T](tuple[T, ...]):
     def __rmul__(self, value: object) -> NotImplementedType:
         return NotImplemented
 
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Removing beads
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def without_bead(self, bead_to_remove: T, /) -> Self:
+        """Return the anklet with a bead removed.
+
+        The relative order of all retained beads is preserved.
+
+        Parameters
+        ----------
+        bead_to_remove : T
+            A bead to remove from the anklet.
+
+        Returns
+        -------
+        Self
+            The anklet with `bead_to_remove` removed, if present.
+
+        See Also
+        --------
+        :meth:`Anklet.without_beads`,
+        :meth:`Anklet.restrict_beads`
+
+        Examples
+        --------
+        >>> a = Anklet(5, 2, 3, 0, 4, 1)
+        >>> a.without_bead(3)
+        A(5, 2, 0, 4, 1)
+        >>> a.without_bead(6)
+        A(5, 2, 3, 0, 4, 1)
+        """
+        return type(self).from_iterable(b for b in self if b is not bead_to_remove)
+
+    def without_beads(self, beads_to_remove: Container[T], /) -> Self:
+        """Return the anklet with beads removed.
+
+        The relative order of all retained beads is preserved.
+
+        Parameters
+        ----------
+        beads_to_remove : Container[T]
+            Beads to remove from the anklet.
+
+        Returns
+        -------
+        Self
+            Anklet with beads from `beads_to_remove` removed, if present.
+
+        See Also
+        --------
+        :meth:`Anklet.without_bead`,
+        :meth:`Anklet.restrict_beads`
+
+        Examples
+        --------
+        >>> Anklet(5, 2, 3, 0, 4, 1).without_beads((0, 2))
+        A(5, 3, 4, 1)
+        >>> Anklet(5, 2, 3, 0, 4, 1).without_beads(Anklet(0, 1, 6))
+        A(5, 2, 3, 4)
+        """
+        return type(self).from_iterable(b for b in self if b not in beads_to_remove)
+
+    def restrict_beads(self, beads_to_keep: Container[T], /) -> Self:
+        """Return the anklet with beads removed.
+
+        The relative order of all retained beads is preserved.
+
+        Parameters
+        ----------
+        beads_to_keep : Container[T]
+            Beads to *not* remove from the anklet.
+
+        Returns
+        -------
+        Self
+            Anklet with all beads not in `beads_to_keep` removed.
+
+        See Also
+        --------
+        :meth:`Anklet.without_bead`,
+        :meth:`Anklet.without_beads`
+
+        Examples
+        --------
+        >>> Anklet(5, 2, 3, 0, 4, 1).restrict_beads(range(3))
+        A(2, 0, 1)
+        >>> Anklet(5, 2, 3, 0, 4, 1).restrict_beads(Anklet(0, 1, 4, 6))
+        A(0, 4, 1)
+        """
+        return type(self).from_iterable(b for b in self if b in beads_to_keep)
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   (In)equality
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
     def representatives(self) -> Iterator[tuple[T, ...]]:
         """Generate all representative tuples of the anklet.
 
@@ -154,21 +250,7 @@ class Anklet[T](tuple[T, ...]):
         """
         if not isinstance(other, Anklet):
             return NotImplemented
-
-        # Edge case for empty anklet to avoid IndexError below
-        if not self:
-            return True
-
-        # Scan through 'other', collecting the next bead for each representative of 'self'
-        # as they are passed. If a rep manages to collect all of its beads then it is a sub-anklet.
-        states = {rep: 0 for rep in self.representatives()}
-        for bead in other:
-            for rep, index in states.items():
-                if bead == rep[index]:
-                    states[rep] += 1
-                    if states[rep] == len(self):
-                        return True
-        return False
+        return self == other.restrict_beads(self)
 
     def __lt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and `self != other`.
@@ -179,7 +261,7 @@ class Anklet[T](tuple[T, ...]):
             return NotImplemented
         return len(self) < len(other) and self <= other
 
-    def __ge__(self, other: object) -> NotImplementedType:
+    def __ge__(self, other: object) -> NotImplementedType | bool:
         """Return whether `other <= self`.
 
         See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
@@ -188,7 +270,7 @@ class Anklet[T](tuple[T, ...]):
             return NotImplemented
         return other <= self
 
-    def __gt__(self, other: object) -> NotImplementedType:
+    def __gt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `other <= self` and `self != other`.
 
         See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
@@ -197,60 +279,9 @@ class Anklet[T](tuple[T, ...]):
             return NotImplemented
         return len(other) < len(self) and other <= self
 
-    def without_bead(self, bead: T, /) -> Self:
-        """Return the anklet with a bead removed.
-
-        The relative order of all retained beads is preserved.
-
-        Parameters
-        ----------
-        bead : T
-            Bead to remove.
-
-        Returns
-        -------
-        Self
-            The anklet with `bead` removed, if present.
-
-        See Also
-        --------
-        :meth:`Anklet.without_beads`
-
-        Examples
-        --------
-        >>> a = Anklet(5, 2, 3, 0, 4, 1)
-        >>> a.without_bead(3)
-        A(5, 2, 0, 4, 1)
-        >>> a.without_bead(6)
-        A(5, 2, 3, 0, 4, 1)
-        """
-        return type(self).from_iterable(b for b in self if b is not bead)
-
-    def without_beads(self, beads: Container[T], /) -> Self:
-        """Return the anklet with beads removed.
-
-        Parameters
-        ----------
-        beads : Container[T]
-            Beads to remove.
-
-        Returns
-        -------
-        Self
-            Anklet with beads from `beads` removed, if present.
-
-        See Also
-        --------
-        :meth:`Anklet.without_bead`
-
-        Examples
-        --------
-        >>> Anklet(5, 2, 3, 0, 4, 1).without_beads((0, 2))
-        A(5, 3, 4, 1)
-        >>> Anklet(5, 2, 3, 0, 4, 1).without_beads(Anklet(0, 1, 6))
-        A(5, 2, 3, 4)
-        """
-        return type(self).from_iterable(b for b in self if b not in beads)
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Other
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def standardized(self) -> Self:
         """Return an equivalent anklet with minimal defining tuple.
@@ -375,8 +406,8 @@ class Anklet[T](tuple[T, ...]):
 
         # Form the disjoint union of three labeled wheel graphs,
         # one for the parent anklet and one each for the subanklets corresponding to 'x' and 'y'
-        subanklet_x = Anklet.from_iterable(bead for bead in self if bead in x)
-        subanklet_y = Anklet.from_iterable(bead for bead in self if bead in y)
+        subanklet_x = self.restrict_beads(x)
+        subanklet_y = self.restrict_beads(y)
         g = nx.disjoint_union_all(a.to_wheel_graph() for a in [self, subanklet_x, subanklet_y])
 
         # Join nodes which share a bead label
@@ -385,6 +416,7 @@ class Anklet[T](tuple[T, ...]):
             if label not in label_groups:
                 label_groups[label] = set()
             label_groups[label].add(n)
+
         for node_group in label_groups.values():
             for u, v in combinations(node_group, 2):
                 g.add_edge(u, v)
