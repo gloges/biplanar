@@ -89,7 +89,8 @@ class Anklet[T](tuple[T, ...]):
 
         See Also
         --------
-        :meth:`Anklet.without_beads`
+        :meth:`Anklet.without_beads`,
+        :meth:`Anklet.restrict_beads`
 
         Examples
         --------
@@ -118,7 +119,8 @@ class Anklet[T](tuple[T, ...]):
 
         See Also
         --------
-        :meth:`Anklet.without_bead`
+        :meth:`Anklet.without_bead`,
+        :meth:`Anklet.restrict_beads`
 
         Examples
         --------
@@ -128,6 +130,35 @@ class Anklet[T](tuple[T, ...]):
         A(5, 2, 3, 4)
         """
         return type(self).from_iterable(b for b in self if b not in beads_to_remove)
+
+    def restrict_beads(self, beads_to_keep: Container[T], /) -> Self:
+        """Return the anklet with beads removed.
+
+        The relative order of all retained beads is preserved.
+
+        Parameters
+        ----------
+        beads_to_keep : Container[T]
+            Beads to *not* remove from the anklet.
+
+        Returns
+        -------
+        Self
+            Anklet with all beads not in `beads_to_keep` removed.
+
+        See Also
+        --------
+        :meth:`Anklet.without_bead`,
+        :meth:`Anklet.without_beads`
+
+        Examples
+        --------
+        >>> Anklet(5, 2, 3, 0, 4, 1).restrict_beads(range(3))
+        A(2, 0, 1)
+        >>> Anklet(5, 2, 3, 0, 4, 1).restrict_beads(Anklet(0, 1, 4, 6))
+        A(0, 4, 1)
+        """
+        return type(self).from_iterable(b for b in self if b in beads_to_keep)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   (In)equality
