@@ -144,7 +144,7 @@ class Anklet[T](tuple[T, ...]):
     def __lt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and `self != other`.
 
-        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
         """
         if not isinstance(other, Anklet):
             return NotImplemented
@@ -153,7 +153,7 @@ class Anklet[T](tuple[T, ...]):
     def __ge__(self, other: object) -> NotImplementedType:
         """Return whether `other <= self`.
 
-        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
         """
         if not isinstance(other, Anklet):
             return NotImplemented
@@ -162,7 +162,7 @@ class Anklet[T](tuple[T, ...]):
     def __gt__(self, other: object) -> NotImplementedType:
         """Return whether `other <= self` and `self != other`.
 
-        See :meth:`__le__` for the definition of the underlying partial order on anklets.
+        See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
         """
         if not isinstance(other, Anklet):
             return NotImplemented
@@ -185,7 +185,7 @@ class Anklet[T](tuple[T, ...]):
 
         See Also
         --------
-        :meth:`without_beads`
+        :meth:`Anklet.without_beads`
 
         Examples
         --------
@@ -212,7 +212,7 @@ class Anklet[T](tuple[T, ...]):
 
         See Also
         --------
-        :meth:`without_bead`
+        :meth:`Anklet.without_bead`
 
         Examples
         --------
