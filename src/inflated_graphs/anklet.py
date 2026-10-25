@@ -72,20 +72,20 @@ class Anklet[T](tuple[T, ...]):
     #   Removing beads
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def without_bead(self, bead: T, /) -> Self:
+    def without_bead(self, bead_to_remove: T, /) -> Self:
         """Return the anklet with a bead removed.
 
         The relative order of all retained beads is preserved.
 
         Parameters
         ----------
-        bead : T
-            Bead to remove.
+        bead_to_remove : T
+            A bead to remove from the anklet.
 
         Returns
         -------
         Self
-            The anklet with `bead` removed, if present.
+            The anklet with `bead_to_remove` removed, if present.
 
         See Also
         --------
@@ -99,20 +99,22 @@ class Anklet[T](tuple[T, ...]):
         >>> a.without_bead(6)
         A(5, 2, 3, 0, 4, 1)
         """
-        return type(self).from_iterable(b for b in self if b is not bead)
+        return type(self).from_iterable(b for b in self if b is not bead_to_remove)
 
-    def without_beads(self, beads: Container[T], /) -> Self:
+    def without_beads(self, beads_to_remove: Container[T], /) -> Self:
         """Return the anklet with beads removed.
+
+        The relative order of all retained beads is preserved.
 
         Parameters
         ----------
-        beads : Container[T]
-            Beads to remove.
+        beads_to_remove : Container[T]
+            Beads to remove from the anklet.
 
         Returns
         -------
         Self
-            Anklet with beads from `beads` removed, if present.
+            Anklet with beads from `beads_to_remove` removed, if present.
 
         See Also
         --------
@@ -125,7 +127,7 @@ class Anklet[T](tuple[T, ...]):
         >>> Anklet(5, 2, 3, 0, 4, 1).without_beads(Anklet(0, 1, 6))
         A(5, 2, 3, 4)
         """
-        return type(self).from_iterable(b for b in self if b not in beads)
+        return type(self).from_iterable(b for b in self if b not in beads_to_remove)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   (In)equality
