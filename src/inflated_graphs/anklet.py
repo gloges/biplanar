@@ -68,6 +68,10 @@ class Anklet[T](tuple[T, ...]):
     def __rmul__(self, value: object) -> NotImplementedType:
         return NotImplemented
 
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Removing beads
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
     def without_bead(self, bead: T, /) -> Self:
         """Return the anklet with a bead removed.
 
@@ -122,6 +126,10 @@ class Anklet[T](tuple[T, ...]):
         A(5, 2, 3, 4)
         """
         return type(self).from_iterable(b for b in self if b not in beads)
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   (In)equality
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def representatives(self) -> Iterator[tuple[T, ...]]:
         """Generate all representative tuples of the anklet.
@@ -234,7 +242,7 @@ class Anklet[T](tuple[T, ...]):
             return NotImplemented
         return len(self) < len(other) and self <= other
 
-    def __ge__(self, other: object) -> NotImplementedType:
+    def __ge__(self, other: object) -> NotImplementedType | bool:
         """Return whether `other <= self`.
 
         See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
@@ -243,7 +251,7 @@ class Anklet[T](tuple[T, ...]):
             return NotImplemented
         return other <= self
 
-    def __gt__(self, other: object) -> NotImplementedType:
+    def __gt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `other <= self` and `self != other`.
 
         See :meth:`Anklet.__le__` for the definition of the underlying partial order on anklets.
@@ -251,6 +259,10 @@ class Anklet[T](tuple[T, ...]):
         if not isinstance(other, Anklet):
             return NotImplemented
         return len(other) < len(self) and other <= self
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Other
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def standardized(self) -> Self:
         """Return an equivalent anklet with minimal defining tuple.
