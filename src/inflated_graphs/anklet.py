@@ -19,12 +19,12 @@ class Anklet[T](tuple[T, ...]):
     >>> Anklet(0, 1, 2, 1)
     Traceback (most recent call last):
     ...
-    ValueError: beads are not distinct
+    ValueError: the beads (0, 1, 2, 1) are not distinct
     """
 
     def __new__(cls, *beads: T) -> Self:
         if len(set(beads)) != len(beads):
-            raise ValueError("beads are not distinct")
+            raise ValueError(f"the beads {beads} are not distinct")
         return super().__new__(cls, beads)
 
     @classmethod
