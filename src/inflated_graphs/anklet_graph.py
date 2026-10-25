@@ -192,7 +192,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`number_of_nodes` : identical method
+        :meth:`AnkletGraph.number_of_nodes` : identical method
         """
         return len(self._node)
 
@@ -249,7 +249,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`__len__` : identical method
+        :meth:`AnkletGraph.__len__` : identical method
         """
         return len(self._node)
 
@@ -265,7 +265,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         -------
-        :meth:`add_nodes_from`
+        :meth:`AnkletGraph.add_nodes_from`
 
         Examples
         --------
@@ -301,7 +301,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`add_node`
+        :meth:`AnkletGraph.add_node`
 
         Examples
         --------
@@ -339,9 +339,9 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`remove_nodes_from`,
-        :meth:`erase_node`,
-        :meth:`erase_nodes_from`
+        :meth:`AnkletGraph.remove_nodes_from`,
+        :meth:`AnkletGraph.erase_node`,
+        :meth:`AnkletGraph.erase_nodes_from`
 
         Examples
         --------
@@ -371,9 +371,9 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`remove_node`,
-        :meth:`erase_node`,
-        :meth:`erase_nodes_from`
+        :meth:`AnkletGraph.remove_node`,
+        :meth:`AnkletGraph.erase_node`,
+        :meth:`AnkletGraph.erase_nodes_from`
 
         Examples
         --------
@@ -408,9 +408,9 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`remove_node`,
-        :meth:`remove_nodes_from`,
-        :meth:`erase_nodes_from`
+        :meth:`AnkletGraph.remove_node`,
+        :meth:`AnkletGraph.remove_nodes_from`,
+        :meth:`AnkletGraph.erase_nodes_from`
 
         Examples
         --------
@@ -445,9 +445,9 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`remove_node`,
-        :meth:`remove_nodes_from`,
-        :meth:`erase_node`
+        :meth:`AnkletGraph.remove_node`,
+        :meth:`AnkletGraph.remove_nodes_from`,
+        :meth:`AnkletGraph.erase_node`
 
         Examples
         --------
@@ -490,8 +490,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`set_node_attributes`,
-        :meth:`remove_node_attributes`
+        :meth:`AnkletGraph.set_node_attributes`,
+        :meth:`AnkletGraph.remove_node_attributes`
 
         Examples
         --------
@@ -519,8 +519,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`get_node_attributes`,
-        :meth:`remove_node_attributes`
+        :meth:`AnkletGraph.get_node_attributes`,
+        :meth:`AnkletGraph.remove_node_attributes`
 
         Examples
         --------
@@ -548,8 +548,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`get_node_attributes`,
-        :meth:`set_node_attributes`
+        :meth:`AnkletGraph.get_node_attributes`,
+        :meth:`AnkletGraph.set_node_attributes`
 
         Examples
         --------
@@ -592,7 +592,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`number_of_unique_hyperedges`
+        :meth:`AnkletGraph.number_of_unique_hyperedges`
 
         Examples
         --------
@@ -613,7 +613,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`number_of_hyperedges`
+        :meth:`AnkletGraph.number_of_hyperedges`
 
         Examples
         --------
@@ -646,7 +646,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`add_hyperedges_from`
+        :meth:`AnkletGraph.add_hyperedges_from`
 
         Examples
         --------
@@ -684,7 +684,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`add_hyperedge`
+        :meth:`AnkletGraph.add_hyperedge`
 
         Examples
         --------
@@ -726,7 +726,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`remove_hyperedges_from`
+        :meth:`AnkletGraph.remove_hyperedges_from`
 
         Examples
         --------
@@ -770,7 +770,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`remove_hyperedge`
+        :meth:`AnkletGraph.remove_hyperedge`
 
         Examples
         --------
@@ -803,7 +803,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         -------
-        :meth:`clear`
+        :meth:`AnkletGraph.clear`
         """
         self._edge.clear()
         self._reduced = True
@@ -815,7 +815,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`clear_hyperedges`
+        :meth:`AnkletGraph.clear_hyperedges`
         """
         self.clear_hyperedges()
         self._node.clear()
@@ -835,9 +835,9 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`adjacency`,
-        :meth:`anklet_adjacency`,
-        :meth:`to_incidence_graph`
+        :meth:`AnkletGraph.adjacency`,
+        :meth:`AnkletGraph.anklet_adjacency`,
+        :meth:`AnkletGraph.to_incidence_graph`
 
         Examples
         --------
@@ -866,9 +866,9 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`incidence`,
-        :meth:`anklet_adjacency`,
-        :meth:`to_adjacency_graph`
+        :meth:`AnkletGraph.incidence`,
+        :meth:`AnkletGraph.anklet_adjacency`,
+        :meth:`AnkletGraph.to_adjacency_graph`
 
         Examples
         --------
@@ -899,8 +899,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`incidence`,
-        :meth:`adjacency`
+        :meth:`AnkletGraph.incidence`,
+        :meth:`AnkletGraph.adjacency`
 
         Examples
         --------
@@ -938,9 +938,9 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`incidence`,
-        :meth:`to_adjacency_graph`,
-        :meth:`to_wheel_graph`
+        :meth:`AnkletGraph.incidence`,
+        :meth:`AnkletGraph.to_adjacency_graph`,
+        :meth:`AnkletGraph.to_wheel_graph`
 
         Examples
         --------
@@ -974,9 +974,9 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`adjacency`,
-        :meth:`to_incidence_graph`,
-        :meth:`to_wheel_graph`
+        :meth:`AnkletGraph.adjacency`,
+        :meth:`AnkletGraph.to_incidence_graph`,
+        :meth:`AnkletGraph.to_wheel_graph`
 
         Examples
         --------
@@ -1010,8 +1010,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`to_incidence_graph`,
-        :meth:`to_adjacency_graph`,
+        :meth:`AnkletGraph.to_incidence_graph`,
+        :meth:`AnkletGraph.to_adjacency_graph`,
         :meth:`Anklet.to_wheel_graph`
 
         Examples
@@ -1111,8 +1111,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`connected_components`,
-        :meth:`is_biconnected`
+        :meth:`AnkletGraph.connected_components`,
+        :meth:`AnkletGraph.is_biconnected`
 
         Examples
         --------
@@ -1140,8 +1140,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`connected_components`,
-        :meth:`is_connected`
+        :meth:`AnkletGraph.connected_components`,
+        :meth:`AnkletGraph.is_connected`
 
         Examples
         --------
@@ -1276,7 +1276,8 @@ class AnkletGraph[T: Hashable]:
     def __lt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and not `other <= self`.
 
-        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        See :meth:`AnkletGraph.__le__` for the definition
+        of the underlying relation on anklet graphs.
         """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
@@ -1285,7 +1286,8 @@ class AnkletGraph[T: Hashable]:
     def __ge__(self, other: object) -> NotImplementedType | bool:
         """Return whether `other <= self`.
 
-        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        See :meth:`AnkletGraph.__le__` for the definition
+        of the underlying relation on anklet graphs.
         """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
@@ -1294,7 +1296,8 @@ class AnkletGraph[T: Hashable]:
     def __gt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `other <= self` and not `self <= other`.
 
-        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        See :meth:`AnkletGraph.__le__` for the definition
+        of the underlying relation on anklet graphs.
         """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
@@ -1303,7 +1306,8 @@ class AnkletGraph[T: Hashable]:
     def __eq__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and `other <= self`.
 
-        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        See :meth:`AnkletGraph.__le__` for the definition
+        of the underlying relation on anklet graphs.
 
         Two anklet graphs are equal if each embeds into the other. This clearly requires that they
         have the same set of nodes, but it does not mean that they have the same set of hyperedges.
