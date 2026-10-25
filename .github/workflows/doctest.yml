@@ -23,4 +23,4 @@ jobs:
 
       - name: Run doctest
         run: |
-          python -m doctest $(git ls-files '*.py')
+          python -m pytest
