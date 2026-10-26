@@ -29,14 +29,22 @@ class AnkletGraph[T: Hashable]:
     _edge: dict[Anklet[T], int]
     _reduced: None | Literal[True]
 
-    def __init__(self, nodes: Iterable[T] = (), *, name: str = "", **attr: Any) -> None:
+    def __init__(
+        self,
+        nodes: Iterable[T] = (),
+        hyperedges: Iterable[Anklet[T]] = (),
+        *,
+        name: str = "",
+        **attr: Any
+    ) -> None:
         self._name = name
         self._attr = attr
         self._node = {}
         self._edge = {}
+        self._reduced = True
 
         self.add_nodes_from(nodes)
-        self._reduced = True
+        self.add_hyperedges_from(hyperedges)
 
     @classmethod
     def from_data_strings(
