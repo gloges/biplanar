@@ -82,7 +82,7 @@ class AnkletGraph[T: Hashable]:
         name : str, optional (default="")
             The anklet graph's name.
         attr : keyword arguments, optional
-            Set graph attributes using key=value.
+            Set anklet graph attributes using key=value.
 
         Returns
         -------
@@ -159,7 +159,7 @@ class AnkletGraph[T: Hashable]:
 
     @property
     def name(self) -> str:
-        """The name of the graph."""
+        """The name of the anklet graph."""
         return self._name
 
     @name.setter
@@ -170,7 +170,7 @@ class AnkletGraph[T: Hashable]:
     def attributes(self) -> dict[str, Any]:
         """The anklet graph's mutable attribute dictionary.
 
-        Changes to the returned dictionary modify this graphs's attributes.
+        Changes to the returned dictionary modify this anklet graphs's attributes.
         Assigning a mapping replaces the dictionary with a shallow copy of that mapping.
         """
         return self._attr
@@ -212,7 +212,7 @@ class AnkletGraph[T: Hashable]:
         return iter(self._node)
 
     def __contains__(self, n: T) -> bool:
-        """Return whether `n` is a node in the graph. Use: `n in g`."""
+        """Return whether `n` is a node in the anklet graph. Use: `n in g`."""
         try:
             return n in self._node
         except TypeError:
@@ -230,8 +230,8 @@ class AnkletGraph[T: Hashable]:
     def copy(self) -> Self:
         """Return a copy of the anklet graph.
 
-        Graph attributes, nodes, node attributes and hyperedges are copied.
-        If the graph has a name then '-copy' is appended: otherwise the copy remains unnamed.
+        Anklet graph attributes, nodes, node attributes and hyperedges are copied.
+        If the anklet graph has a name then '-copy' is appended: otherwise the copy remains unnamed.
 
         Returns
         -------
@@ -289,7 +289,7 @@ class AnkletGraph[T: Hashable]:
         Parameters
         ----------
         n : T
-            The node to add to the graph.
+            A node to add to the anklet graph.
         attr : keyword arguments, optional
             Set or change node attributes using key=value.
 
@@ -360,12 +360,12 @@ class AnkletGraph[T: Hashable]:
         Parameters
         ----------
         n : T
-            A node in the graph.
+            A node in the anklet graph.
 
         Raises
         ------
         ValueError
-            If `n` is not in the graph.
+            If `n` is not in the anklet graph.
 
         See Also
         --------
@@ -396,7 +396,7 @@ class AnkletGraph[T: Hashable]:
         ----------
         nodes : Iterable[T]
             A container (list, dict, set, etc.) of nodes.
-            If a node from `nodes` is not in the graph it is silently ignored.
+            If an element of `nodes` is not in the anklet graph it is silently ignored.
 
         See Also
         --------
@@ -427,12 +427,12 @@ class AnkletGraph[T: Hashable]:
         Parameters
         ----------
         n : T
-            A node in the graph.
+            A node in the anklet graph.
 
         Raises
         ------
         ValueError
-            If `n` is not in the graph.
+            If `n` is not in the anklet graph.
 
         See Also
         --------
@@ -452,13 +452,13 @@ class AnkletGraph[T: Hashable]:
         ((A(0, 4), 2), (A(2, 3, 4), 1))
         """
         if n not in self.nodes:
-            raise ValueError(f"the node {n} is not in the graph")
+            raise ValueError(f"the node {n} is not in the anklet graph")
         self._node.pop(n)
         self._edge = {hype.without_bead(n): k for hype, k in self._edge.items()}
         if Anklet() in self._edge:
             self._edge.pop(Anklet())
 
-        # Erasing a node from a reduced graph may make it reducible
+        # Erasing a node from a reduced anklet graph may make it reducible
         self._reduced = None
 
     def erase_nodes_from(self, nodes: Iterable[T]) -> None:
@@ -468,7 +468,7 @@ class AnkletGraph[T: Hashable]:
         ----------
         nodes : Iterable[T]
             A container (list, dict, set, etc.) of nodes.
-            If a node from `nodes` is not in the graph it is silently ignored.
+            If an element of `nodes` is not in the anklet graph it is silently ignored.
 
         See Also
         --------
@@ -541,7 +541,7 @@ class AnkletGraph[T: Hashable]:
             Attribute name.
         values : Mapping[T, Any]
             Attribute values keyed by nodes of the anklet graph.
-            Keys which are not nodes in the graph are silently ignored.
+            Keys which are not nodes in the anklet graph are silently ignored.
 
         See Also
         --------
@@ -626,7 +626,7 @@ class AnkletGraph[T: Hashable]:
         Returns
         -------
         int
-            The total number of hyperedges in the graph.
+            The total number of hyperedges in the anklet graph.
 
         See Also
         --------
@@ -646,7 +646,7 @@ class AnkletGraph[T: Hashable]:
         Returns
         -------
         int
-            The number of unique hyperedges in the graph.
+            The number of unique hyperedges in the anklet graph.
 
         See Also
         --------
@@ -671,7 +671,7 @@ class AnkletGraph[T: Hashable]:
         Parameters
         ----------
         hype : Anklet[T]
-            The hyperedge to add to the graph.
+            The hyperedge to add to the anklet graph.
         k : int, optional (default=1)
             The number of copies of `hype` to add.
 
@@ -705,7 +705,7 @@ class AnkletGraph[T: Hashable]:
             self._edge[hype] = 0
         self._edge[hype] += k
 
-        # Adding a hyperedge can make a reduced graph reducible
+        # Adding a hyperedge can make a reduced anklet graph reducible
         self._reduced = None
 
     def add_hyperedges_from(self, hypes: Iterable[Anklet[T]]) -> None:
@@ -744,20 +744,20 @@ class AnkletGraph[T: Hashable]:
     def remove_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
         """Remove a hyperedge.
 
-        The hyperedge `hype` must be present in the graph. The multiplicity of `hype` is reduced
-        by `k` and if it drops to zero the hyperedge is removed.
+        The hyperedge `hype` must be present in the anklet graph. The multiplicity of `hype`
+        is reduced by `k` and if it drops to zero the hyperedge is removed.
 
         Parameters
         ----------
         hype : Anklet[T]
-            The hyperedge to remove from the graph.
+            The hyperedge to remove from the anklet graph.
         k : int, optional (default=1)
             The number of copies of `hype` to remove.
 
         Raises
         ------
         ValueError
-            If `hype` is not a hyperedge in the graph, if `k` is not a positive integer,
+            If `hype` is not a hyperedge in the anklet graph, if `k` is not a positive integer,
             or if `k` exceeds the multiplicity of `hype`.
 
         See Also
@@ -781,7 +781,7 @@ class AnkletGraph[T: Hashable]:
         ValueError: 5 > 4 is larger than the multiplicity of hyperedge A(0, 2)
         """
         if hype not in self._edge:
-            raise ValueError(f"{hype} is not a hyperedge in the graph")
+            raise ValueError(f"{hype} is not a hyperedge in the anklet graph")
         if not isinstance(k, int) or k <= 0:
             raise ValueError(f"k={k} is not a positive integer")
         if k > self._edge[hype]:
@@ -833,7 +833,7 @@ class AnkletGraph[T: Hashable]:
     def clear_hyperedges(self) -> None:
         """Remove all hyperedges.
 
-        The graph's name, attributes and nodes are left unchanged.
+        The anklet graph's name, attributes and nodes are left unchanged.
 
         See Also
         -------
@@ -845,7 +845,7 @@ class AnkletGraph[T: Hashable]:
     def clear(self) -> None:
         """Remove all nodes and hyperedges.
 
-        The graph's name and attributes are left unchanged.
+        The anklet graph's name and attributes are left unchanged.
 
         See Also
         --------
@@ -865,7 +865,7 @@ class AnkletGraph[T: Hashable]:
         -------
         dict[T, set[Anklet[T]]]
             Dictionary keyed by nodes.
-            Values are the sets of hyperedges in the graph containing that node.
+            Values are the sets of hyperedges in the anklet graph containing that node.
 
         See Also
         --------
@@ -922,7 +922,7 @@ class AnkletGraph[T: Hashable]:
         Nodes are anklet-adjacent if they appear sequentially in one or more hyperedge.
 
         Note that a node `n` is anklet-adjacent to itself *if and only if* the hyperedge `A(n)`
-        is present in the graph.
+        is present in the anklet graph.
 
         Returns
         -------
