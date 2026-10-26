@@ -64,8 +64,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         ... )
         Traceback (most recent call last):
         ...
-        ValueError: the string '2, 3 | A(2, 3)' does not contain exactly
-        two instances of ' | ' separating the balloon, node data and hyperedge data
+        ValueError: the string '2, 3 | A(2, 3)'
+        is not of the expected format '{balloon} | {nodes} | {hyperedges}'
         """
         anklet_graphs = []
         if data[0] != '[' or data[-1] != ']':
@@ -75,8 +75,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         for ag in data[1:-1].split('], ['):
             if ag.count(' | ') != 2:
                 raise ValueError(
-                    f"the string '{agraph_strings}' does not contain exactly\n"
-                    "two instances of ' | ' separating the balloon, node data and hyperedge data"
+                    f"the string '{ag}'\n"
+                    "is not of the expected format '{balloon} | {nodes} | {hyperedges}'"
                 )
             balloon, nodes, hyperedges = ag.split(' | ')
             anklet_graphs.append(
@@ -156,10 +156,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         Examples
         --------
         >>> from inflated_graphs import Anklet
-        >>> ag1 = AnkletGraph(range(0, 4), balloon='a')
-        >>> ag2 = AnkletGraph(range(4, 7), balloon='b')
-        >>> ag1.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
-        >>> ag2.add_hyperedge(Anklet(4, 5), 3)
+        >>> ag1 = AnkletGraph(range(0, 4), {Anklet(0, 1): 1, Anklet(1, 2, 3): 2}, balloon='a')
+        >>> ag2 = AnkletGraph(range(4, 7), {Anklet(4, 5): 3}, balloon='b')
         >>> bg = BalloonGraph(ag1, ag2)
         >>> bg.get_data_string()
         '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
