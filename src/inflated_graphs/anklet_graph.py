@@ -180,21 +180,31 @@ class AnkletGraph[T: Hashable]:
         self._attr = dict(value)
 
     def __str__(self) -> str:
-        """Return a short summary of the graph.
+        """Return a short summary of the anklet graph.
+
+        Returns
+        -------
+        str
+            A summary of the anklet graph, including the number of nodes and hyperedges,
+            as well as the anklet graph's name and list of anklet graph attributes if set.
 
         Examples
         --------
-        >>> g = AnkletGraph(range(5), name='myGraph', color='b', type='foo')
-        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 1, Anklet(2, 3, 4): 2})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 1, Anklet(2, 3, 4): 2})
         >>> print(g)
-        AnkletGraph named myGraph with attribute(s) (color, type), 5 nodes and 3 hyperedges
+        AnkletGraph with 5 nodes and 3 hyperedges
+        >>> g.name = 'myGraph'
+        >>> print(g)
+        AnkletGraph named myGraph with 5 nodes and 3 hyperedges
+        >>> g.attributes = {'color': 'r', 'type': 'A+'}
+        >>> print(g)
+        AnkletGraph named myGraph with attributes (color, type), 5 nodes and 3 hyperedges
         """
         return "".join([
             type(self).__name__,
             f" named {self._name}" if self._name else "",
-            " with attribute(s) (" + ", ".join(self._attr) + ")," if self._attr else " with",
-            f" {self.number_of_nodes()} nodes"
-            f" and {self.number_of_hyperedges()} hyperedges",
+            " with attributes (" + ", ".join(self._attr) + ")," if self._attr else " with",
+            f" {self.number_of_nodes()} nodes and {self.number_of_hyperedges()} hyperedges"
         ])
 
     def __iter__(self) -> Iterator[T]:
