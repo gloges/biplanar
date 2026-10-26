@@ -594,10 +594,9 @@ class AnkletGraph[T: Hashable]:
         >>> g.get_node_attributes('color')
         {}
         """
-        for n in self:
+        for n in self.get_node_attributes(attr_name):
             if nodes is None or n in nodes:
-                if attr_name in self._node[n]:
-                    self._node[n].pop(attr_name)
+                self._node[n].pop(attr_name)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Hyperedges
