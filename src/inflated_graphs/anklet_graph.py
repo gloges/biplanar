@@ -383,9 +383,13 @@ class AnkletGraph[T: Hashable]:
         {0, 2, 3, 4}
         >>> g.hyperedges
         ((A(2, 3, 4), 3),)
+        >>> g.remove_node('a')
+        Traceback (most recent call last):
+        ...
+        ValueError: 'a' is not a node in the anklet graph
         """
         if n not in self.nodes:
-            raise ValueError(f"the node {n} is not in the graph")
+            raise ValueError(f"{n!r} is not a node in the anklet graph")
         self._node.pop(n)
         self.remove_hyperedges_from({hype: k for hype, k in self._edge.items() if n in hype})
 
