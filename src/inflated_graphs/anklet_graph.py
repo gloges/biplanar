@@ -729,14 +729,14 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from([Anklet(0, 1), Anklet(1, 2, 3, 4)])
+        >>> g.add_hyperedges_from([Anklet(0, 1), Anklet(0, 1), Anklet(1, 2, 3, 4)])
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3, 4), 1))
+        ((A(0, 1), 2), (A(1, 2, 3, 4), 1))
         >>> g.add_hyperedges_from({Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 2})
         >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3, 4), 3), (A(0, 2), 2))
+        ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 2))
         """
         if isinstance(hypes, Mapping):
             for hype, k in hypes.items():
