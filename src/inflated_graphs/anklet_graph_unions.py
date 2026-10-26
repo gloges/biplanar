@@ -1,10 +1,10 @@
 """Unions of anklet graphs."""
 
-from collections.abc import Hashable, Iterable
+from collections.abc import Collection, Hashable
 from .anklet_graph import AnkletGraph
 
 
-def union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
+def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]:
     """Return the union of a collection of anklet graphs.
 
     The union for nodes the union of the nodes of the individual anklet graphs and for its multiset
@@ -12,8 +12,8 @@ def union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
 
     Parameters
     ----------
-    graphs : Iterable[AnkletGraph[T]]
-        A sequence of anklet graphs.
+    graphs : Collection[AnkletGraph[T]]
+        A collection of anklet graphs.
 
     Returns
     -------
@@ -68,13 +68,13 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     return union_all([g, h])
 
 
-def disjoint_union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
+def disjoint_union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]:
     """Return the union of a collection of anklet graphs on disjoint sets of nodes.
 
     Parameters
     ----------
-    graphs : Iterable[AnkletGraph[T]]
-        A sequence of anklet graphs with pairwise no nodes in common.
+    graphs : Collection[AnkletGraph[T]]
+        A collection of anklet graphs on different sets of nodes.
 
     Returns
     -------
