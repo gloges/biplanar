@@ -49,25 +49,29 @@ class AnkletGraph[T: Hashable]:
     @classmethod
     def from_data_strings(
         cls,
-        node_data: str,
-        hyperedge_data: str,
+        nodes: str,
+        hyperedges: str,
         interpreter: Callable[[str], T],
+        name: str = "",
         **attr: Any
     ) -> Self:
         """Construct an anklet graph from string encodings of the nodes and hyperedges.
 
-        The input strings must follow the format produced by :meth:`AnkletGraph.get_data_strings`.
+        The node and hyperedge strings must follow the format
+        produced by :meth:`AnkletGraph.get_data_strings`.
 
         Parameters
         ----------
-        node_data : str
-            String representations of the nodes, separated by `', '`.
-        hyperedge_data : str
+        nodes : str
+            String representations of nodes, separated by `', '`.
+        hyperedges : str
             String representations of the hyperedges, separated by `' + '`.
             Each hyperedge must have the form `k × A(...)` or `A(...)`,
             with the latter indicating a multiplicity of one.
         interpreter : Callable[[str], T]
             A function that converts a node's string representation into a node of type `T`.
+        name : str, optional (default="")
+            The anklet graph's name.
         attr : keyword arguments, optional
             Set graph attributes using key=value.
 
@@ -122,20 +126,19 @@ class AnkletGraph[T: Hashable]:
         ...
         ValueError: the beads (True, True) are not distinct
         """
-        g = cls()
-        g.attributes = attr
-        if node_data:
-            g.add_nodes_from(interpreter(n) for n in node_data.split(', '))
-        if hyperedge_data:
-            for hype_string in hyperedge_data.split(' + '):
-                if '×' in hype_string:
-                    k, hype_string = hype_string.split(' × ')
+        g = cls(name=name, **attr)
+        if nodes:
+            g.add_nodes_from(interpreter(n) for n in nodes.split(', '))
+        if hyperedges:
+            for hype in hyperedges.split(' + '):
+                if '×' in hype:
+                    k, hype = hype.split(' × ')
                 else:
                     k = 1
-                if hype_string[:2] != 'A(' or hype_string[-1] != ')':
-                    raise ValueError(f"unexpected format for hyperedge: '{hype_string}'")
+                if hype[:2] != 'A(' or hype[-1] != ')':
+                    raise ValueError(f"unexpected format for hyperedge: '{hype}'")
                 g.add_hyperedge(
-                    Anklet.from_iterable(interpreter(n) for n in hype_string[2:-1].split(', ')),
+                    Anklet[T].from_iterable(interpreter(n) for n in hype[2:-1].split(', ')),
                     int(k)
                 )
         return g
