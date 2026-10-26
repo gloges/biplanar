@@ -90,7 +90,7 @@ def anklet_graphs_on[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
 
     # Add single-node anklet graphs to list of connected graphs
     # (but not to the queue to have edges added)
-    ankletgraphs = [AnkletGraph[T]([n]) for n in nodes]
+    anklet_graphs = [AnkletGraph([n]) for n in nodes]
 
     while queue:
         g = queue.pop(0)
@@ -107,9 +107,9 @@ def anklet_graphs_on[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
 
         if g.is_connected():
             g.attributes.clear()
-            ankletgraphs.append(g)
+            anklet_graphs.append(g)
 
-    return ankletgraphs
+    return anklet_graphs
 
 
 def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]]:
@@ -131,21 +131,19 @@ def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
     [1, 1, 3, 20, 361]
     """
     # Store indices into the array with the anklet graphs themselves
-    ankletgraphs = anklet_graphs_on(nodes)
-    for i, ag in enumerate(ankletgraphs):
+    anklet_graphs = anklet_graphs_on(nodes)
+    for i, ag in enumerate(anklet_graphs):
         ag.attributes['index'] = i
 
-    # Init a queue with the empty balloon graph
     queue = [BalloonGraph[T]()]
-
-    balloongraphs = []
+    balloon_graphs: list[BalloonGraph[T]] = []
     while queue:
         bg = queue.pop(0)
 
         # Iterate over anklet graphs with index larger than those already present
         # that share at most one node with 'bg'
         i_start = 0 if not bg else max(g.attributes['index'] for g in bg) + 1
-        for ag in ankletgraphs[i_start:]:
+        for ag in anklet_graphs[i_start:]:
             if len(ag.nodes & bg.nodes) <= 1:
                 # Assign balloon attribute to the new component - up to one past the current largest
                 b_max = 0 if not bg else max(g.attributes['balloon'] for g in bg) + 1
@@ -162,6 +160,6 @@ def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
         if bg.nodes == set(nodes):
             for ag in bg:
                 ag.attributes.pop('index')
-            balloongraphs.append(bg)
+            balloon_graphs.append(bg)
 
-    return balloongraphs
+    return balloon_graphs
