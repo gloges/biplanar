@@ -236,8 +236,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(5))
-        >>> g.add_hyperedges_from({Anklet(0): 3, Anklet(0, 1): 2, Anklet(1, 2, 3): 1})
+        >>> g = AnkletGraph(range(5), {Anklet(0): 3, Anklet(0, 1): 2, Anklet(1, 2, 3): 1})
         >>> g.get_data_strings()
         ('0, 1, 2, 3, 4', '3 × A(0) + 2 × A(0, 1) + A(1, 2, 3)')
         """
@@ -356,8 +355,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.remove_node(1)
@@ -388,8 +386,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.remove_nodes_from((2, 4, 'a'))
@@ -425,8 +422,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
+        >>> g = AnkletGraph(hyperedges={Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.erase_node(1)
@@ -462,8 +458,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
+        >>> g = AnkletGraph(hyperedges={Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.erase_nodes_from((1, 3, 5))
@@ -607,8 +602,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.number_of_hyperedges()
         6
         """
@@ -628,8 +622,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.number_of_unique_hyperedges()
         3
         """
@@ -741,8 +734,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1, 2, 3, 4): 3, Anklet(0, 2): 4})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 2, Anklet(1, 2, 3, 4): 3, Anklet(0, 2): 4})
         >>> g.hyperedges
         ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 4))
         >>> g.remove_hyperedge(Anklet(1, 0))
@@ -785,8 +777,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 3})
         >>> g.hyperedges
         ((A(0, 1), 1), (A(1, 2, 3, 4), 2), (A(0, 2), 3))
         >>> g.remove_hyperedges_from([Anklet(0, 2), Anklet(0, 1)])
@@ -852,8 +843,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(4))
-        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2): 4})
+        >>> g = AnkletGraph(range(4), {Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2): 4})
         >>> g.incidence()
         {0: {A(0, 1), A(0, 2)}, 1: {A(0, 1), A(1)}, 2: {A(0, 2)}, 3: set()}
         """
@@ -883,8 +873,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(5))
-        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2, 3): 4})
+        >>> g = AnkletGraph(range(5), {Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2, 3): 4})
         >>> g.adjacency()
         {0: {1, 2, 3}, 1: {0}, 2: {0, 3}, 3: {0, 2}, 4: set()}
         """
@@ -915,8 +904,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(6))
-        >>> g.add_hyperedges_from({Anklet(0, 1, 2, 3, 4): 2, Anklet(1): 3})
+        >>> g = AnkletGraph(range(6), {Anklet(0, 1, 2, 3, 4): 2, Anklet(1): 3})
         >>> g.anklet_adjacency()
         {0: {1, 4}, 1: {0, 1, 2}, 2: {1, 3}, 3: {2, 4}, 4: {0, 3}, 5: set()}
         """
@@ -955,8 +943,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
         >>> inc_graph = g.to_incidence_graph()
         >>> list(inc_graph.nodes)
         [0, 1, 2, 3, (A(0, 1), 0), (A(1, 2, 3), 0), (A(1, 2, 3), 1)]
@@ -991,8 +978,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
         >>> adj_graph = g.to_adjacency_graph()
         >>> sorted(adj_graph.nodes)
         [0, 1, 2, 3]
@@ -1027,8 +1013,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedge(Anklet('a', 'b', 'c'))
+        >>> g = AnkletGraph(hyperedges=[Anklet.from_iterable('abc')])
         >>> wh_graph = g.to_wheel_graph()
         >>> sorted(wh_graph.nodes, key=lambda x: (isinstance(x, int), x))
         ['a', 'b', 'c', 0, 1, 2, 3]
@@ -1099,8 +1084,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(7))
-        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(2, 3)])
+        >>> g = AnkletGraph(range(7), {Anklet(0, 1, 2): 2, Anklet(2, 3): 1})
         >>> list(g.connected_components())
         [{0, 1, 2, 3}, {4}, {5}, {6}]
         >>> g.add_hyperedges_from([Anklet(4), Anklet(5, 6)])
@@ -1185,9 +1169,8 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from(
-        ...     {Anklet(0): 2, Anklet(0, 1): 3, Anklet(1, 2): 4, Anklet(1, 2, 3): 2}
+        >>> g = AnkletGraph(
+        ...     hyperedges={Anklet(0): 2, Anklet(0, 1): 3, Anklet(1, 2): 4, Anklet(1, 2, 3): 2}
         ... )
         >>> g.reduce()
         >>> g.hyperedges
