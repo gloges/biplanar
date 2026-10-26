@@ -1,24 +1,30 @@
 """Unions of anklet graphs."""
 
-from collections.abc import Hashable, Iterable
+from collections.abc import Collection, Hashable
 from .anklet_graph import AnkletGraph
 
 
-def union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
+def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]:
     """Return the union of a collection of anklet graphs.
 
-    The union for nodes the union of the nodes of the individual anklet graphs and for its multiset
-    of hyperedges the union of the hyperedge multisets of the individual anklet graphs.
+    The returned anklet graph has for its nodes and hyperedge multiset
+    the union of the nodes and hyperedge multisets over the individual anklet graphs.
 
     Parameters
     ----------
-    graphs : Iterable[AnkletGraph[T]]
-        A sequence of anklet graphs.
+    graphs : Collection[AnkletGraph[T]]
+        A collection of anklet graphs.
 
     Returns
     -------
     AnkletGraph[T]
         The union of the anklet graphs.
+
+    See Also
+    --------
+    :meth:`union`,
+    :meth:`disjoint_union_all`,
+    :meth:`disjoint_union`
     """
     graph_union = AnkletGraph[T]()
     for g in graphs:
@@ -30,8 +36,8 @@ def union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
 def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     """Return the union of two anklet graphs.
 
-    The union of `g` and `h` has for nodes the union of the nodes of `g` and `h`
-    and for its multiset of hyperedges the union of the hyperedge multisets of `g` and `h`.
+    The returned anklet graph has for its nodes and hyperedge multiset
+    the union of the nodes and hyperedge multisets over `g` and `h`.
 
     Parameters
     ----------
@@ -43,26 +49,33 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     AnkletGraph[T]
         The union of `g` and `h`.
 
+    See Also
+    --------
+    :meth:`union_all`,
+    :meth:`disjoint_union_all`,
+    :meth:`disjoint_union`
+
     Examples
     --------
-    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
-    >>> h = AnkletGraph.from_data_strings("1, 2, 3, 4, 5", "A(1, 2) + A(1, 3, 4)", int)
+    >>> from inflated_graphs import Anklet
+    >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 1, Anklet(1, 2): 2})
+    >>> h = AnkletGraph([1, 2, 3, 4, 5], {Anklet(1, 2): 1, Anklet(1, 3, 4): 2})
     >>> gh = union(g, h)
     >>> gh.nodes
     {0, 1, 2, 3, 4, 5}
     >>> gh.hyperedges
-    ((A(0, 1, 2), 1), (A(1, 2), 3), (A(1, 3, 4), 1))
+    ((A(0, 1, 2), 1), (A(1, 2), 3), (A(1, 3, 4), 2))
     """
     return union_all([g, h])
 
 
-def disjoint_union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
+def disjoint_union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]:
     """Return the union of a collection of anklet graphs on disjoint sets of nodes.
 
     Parameters
     ----------
-    graphs : Iterable[AnkletGraph[T]]
-        A sequence of anklet graphs with pairwise no nodes in common.
+    graphs : Collection[AnkletGraph[T]]
+        A collection of anklet graphs on different sets of nodes.
 
     Returns
     -------
@@ -73,6 +86,12 @@ def disjoint_union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletG
     ------
     ValueError
         If any two graphs have nodes in common.
+
+    See Also
+    --------
+    :meth:`union_all`,
+    :meth:`union`,
+    :meth:`disjoint_union`
     """
     if len(set().union(g.nodes for g in graphs)) != sum(g.number_of_nodes() for g in graphs):
         raise ValueError("two or more anklet graphs have node(s) in common")
@@ -85,7 +104,7 @@ def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletG
     Parameters
     ----------
     g, h : AnkletGraph[T]
-        Two anklet graphs with no nodes in common.
+        Two anklet graphs on different sets of nodes.
 
     Returns
     -------
@@ -97,17 +116,23 @@ def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletG
     ValueError
         If `g` and `h` have nodes in common.
 
+    See Also
+    --------
+    :meth:`union_all`,
+    :meth:`union`,
+    :meth:`disjoint_union_all`
+
     Examples
     --------
-    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
-    >>> h = AnkletGraph.from_data_strings("3, 4, 5", "A(3, 4)", int)
+    >>> from inflated_graphs import Anklet
+    >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 1, Anklet(1, 2): 2})
+    >>> h = AnkletGraph({3, 4, 5}, [Anklet(3, 4)])
     >>> gh = disjoint_union(g, h)
     >>> gh.nodes
     {0, 1, 2, 3, 4, 5}
     >>> gh.hyperedges
     ((A(0, 1, 2), 1), (A(1, 2), 2), (A(3, 4), 1))
-    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
-    >>> h = AnkletGraph.from_data_strings("1, 2, 3, 4, 5", "A(1, 2) + A(1, 3, 4)", int)
+    >>> h.add_hyperedge(Anklet(1, 2, 3))
     >>> disjoint_union(g, h)
     Traceback (most recent call last):
     ...
