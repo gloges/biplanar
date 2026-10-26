@@ -57,13 +57,14 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
 
     Examples
     --------
-    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
-    >>> h = AnkletGraph.from_data_strings("1, 2, 3, 4, 5", "A(1, 2) + A(1, 3, 4)", int)
+    >>> from inflated_graphs import Anklet
+    >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 1, Anklet(1, 2): 2})
+    >>> h = AnkletGraph([1, 2, 3, 4, 5], {Anklet(1, 2): 1, Anklet(1, 3, 4): 2})
     >>> gh = union(g, h)
     >>> gh.nodes
     {0, 1, 2, 3, 4, 5}
     >>> gh.hyperedges
-    ((A(0, 1, 2), 1), (A(1, 2), 3), (A(1, 3, 4), 1))
+    ((A(0, 1, 2), 1), (A(1, 2), 3), (A(1, 3, 4), 2))
     """
     return union_all([g, h])
 
@@ -123,15 +124,15 @@ def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletG
 
     Examples
     --------
-    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
-    >>> h = AnkletGraph.from_data_strings("3, 4, 5", "A(3, 4)", int)
+    >>> from inflated_graphs import Anklet
+    >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 1, Anklet(1, 2): 2})
+    >>> h = AnkletGraph({3, 4, 5}, [Anklet(3, 4)])
     >>> gh = disjoint_union(g, h)
     >>> gh.nodes
     {0, 1, 2, 3, 4, 5}
     >>> gh.hyperedges
     ((A(0, 1, 2), 1), (A(1, 2), 2), (A(3, 4), 1))
-    >>> g = AnkletGraph.from_data_strings("0, 1, 2", "A(0, 1, 2) + 2 × A(1, 2)", int)
-    >>> h = AnkletGraph.from_data_strings("1, 2, 3, 4, 5", "A(1, 2) + A(1, 3, 4)", int)
+    >>> h.add_hyperedge(Anklet(1, 2, 3))
     >>> disjoint_union(g, h)
     Traceback (most recent call last):
     ...
