@@ -1135,11 +1135,6 @@ class AnkletGraph[T: Hashable]:
     def is_connected(self) -> bool:
         """Return whether the anklet graph is connected.
 
-        Returns
-        -------
-        bool
-            `True` if the anklet graph is connected, `False` otherwise.
-
         See Also
         --------
         :meth:`AnkletGraph.connected_components`,
@@ -1147,9 +1142,8 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(4))
-        >>> g.add_hyperedge(Anklet(0, 1, 2))
-        >>> g.is_connected()
+        >>> g = AnkletGraph(range(4), [Anklet(0, 1, 2)])
+        >>> g.is_connected()  # node '3' is not connected to the others
         False
         >>> g.add_hyperedge(Anklet(2, 3))
         >>> g.is_connected()
@@ -1164,11 +1158,6 @@ class AnkletGraph[T: Hashable]:
         one node. Note that in erasing a node its incident hyperedges are *not* removed
         if they are incident to other other nodes.
 
-        Returns
-        -------
-        bool
-            `True` if the anklet graph is biconnected, `False` otherwise.
-
         See Also
         --------
         :meth:`AnkletGraph.connected_components`,
@@ -1176,17 +1165,14 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedge(Anklet(0, 1, 2))
-        >>> g.is_biconnected()
+        >>> AnkletGraph(hyperedges=[Anklet(0, 1, 2)]).is_biconnected()
         True
-        >>> g.clear_hyperedges()
-        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(0, 1, 3)])
-        >>> g.is_biconnected()
+        >>> AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(0, 1, 3)]).is_biconnected()
         True
-        >>> g.clear_hyperedges()
-        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(0, 3, 4)])
-        >>> g.is_biconnected()
+
+        In the following example `0` is an articulation node:
+
+        >>> AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(0, 3, 4)]).is_biconnected()
         False
         """
         return nx.is_biconnected(self.to_adjacency_graph())
