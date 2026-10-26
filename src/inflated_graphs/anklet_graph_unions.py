@@ -19,6 +19,12 @@ def union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletGraph[T]:
     -------
     AnkletGraph[T]
         The union of the anklet graphs.
+
+    See Also
+    --------
+    :meth:`union`,
+    :meth:`disjoint_union_all`,
+    :meth:`disjoint_union`
     """
     graph_union = AnkletGraph[T]()
     for g in graphs:
@@ -42,6 +48,12 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     -------
     AnkletGraph[T]
         The union of `g` and `h`.
+
+    See Also
+    --------
+    :meth:`union_all`,
+    :meth:`disjoint_union_all`,
+    :meth:`disjoint_union`
 
     Examples
     --------
@@ -73,6 +85,12 @@ def disjoint_union_all[T: Hashable](graphs: Iterable[AnkletGraph[T]]) -> AnkletG
     ------
     ValueError
         If any two graphs have nodes in common.
+
+    See Also
+    --------
+    :meth:`union_all`,
+    :meth:`union`,
+    :meth:`disjoint_union`
     """
     if len(set().union(g.nodes for g in graphs)) != sum(g.number_of_nodes() for g in graphs):
         raise ValueError("two or more anklet graphs have node(s) in common")
@@ -96,6 +114,12 @@ def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletG
     ------
     ValueError
         If `g` and `h` have nodes in common.
+
+    See Also
+    --------
+    :meth:`union_all`,
+    :meth:`union`,
+    :meth:`disjoint_union_all`
 
     Examples
     --------
