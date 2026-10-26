@@ -12,13 +12,13 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
     _name: str
     _attr: dict[str, Any]
-    _valid_structure_hash: int | None
+    _valid_structure: int | None
 
     def __init__(self, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> None:
         super().__init__(ankletgraphs)
         self._name = name
         self._attr = attr
-        self._reset_valid_structure_hash()
+        self._reset_valid_structure()
 
     @classmethod
     def from_data_string(
@@ -285,11 +285,54 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def _get_check_structure_hash(self) -> int:
-        return hash(ag.get_data_strings() for ag in self)
+    def _get_structure_hash(self) -> int:
+        return hash(self.get_data_string())
 
-    def _reset_valid_structure_hash(self) -> None:
-        self._valid_structure_hash = None
+    def _reset_valid_structure(self) -> None:
+        self._valid_structure = None
+
+    def _check_balloon_attributes(self) -> None:
+        """Validate that all anklet graphs belong to balloons.
+
+        Returns silently if all anklet graphs are assigned to balloons.
+
+        Raises
+        ------
+        ValueError
+            If one of the anklet graphs does not have a 'balloon' attribute.
+        """
+        for i, ag in enumerate(self):
+            if 'balloon' not in ag.attributes:
+                raise ValueError(
+                    f"the anklet graph at index {i} does not have a 'balloon' attribute"
+                )
+
+    def _check_anklet_graph_structure(self, i: int) -> None:
+        """Validate the structure of the `i`ᵗʰ anklet graph.
+
+        Checks if the anklet graph (i) is non-empty, (ii) has a 'balloon' attribute,
+        (iii) is connected and (iv) is planar.
+
+        Returns silently if the structure of the `i`ᵗʰ anklet graph is valid.
+
+        Raises
+        ------
+        ValueError
+            If one of the four requirements above is not met (a short message explains the issue).
+        """
+        if not self[i].nodes:
+            raise ValueError(f"the anklet graph at index {i} is empty")
+
+        if 'balloon' not in self[i].attributes:
+            raise ValueError(
+                f"the anklet graph at index {i} does not have a 'balloon' attribute"
+            )
+
+        if not self[i].is_connected():
+            raise ValueError(f"the anklet graph at index {i} is not connected")
+
+        if not self[i].is_planar():
+            raise ValueError(f"the anklet graph at index {i} is not planar")
 
     def check_structure(self) -> None:
         """Validate the structure of the balloon graph.
@@ -336,34 +379,18 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         ValueError: Invalid structure. the node-component incidence graph contains the cycle
         (graph 0) → (node 1) → (graph 1) → (node 2) → (graph 0)
         """
-        if self._get_check_structure_hash() == self._valid_structure_hash:
+        if self._get_structure_hash() == self._valid_structure:
             # If the hash has not changed since the last successful structure check,
             # there is no need to check again
             return
 
-        # Check the basic structure of individual components. Each component anklet graph must...
-        for i, ag in enumerate(self):
-            # 1) be non-empty
-            if not ag.nodes:
-                self._reset_valid_structure_hash()
-                raise ValueError(f"the anklet graph at index {i} is empty")
-
-            # 2) be connected
-            if not ag.is_connected():
-                self._reset_valid_structure_hash()
-                raise ValueError(f"the anklet graph at index {i} is not connected")
-
-            # 3) be planar
-            if not ag.is_planar():
-                self._reset_valid_structure_hash()
-                raise ValueError(f"the anklet graph at index {i} is not planar")
-
-            # 4) have a 'balloon' attribute
-            if 'balloon' not in ag.attributes:
-                self._reset_valid_structure_hash()
-                raise ValueError(
-                    f"the anklet graph at index {i} does not have a 'balloon' attribute"
-                )
+        # Check the structure of individual anklet graphs
+        for i in range(len(self)):
+            try:
+                self._check_anklet_graph_structure(i)
+            except ValueError as exc:
+                self._reset_valid_structure()
+                raise exc
 
         # Check structure of the incidence graph:
         inc_graph = self.to_incidence_graph()
@@ -376,7 +403,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
                 # one neighbor in the incidence graph, namely node 'i' (corresponding to 'ag')
                 n = list(inc_graph.adj[i])[0]
                 if set(inc_graph.adj[n]) != {i}:
-                    self._reset_valid_structure_hash()
+                    self._reset_valid_structure()
                     raise ValueError(
                         f"the anklet graph at index {i} has only one node {ag.nodes}"
                         f"\nand this node appears in multiple components: {inc_graph.adj[n]}"
@@ -384,16 +411,14 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         # 2) For each node the components containing it must all have the same value for 'balloon'.
         for i in inc_graph:
-            if (
-                'node' in inc_graph.nodes[i]
-                and len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1
-            ):
-                self._reset_valid_structure_hash()
-                raise ValueError(
-                    f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"
-                    f" (indices: {sorted(inc_graph.neighbors(i))})\n"
-                    "do not all have the same value for their 'balloon' attribute"
-                )
+            if 'node' in inc_graph.nodes[i]:
+                if len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1:
+                    self._reset_valid_structure()
+                    raise ValueError(
+                        f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"
+                        f" (indices: {sorted(inc_graph.neighbors(i))})\n"
+                        "do not all have the same value for their 'balloon' attribute"
+                    )
 
         # 3) There are no cycles.
         if not nx.is_forest(inc_graph):
@@ -403,7 +428,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
                 else f"(graph {i})"
                 for i, _ in nx.find_cycle(inc_graph)
             ]
-            self._reset_valid_structure_hash()
+            self._reset_valid_structure()
             raise ValueError(
                 "Invalid structure. the node-component incidence graph contains the cycle\n" +
                 " → ".join([*cycle_data, cycle_data[0]])
@@ -411,4 +436,4 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         # The structure is valid:
         # save the hash to avoid checking the structure again if it doesn't change
-        self._valid_structure_hash = self._get_check_structure_hash()
+        self._valid_structure = self._get_structure_hash()
