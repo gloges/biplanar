@@ -7,8 +7,8 @@ from .anklet_graph import AnkletGraph
 def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]:
     """Return the union of a collection of anklet graphs.
 
-    The union for nodes the union of the nodes of the individual anklet graphs and for its multiset
-    of hyperedges the union of the hyperedge multisets of the individual anklet graphs.
+    The returned anklet graph has for its nodes and hyperedge multiset
+    the union of the nodes and hyperedge multisets over the individual anklet graphs.
 
     Parameters
     ----------
@@ -36,8 +36,8 @@ def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]
 def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     """Return the union of two anklet graphs.
 
-    The union of `g` and `h` has for nodes the union of the nodes of `g` and `h`
-    and for its multiset of hyperedges the union of the hyperedge multisets of `g` and `h`.
+    The returned anklet graph has for its nodes and hyperedge multiset
+    the union of the nodes and hyperedge multisets over `g` and `h`.
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ def disjoint_union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletG
     Parameters
     ----------
     g, h : AnkletGraph[T]
-        Two anklet graphs with no nodes in common.
+        Two anklet graphs on different sets of nodes.
 
     Returns
     -------
