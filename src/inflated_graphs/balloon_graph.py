@@ -164,6 +164,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         >>> bg.get_data_string()
         '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
         """
+        self._check_balloon_attributes()
         return ", ".join(
             '[' + " | ".join([str(ag.attributes['balloon']), *ag.get_data_strings()]) + ']'
             for ag in self
@@ -208,9 +209,9 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         """
         if i == j:
             raise ValueError('i and j must be distinct')
-        for index, ag in enumerate(self):
-            if 'balloon' not in ag.attributes:
-                raise ValueError(f"the graph at index {index} does not have a 'balloon' attribute")
+
+        self._check_balloon_attributes()
+
         if self[i].attributes['balloon'] == self[j].attributes['balloon']:
             raise ValueError(f"graphs {i} and {j} do not belong to different balloons")
 
