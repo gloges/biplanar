@@ -75,18 +75,13 @@ def anklet_graphs_on[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
     # Record which pairs of anklets taken together as hyperedges give a reduced planar anklet graph
     compatible = {i: set[int]() for i in range(len(anklets))}
     for (i, a), (j, b) in combinations_with_replacement(enumerate(anklets), 2):
-        g = AnkletGraph[T]()
-        g.add_hyperedges_from([a, b])
+        g = AnkletGraph(hyperedges=[a, b])
         g.reduce()
         if g.number_of_hyperedges() == 2 and g.is_planar():
             compatible[i].add(j)
 
     # Init queue with single-hyperedge anklet graphs
-    queue = []
-    for i, a in enumerate(anklets):
-        g = AnkletGraph[T](indices=(i,))
-        g.add_hyperedge(a)
-        queue.append(g)
+    queue = [AnkletGraph(hyperedges=[a], indices=(i,)) for i, a in enumerate(anklets)]
 
     # Add single-node anklet graphs to list of connected graphs
     # (but not to the queue to have edges added)
