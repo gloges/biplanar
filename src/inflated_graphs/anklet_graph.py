@@ -18,6 +18,15 @@ class AnkletGraph[T: Hashable]:
     Forgetting the anklet structure of the hyperedges yields an ordinary multi-hypergraph:
     each hyperedge is simply incident to the set of nodes appearing in its sequence.
 
+    ### Partial order
+
+    Anklet graphs have a natural partial order in which `g ≤ h` *if and only if* there exists
+    an embedding of `g` into `h`. Two anklet graphs are considered equal if they are *bi-embeddable*
+    (*i.e.* both `g ≤ h` and `h ≤ g`). This is a slightly weaker notion of equality than simply
+    requiring that the anklet graphs have the same nodes and hyperedges.
+
+    ### Embeddings
+
     An embedding of an anklet graph into a surface must preserve the anklet structure
     of its hyperedges. This means that a hyperedge must be embedded as a topological disk
     with the incident nodes appearing on the boundary in the prescribed cyclic order.
