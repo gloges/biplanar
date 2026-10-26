@@ -16,7 +16,7 @@ def powerset[T](iterable: Iterable[T]) -> chain[tuple[T, ...]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
 
-def get_anklets[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet[T]]:
+def anklets_on[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet[T]]:
     """Return anklets on a set of beads.
 
     If `subsets` is `False`, returns all anklets which contain all of the beads.
@@ -40,21 +40,21 @@ def get_anklets[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet
 
     Examples
     --------
-    >>> list(get_anklets(range(4)))
+    >>> list(anklets_on(range(4)))
     [A(0, 1, 2, 3), A(0, 1, 3, 2), A(0, 2, 1, 3)]
-    >>> sorted(get_anklets(range(3), subsets=True), key=lambda x: (len(x), tuple(x)))
+    >>> sorted(anklets_on(range(3), subsets=True), key=lambda x: (len(x), tuple(x)))
     [A(), A(0), A(1), A(2), A(0, 1), A(0, 2), A(1, 2), A(0, 1, 2)]
-    >>> [len(get_anklets(range(n))) for n in range(8)]
+    >>> [len(anklets_on(range(n))) for n in range(8)]  # A001710
     [1, 1, 1, 1, 3, 12, 60, 360]
-    >>> [len(get_anklets(range(n), subsets=True)) for n in range(8)]
+    >>> [len(anklets_on(range(n), subsets=True)) for n in range(8)]  # A116723
     [1, 2, 4, 8, 18, 53, 219, 1201]
     """
     if subsets:
-        return set.union(*[get_anklets(bead_subset) for bead_subset in powerset(beads)])
+        return set.union(*[anklets_on(bead_subset) for bead_subset in powerset(beads)])
     return {Anklet.from_iterable(bead_perm) for bead_perm in permutations(beads)}
 
 
-def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
+def anklet_graphs_on[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
     """Return all reduced, connected, planar anklet graphs on subsets of `nodes`.
 
     Parameters
@@ -70,7 +70,7 @@ def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
     """
 
     # Fix an order for the non-trivial anklets
-    anklets = [a for a in get_anklets(nodes, subsets=True) if len(a) > 1]
+    anklets = [a for a in anklets_on(nodes, subsets=True) if len(a) > 1]
 
     # Record which pairs of anklets taken together as hyperedges give a reduced planar anklet graph
     compatible = {i: set[int]() for i in range(len(anklets))}
@@ -112,7 +112,7 @@ def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
     return ankletgraphs
 
 
-def get_balloongraphs[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]]:
+def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]]:
     """Return all balloon graphs on the given nodes.
 
     Parameters
@@ -127,11 +127,11 @@ def get_balloongraphs[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
 
     Examples
     --------
-    >>> [len(get_balloongraphs(range(n))) for n in range(5)]
+    >>> [len(balloon_graphs_on(range(n))) for n in range(5)]
     [1, 1, 3, 20, 361]
     """
     # Store indices into the array with the anklet graphs themselves
-    ankletgraphs = get_ankletgraphs(nodes)
+    ankletgraphs = anklet_graphs_on(nodes)
     for i, ag in enumerate(ankletgraphs):
         ag.attributes['index'] = i
 
