@@ -105,13 +105,14 @@ class AnkletGraph[T: Hashable]:
         >>> g.hyperedges
         ((A(1, 3), 2), (A(1, 3, 5), 1))
 
-        If the node / hyperedge data strings are empty no nodes / hyperedges are added:
+        The hyperedges' incident nodes are automatically added to the anklet graph
+        and may be omitted from `node_string`:
 
-        >>> g = AnkletGraph.from_data_strings('', '', int)
-        >>> g.nodes
-        set()
+        >>> g = AnkletGraph.from_data_strings('0', '2 × A(1, 3) + A(1, 3, 5)', int)
+        >>> sorted(g.nodes)
+        [0, 1, 3, 5]
         >>> g.hyperedges
-        ()
+        ((A(1, 3), 2), (A(1, 3, 5), 1))
 
         An anklet graph is equal to the anklet graph created from its data strings:
 
@@ -127,8 +128,8 @@ class AnkletGraph[T: Hashable]:
         ...
         ValueError: unexpected format for hyperedge: '(1, 3)'
 
-        In the following example all of `'0'`, `'1'` and `'2'` are interpreted by 'bool' as `True`,
-        and the hyperedge `Anklet(True, True)` is invalid:
+        Nominally different nodes may in fact be mapped to the same node by `interpreter`
+        and result in an invalid hyperedge with repeated nodes:
 
         >>> AnkletGraph.from_data_strings('0, 1, 2', '3 × A(0, 1)', bool)
         Traceback (most recent call last):
