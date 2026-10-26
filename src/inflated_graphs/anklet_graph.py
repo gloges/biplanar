@@ -168,7 +168,7 @@ class AnkletGraph[T: Hashable]:
 
     @property
     def attributes(self) -> dict[str, Any]:
-        """The anklet graph's mutable attribute dictionary.
+        """The attributes of the anklet graph.
 
         Changes to the returned dictionary modify this anklet graphs's attributes.
         Assigning a mapping replaces the dictionary with a shallow copy of that mapping.
@@ -249,10 +249,10 @@ class AnkletGraph[T: Hashable]:
 
         Returns
         -------
-        node_data, hyperedge_data : str
+        nodes, hyperedges : str
             The first returned string is a comma-separated list of the nodes.
-            The second returned string contains the hyperedges with their multiplicities,
-            each formated as `"k × A(...)"` (or simply `"A(...)"` if `k = 1`), joined by `" + "`.
+            The second returned string contains the hyperedges with their multiplicities, each
+            formated as `"k × A(...)"` (or simply `"A(...)"` if `k = 1`), and joined by `" + "`.
 
         Examples
         --------
@@ -326,7 +326,7 @@ class AnkletGraph[T: Hashable]:
             A container (list, dict, set, etc.) of nodes to add.
             If `nodes` is a `Mapping` then the values are used to update node attributes.
         attr : keyword arguments, optional
-            Update attributes for all nodes in nodes. Node attributes specified in nodes
+            Update attributes for all nodes in nodes. Node attributes specified in `nodes`
             take precedence over attributes specified via keyword arguments.
 
         See Also
@@ -413,7 +413,7 @@ class AnkletGraph[T: Hashable]:
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.nodes
         {0, 1, 2, 3, 4}
-        >>> g.remove_nodes_from((2, 4, 'a'))
+        >>> g.remove_nodes_from([2, 4, 'a'])
         >>> g.nodes
         {0, 1, 3}
         >>> g.hyperedges
@@ -667,8 +667,8 @@ class AnkletGraph[T: Hashable]:
         """Add a hyperedge.
 
         If the hyperedge is already present then its multiplicity is increased by `k`.
-        Otherwise, the hyperedge is added to the graph and its multiplicity set to `k`.
-        The hyperedge's incident nodes will be automatically added to the graph
+        Otherwise, the hyperedge is added to the anklet graph and its multiplicity set to `k`.
+        The hyperedge's incident nodes are automatically added to the anklet graph
         if they are not already present.
 
         Parameters
@@ -718,7 +718,7 @@ class AnkletGraph[T: Hashable]:
         ----------
         hypes: Iterable[Anklet[T]]
             A container (list, dict, set, etc.) of hyperedges.
-            If `hypes` is a Mapping then the values are interpreted as the number of copies
+            If `hypes` is a `Mapping` then the values are interpreted as the number of copies
             of each hyperedge to add; otherwise, one instance of each hyperedge is added.
 
         See Also
@@ -803,7 +803,7 @@ class AnkletGraph[T: Hashable]:
         ----------
         hypes : Iterable[Anklet[T]]
             A container (list, dict, set, etc.) of hyperedges.
-            If `hypes` is a Mapping then the values are interpreted as the number of copies
+            If `hypes` is a `Mapping` then the values are interpreted as the number of copies
             of each hyperedge to remove; otherwise, one instance of each hyperedge is removed.
 
         See Also
@@ -1038,7 +1038,7 @@ class AnkletGraph[T: Hashable]:
         -------
         networkx.Graph
             A simple graph whose nodes are both the nodes of the anklet graph
-            as well as `n + 1` integer nodes for each hyperedge of size `n`.
+            as well as `n + 1` integer nodes for each hyperedge of length `n`.
 
         See Also
         --------
