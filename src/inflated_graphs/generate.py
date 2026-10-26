@@ -19,11 +19,11 @@ def powerset[T](iterable: Iterable[T]) -> chain[tuple[T, ...]]:
 def anklets_on[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet[T]]:
     """Return anklets on a set of beads.
 
-    If `subsets` is `False`, returns all anklets which contain all of the beads.
+    If `subsets` is `False`, returns all anklets which contain *all* of the beads.
     For `n ≥ 1` beads the number of such anklets is the order of the alternating group `Aₙ₋₁`,
     OEIS sequence [A001710](https://oeis.org/A001710).
 
-    If `subsets` is `True`, returns all anklets which contain any subset of the beads.
+    If `subsets` is `True`, returns all anklets which contain any *subset* of the beads.
     The number of such anklets is given by OEIS sequence [A116723](https://oeis.org/A116723).
 
     Parameters
@@ -106,7 +106,7 @@ def anklet_graphs_on[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
     # Init queue with single-hyperedge anklet graphs
     queue = [AnkletGraph(hyperedges=[a], indices=(i,)) for i, a in enumerate(anklets)]
 
-    # Add single-node anklet graphs to list of connected graphs
+    # Add single-node anklet graphs to list of reduced, connected, planar anklet graphs
     # (but not to the queue to have edges added)
     anklet_graphs = [AnkletGraph([n]) for n in nodes]
 
@@ -131,17 +131,17 @@ def anklet_graphs_on[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
 
 
 def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]]:
-    """Return all balloon graphs on the given nodes.
+    """Return all reduced balloon graphs on the given nodes.
 
     Parameters
     ----------
     nodes : Collection[T]
-        Set of nodes.
+        Nodes for the balloon graphs.
 
     Returns
     -------
     list[BalloonGraph[T]]
-        Balloon graphs on with node set `nodes`
+        Balloon graphs with node set `nodes`
 
     Examples
     --------
