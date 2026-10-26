@@ -18,6 +18,15 @@ class AnkletGraph[T: Hashable]:
     Forgetting the anklet structure of the hyperedges yields an ordinary multi-hypergraph:
     each hyperedge is simply incident to the set of nodes appearing in its sequence.
 
+    ### Partial order
+
+    Anklet graphs have a natural partial order in which `g ≤ h` *if and only if* there exists
+    an embedding of `g` into `h`. Two anklet graphs are considered equal if they are *bi-embeddable*
+    (*i.e.* both `g ≤ h` and `h ≤ g`). This is a slightly weaker notion of equality than simply
+    requiring that the anklet graphs have the same nodes and hyperedges.
+
+    ### Embeddings
+
     An embedding of an anklet graph into a surface must preserve the anklet structure
     of its hyperedges. This means that a hyperedge must be embedded as a topological disk
     with the incident nodes appearing on the boundary in the prescribed cyclic order.
@@ -29,39 +38,51 @@ class AnkletGraph[T: Hashable]:
     _edge: dict[Anklet[T], int]
     _reduced: None | Literal[True]
 
-    def __init__(self, nodes: Iterable[T] = (), *, name: str = "", **attr: Any) -> None:
+    def __init__(
+        self,
+        nodes: Iterable[T] = (),
+        hyperedges: Iterable[Anklet[T]] = (),
+        *,
+        name: str = "",
+        **attr: Any
+    ) -> None:
         self._name = name
         self._attr = attr
         self._node = {}
         self._edge = {}
+        self._reduced = True
 
         self.add_nodes_from(nodes)
-        self._reduced = True
+        self.add_hyperedges_from(hyperedges)
 
     @classmethod
     def from_data_strings(
         cls,
-        node_data: str,
-        hyperedge_data: str,
+        nodes: str,
+        hyperedges: str,
         interpreter: Callable[[str], T],
+        name: str = "",
         **attr: Any
     ) -> Self:
         """Construct an anklet graph from string encodings of the nodes and hyperedges.
 
-        The input strings must follow the format produced by :meth:`AnkletGraph.get_data_strings`.
+        The node and hyperedge strings must follow the format
+        produced by :meth:`AnkletGraph.get_data_strings`.
 
         Parameters
         ----------
-        node_data : str
-            String representations of the nodes, separated by `', '`.
-        hyperedge_data : str
+        nodes : str
+            String representations of nodes, separated by `', '`.
+        hyperedges : str
             String representations of the hyperedges, separated by `' + '`.
             Each hyperedge must have the form `k × A(...)` or `A(...)`,
             with the latter indicating a multiplicity of one.
         interpreter : Callable[[str], T]
             A function that converts a node's string representation into a node of type `T`.
+        name : str, optional (default="")
+            The anklet graph's name.
         attr : keyword arguments, optional
-            Set graph attributes using key=value.
+            Set anklet graph attributes using key=value.
 
         Returns
         -------
@@ -84,13 +105,14 @@ class AnkletGraph[T: Hashable]:
         >>> g.hyperedges
         ((A(1, 3), 2), (A(1, 3, 5), 1))
 
-        If the node / hyperedge data strings are empty no nodes / hyperedges are added:
+        The hyperedges' incident nodes are automatically added to the anklet graph
+        and may be omitted from `node_string`:
 
-        >>> g = AnkletGraph.from_data_strings('', '', int)
-        >>> g.nodes
-        set()
+        >>> g = AnkletGraph.from_data_strings('0', '2 × A(1, 3) + A(1, 3, 5)', int)
+        >>> sorted(g.nodes)
+        [0, 1, 3, 5]
         >>> g.hyperedges
-        ()
+        ((A(1, 3), 2), (A(1, 3, 5), 1))
 
         An anklet graph is equal to the anklet graph created from its data strings:
 
@@ -106,28 +128,27 @@ class AnkletGraph[T: Hashable]:
         ...
         ValueError: unexpected format for hyperedge: '(1, 3)'
 
-        In the following example all of `'0'`, `'1'` and `'2'` are interpreted by 'bool' as `True`,
-        and the hyperedge `Anklet(True, True)` is invalid:
+        Nominally different nodes may in fact be mapped to the same node by `interpreter`
+        and result in an invalid hyperedge with repeated nodes:
 
         >>> AnkletGraph.from_data_strings('0, 1, 2', '3 × A(0, 1)', bool)
         Traceback (most recent call last):
         ...
         ValueError: the beads (True, True) are not distinct
         """
-        g = cls()
-        g.attributes = attr
-        if node_data:
-            g.add_nodes_from(interpreter(n) for n in node_data.split(', '))
-        if hyperedge_data:
-            for hype_string in hyperedge_data.split(' + '):
-                if '×' in hype_string:
-                    k, hype_string = hype_string.split(' × ')
+        g = cls(name=name, **attr)
+        if nodes:
+            g.add_nodes_from(interpreter(n) for n in nodes.split(', '))
+        if hyperedges:
+            for hype in hyperedges.split(' + '):
+                if '×' in hype:
+                    k, hype = hype.split(' × ')
                 else:
                     k = 1
-                if hype_string[:2] != 'A(' or hype_string[-1] != ')':
-                    raise ValueError(f"unexpected format for hyperedge: '{hype_string}'")
+                if hype[:2] != 'A(' or hype[-1] != ')':
+                    raise ValueError(f"unexpected format for hyperedge: '{hype}'")
                 g.add_hyperedge(
-                    Anklet.from_iterable(interpreter(n) for n in hype_string[2:-1].split(', ')),
+                    Anklet[T].from_iterable(interpreter(n) for n in hype[2:-1].split(', ')),
                     int(k)
                 )
         return g
@@ -138,7 +159,7 @@ class AnkletGraph[T: Hashable]:
 
     @property
     def name(self) -> str:
-        """The name of the graph."""
+        """The name of the anklet graph."""
         return self._name
 
     @name.setter
@@ -147,9 +168,9 @@ class AnkletGraph[T: Hashable]:
 
     @property
     def attributes(self) -> dict[str, Any]:
-        """The anklet graph's mutable attribute dictionary.
+        """The attributes of the anklet graph.
 
-        Changes to the returned dictionary modify this graphs's attributes.
+        Changes to the returned dictionary modify this anklet graphs's attributes.
         Assigning a mapping replaces the dictionary with a shallow copy of that mapping.
         """
         return self._attr
@@ -159,21 +180,31 @@ class AnkletGraph[T: Hashable]:
         self._attr = dict(value)
 
     def __str__(self) -> str:
-        """Return a short summary of the graph.
+        """Return a short summary of the anklet graph.
+
+        Returns
+        -------
+        str
+            A summary of the anklet graph, including the number of nodes and hyperedges,
+            as well as the anklet graph's name and list of anklet graph attributes if set.
 
         Examples
         --------
-        >>> g = AnkletGraph(range(5), name='myGraph', color='b', type='foo')
-        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 1, Anklet(2, 3, 4): 2})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 1, Anklet(2, 3, 4): 2})
         >>> print(g)
-        AnkletGraph named myGraph with attribute(s) (color, type), 5 nodes and 3 hyperedges
+        AnkletGraph with 5 nodes and 3 hyperedges
+        >>> g.name = 'myGraph'
+        >>> print(g)
+        AnkletGraph named myGraph with 5 nodes and 3 hyperedges
+        >>> g.attributes = {'color': 'r', 'type': 'A+'}
+        >>> print(g)
+        AnkletGraph named myGraph with attributes (color, type), 5 nodes and 3 hyperedges
         """
         return "".join([
             type(self).__name__,
             f" named {self._name}" if self._name else "",
-            " with attribute(s) (" + ", ".join(self._attr) + ")," if self._attr else " with",
-            f" {self.number_of_nodes()} nodes"
-            f" and {self.number_of_hyperedges()} hyperedges",
+            " with attributes (" + ", ".join(self._attr) + ")," if self._attr else " with",
+            f" {self.number_of_nodes()} nodes and {self.number_of_hyperedges()} hyperedges"
         ])
 
     def __iter__(self) -> Iterator[T]:
@@ -181,7 +212,7 @@ class AnkletGraph[T: Hashable]:
         return iter(self._node)
 
     def __contains__(self, n: T) -> bool:
-        """Return whether `n` is a node in the graph. Use: `n in g`."""
+        """Return whether `n` is a node in the anklet graph. Use: `n in g`."""
         try:
             return n in self._node
         except TypeError:
@@ -192,15 +223,15 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`number_of_nodes` : identical method
+        :meth:`AnkletGraph.number_of_nodes` : identical method
         """
         return len(self._node)
 
     def copy(self) -> Self:
         """Return a copy of the anklet graph.
 
-        Graph attributes, nodes, node attributes and hyperedges are copied.
-        If the graph has a name then '-copy' is appended: otherwise the copy remains unnamed.
+        Anklet graph attributes, nodes, node attributes and hyperedges are copied.
+        If the anklet graph has a name then '-copy' is appended: otherwise the copy remains unnamed.
 
         Returns
         -------
@@ -218,15 +249,14 @@ class AnkletGraph[T: Hashable]:
 
         Returns
         -------
-        node_data, hyperedge_data : str
+        nodes, hyperedges : str
             The first returned string is a comma-separated list of the nodes.
-            The second returned string contains the hyperedges with their multiplicities,
-            each formated as `"k × A(...)"` (or simply `"A(...)"` if `k = 1`), joined by `" + "`.
+            The second returned string contains the hyperedges with their multiplicities, each
+            formated as `"k × A(...)"` (or simply `"A(...)"` if `k = 1`), and joined by `" + "`.
 
         Examples
         --------
-        >>> g = AnkletGraph(range(5))
-        >>> g.add_hyperedges_from({Anklet(0): 3, Anklet(0, 1): 2, Anklet(1, 2, 3): 1})
+        >>> g = AnkletGraph(range(5), {Anklet(0): 3, Anklet(0, 1): 2, Anklet(1, 2, 3): 1})
         >>> g.get_data_strings()
         ('0, 1, 2, 3, 4', '3 × A(0) + 2 × A(0, 1) + A(1, 2, 3)')
         """
@@ -249,7 +279,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`__len__` : identical method
+        :meth:`AnkletGraph.__len__` : identical method
         """
         return len(self._node)
 
@@ -259,13 +289,13 @@ class AnkletGraph[T: Hashable]:
         Parameters
         ----------
         n : T
-            The node to add to the graph.
+            A node to add to the anklet graph.
         attr : keyword arguments, optional
             Set or change node attributes using key=value.
 
         See Also
         -------
-        :meth:`add_nodes_from`
+        :meth:`AnkletGraph.add_nodes_from`
 
         Examples
         --------
@@ -296,12 +326,12 @@ class AnkletGraph[T: Hashable]:
             A container (list, dict, set, etc.) of nodes to add.
             If `nodes` is a `Mapping` then the values are used to update node attributes.
         attr : keyword arguments, optional
-            Update attributes for all nodes in nodes. Node attributes specified in nodes
+            Update attributes for all nodes in nodes. Node attributes specified in `nodes`
             take precedence over attributes specified via keyword arguments.
 
         See Also
         --------
-        :meth:`add_node`
+        :meth:`AnkletGraph.add_node`
 
         Examples
         --------
@@ -330,23 +360,22 @@ class AnkletGraph[T: Hashable]:
         Parameters
         ----------
         n : T
-            A node in the graph.
+            A node in the anklet graph.
 
         Raises
         ------
         ValueError
-            If `n` is not in the graph.
+            If `n` is not in the anklet graph.
 
         See Also
         --------
-        :meth:`remove_nodes_from`,
-        :meth:`erase_node`,
-        :meth:`erase_nodes_from`
+        :meth:`AnkletGraph.remove_nodes_from`,
+        :meth:`AnkletGraph.erase_node`,
+        :meth:`AnkletGraph.erase_nodes_from`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.remove_node(1)
@@ -354,9 +383,13 @@ class AnkletGraph[T: Hashable]:
         {0, 2, 3, 4}
         >>> g.hyperedges
         ((A(2, 3, 4), 3),)
+        >>> g.remove_node('a')
+        Traceback (most recent call last):
+        ...
+        ValueError: 'a' is not a node in the anklet graph
         """
         if n not in self.nodes:
-            raise ValueError(f"the node {n} is not in the graph")
+            raise ValueError(f"{n!r} is not a node in the anklet graph")
         self._node.pop(n)
         self.remove_hyperedges_from({hype: k for hype, k in self._edge.items() if n in hype})
 
@@ -367,21 +400,20 @@ class AnkletGraph[T: Hashable]:
         ----------
         nodes : Iterable[T]
             A container (list, dict, set, etc.) of nodes.
-            If a node from `nodes` is not in the graph it is silently ignored.
+            If an element of `nodes` is not in the anklet graph it is silently ignored.
 
         See Also
         --------
-        :meth:`remove_node`,
-        :meth:`erase_node`,
-        :meth:`erase_nodes_from`
+        :meth:`AnkletGraph.remove_node`,
+        :meth:`AnkletGraph.erase_node`,
+        :meth:`AnkletGraph.erase_nodes_from`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.nodes
         {0, 1, 2, 3, 4}
-        >>> g.remove_nodes_from((2, 4, 'a'))
+        >>> g.remove_nodes_from([2, 4, 'a'])
         >>> g.nodes
         {0, 1, 3}
         >>> g.hyperedges
@@ -399,23 +431,22 @@ class AnkletGraph[T: Hashable]:
         Parameters
         ----------
         n : T
-            A node in the graph.
+            A node in the anklet graph.
 
         Raises
         ------
         ValueError
-            If `n` is not in the graph.
+            If `n` is not in the anklet graph.
 
         See Also
         --------
-        :meth:`remove_node`,
-        :meth:`remove_nodes_from`,
-        :meth:`erase_nodes_from`
+        :meth:`AnkletGraph.remove_node`,
+        :meth:`AnkletGraph.remove_nodes_from`,
+        :meth:`AnkletGraph.erase_nodes_from`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
+        >>> g = AnkletGraph(hyperedges={Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.erase_node(1)
@@ -425,13 +456,13 @@ class AnkletGraph[T: Hashable]:
         ((A(0, 4), 2), (A(2, 3, 4), 1))
         """
         if n not in self.nodes:
-            raise ValueError(f"the node {n} is not in the graph")
+            raise ValueError(f"the node {n} is not in the anklet graph")
         self._node.pop(n)
         self._edge = {hype.without_bead(n): k for hype, k in self._edge.items()}
         if Anklet() in self._edge:
             self._edge.pop(Anklet())
 
-        # Erasing a node from a reduced graph may make it reducible
+        # Erasing a node from a reduced anklet graph may make it reducible
         self._reduced = None
 
     def erase_nodes_from(self, nodes: Iterable[T]) -> None:
@@ -441,18 +472,17 @@ class AnkletGraph[T: Hashable]:
         ----------
         nodes : Iterable[T]
             A container (list, dict, set, etc.) of nodes.
-            If a node from `nodes` is not in the graph it is silently ignored.
+            If an element of `nodes` is not in the anklet graph it is silently ignored.
 
         See Also
         --------
-        :meth:`remove_node`,
-        :meth:`remove_nodes_from`,
-        :meth:`erase_node`
+        :meth:`AnkletGraph.remove_node`,
+        :meth:`AnkletGraph.remove_nodes_from`,
+        :meth:`AnkletGraph.erase_node`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
+        >>> g = AnkletGraph(hyperedges={Anklet(1): 3, Anklet(0, 1, 4): 2, Anklet(1, 2, 3, 4): 1})
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.erase_nodes_from((1, 3, 5))
@@ -490,8 +520,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`set_node_attributes`,
-        :meth:`remove_node_attributes`
+        :meth:`AnkletGraph.set_node_attributes`,
+        :meth:`AnkletGraph.remove_node_attributes`
 
         Examples
         --------
@@ -515,12 +545,12 @@ class AnkletGraph[T: Hashable]:
             Attribute name.
         values : Mapping[T, Any]
             Attribute values keyed by nodes of the anklet graph.
-            Keys which are not nodes in the graph are silently ignored.
+            Keys which are not nodes in the anklet graph are silently ignored.
 
         See Also
         --------
-        :meth:`get_node_attributes`,
-        :meth:`remove_node_attributes`
+        :meth:`AnkletGraph.get_node_attributes`,
+        :meth:`AnkletGraph.remove_node_attributes`
 
         Examples
         --------
@@ -548,8 +578,8 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`get_node_attributes`,
-        :meth:`set_node_attributes`
+        :meth:`AnkletGraph.get_node_attributes`,
+        :meth:`AnkletGraph.set_node_attributes`
 
         Examples
         --------
@@ -564,10 +594,9 @@ class AnkletGraph[T: Hashable]:
         >>> g.get_node_attributes('color')
         {}
         """
-        for n in self:
+        for n in self.get_node_attributes(attr_name):
             if nodes is None or n in nodes:
-                if attr_name in self._node[n]:
-                    self._node[n].pop(attr_name)
+                self._node[n].pop(attr_name)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Hyperedges
@@ -579,7 +608,19 @@ class AnkletGraph[T: Hashable]:
         return tuple((hype, k) for hype, k in self._edge.items())
 
     def _all_hyperedges(self) -> list[Anklet[T]]:
-        """Return a list of the hyperedges with multiplicity."""
+        """Return a list of the hyperedges with multiplicity.
+
+        Returns
+        -------
+        list[Anklet[T]]
+            The hyperedges of the anklet graph.
+
+        Examples
+        --------
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 2, Anklet(1, 2, 3): 3})
+        >>> g._all_hyperedges()
+        [A(0, 1), A(0, 1), A(1, 2, 3), A(1, 2, 3), A(1, 2, 3)]
+        """
         return [hype for hypes in [k * [hype] for hype, k in self._edge.items()] for hype in hypes]
 
     def number_of_hyperedges(self) -> int:
@@ -588,16 +629,15 @@ class AnkletGraph[T: Hashable]:
         Returns
         -------
         int
-            The total number of hyperedges in the graph.
+            The total number of hyperedges in the anklet graph.
 
         See Also
         --------
-        :meth:`number_of_unique_hyperedges`
+        :meth:`AnkletGraph.number_of_unique_hyperedges`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.number_of_hyperedges()
         6
         """
@@ -609,16 +649,15 @@ class AnkletGraph[T: Hashable]:
         Returns
         -------
         int
-            The number of unique hyperedges in the graph.
+            The number of unique hyperedges in the anklet graph.
 
         See Also
         --------
-        :meth:`number_of_hyperedges`
+        :meth:`AnkletGraph.number_of_hyperedges`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2): 2, Anklet(2, 3, 4): 3})
         >>> g.number_of_unique_hyperedges()
         3
         """
@@ -628,14 +667,14 @@ class AnkletGraph[T: Hashable]:
         """Add a hyperedge.
 
         If the hyperedge is already present then its multiplicity is increased by `k`.
-        Otherwise, the hyperedge is added to the graph and its multiplicity set to `k`.
-        The hyperedge's incident nodes will be automatically added to the graph
+        Otherwise, the hyperedge is added to the anklet graph and its multiplicity set to `k`.
+        The hyperedge's incident nodes are automatically added to the anklet graph
         if they are not already present.
 
         Parameters
         ----------
         hype : Anklet[T]
-            The hyperedge to add to the graph.
+            The hyperedge to add to the anklet graph.
         k : int, optional (default=1)
             The number of copies of `hype` to add.
 
@@ -646,7 +685,7 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`add_hyperedges_from`
+        :meth:`AnkletGraph.add_hyperedges_from`
 
         Examples
         --------
@@ -669,7 +708,7 @@ class AnkletGraph[T: Hashable]:
             self._edge[hype] = 0
         self._edge[hype] += k
 
-        # Adding a hyperedge can make a reduced graph reducible
+        # Adding a hyperedge can make a reduced anklet graph reducible
         self._reduced = None
 
     def add_hyperedges_from(self, hypes: Iterable[Anklet[T]]) -> None:
@@ -679,24 +718,24 @@ class AnkletGraph[T: Hashable]:
         ----------
         hypes: Iterable[Anklet[T]]
             A container (list, dict, set, etc.) of hyperedges.
-            If `hypes` is a Mapping then the values are interpreted as the number of copies
+            If `hypes` is a `Mapping` then the values are interpreted as the number of copies
             of each hyperedge to add; otherwise, one instance of each hyperedge is added.
 
         See Also
         --------
-        :meth:`add_hyperedge`
+        :meth:`AnkletGraph.add_hyperedge`
 
         Examples
         --------
         >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from([Anklet(0, 1), Anklet(1, 2, 3, 4)])
+        >>> g.add_hyperedges_from([Anklet(0, 1), Anklet(0, 1), Anklet(1, 2, 3, 4)])
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3, 4), 1))
+        ((A(0, 1), 2), (A(1, 2, 3, 4), 1))
         >>> g.add_hyperedges_from({Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 2})
         >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3, 4), 3), (A(0, 2), 2))
+        ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 2))
         """
         if isinstance(hypes, Mapping):
             for hype, k in hypes.items():
@@ -708,30 +747,29 @@ class AnkletGraph[T: Hashable]:
     def remove_hyperedge(self, hype: Anklet[T], k: int = 1) -> None:
         """Remove a hyperedge.
 
-        The hyperedge `hype` must be present in the graph. The multiplicity of `hype` is reduced
-        by `k` and if it drops to zero the hyperedge is removed.
+        The hyperedge `hype` must be present in the anklet graph. The multiplicity of `hype`
+        is reduced by `k` and if it drops to zero the hyperedge is removed.
 
         Parameters
         ----------
         hype : Anklet[T]
-            The hyperedge to remove from the graph.
+            The hyperedge to remove from the anklet graph.
         k : int, optional (default=1)
             The number of copies of `hype` to remove.
 
         Raises
         ------
         ValueError
-            If `hype` is not a hyperedge in the graph, if `k` is not a positive integer,
+            If `hype` is not a hyperedge in the anklet graph, if `k` is not a positive integer,
             or if `k` exceeds the multiplicity of `hype`.
 
         See Also
         --------
-        :meth:`remove_hyperedges_from`
+        :meth:`AnkletGraph.remove_hyperedges_from`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1, 2, 3, 4): 3, Anklet(0, 2): 4})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 2, Anklet(1, 2, 3, 4): 3, Anklet(0, 2): 4})
         >>> g.hyperedges
         ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 4))
         >>> g.remove_hyperedge(Anklet(1, 0))
@@ -746,7 +784,7 @@ class AnkletGraph[T: Hashable]:
         ValueError: 5 > 4 is larger than the multiplicity of hyperedge A(0, 2)
         """
         if hype not in self._edge:
-            raise ValueError(f"{hype} is not a hyperedge in the graph")
+            raise ValueError(f"{hype} is not a hyperedge in the anklet graph")
         if not isinstance(k, int) or k <= 0:
             raise ValueError(f"k={k} is not a positive integer")
         if k > self._edge[hype]:
@@ -765,17 +803,16 @@ class AnkletGraph[T: Hashable]:
         ----------
         hypes : Iterable[Anklet[T]]
             A container (list, dict, set, etc.) of hyperedges.
-            If `hypes` is a Mapping then the values are interpreted as the number of copies
+            If `hypes` is a `Mapping` then the values are interpreted as the number of copies
             of each hyperedge to remove; otherwise, one instance of each hyperedge is removed.
 
         See Also
         --------
-        :meth:`remove_hyperedge`
+        :meth:`AnkletGraph.remove_hyperedge`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 3})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 3})
         >>> g.hyperedges
         ((A(0, 1), 1), (A(1, 2, 3, 4), 2), (A(0, 2), 3))
         >>> g.remove_hyperedges_from([Anklet(0, 2), Anklet(0, 1)])
@@ -799,11 +836,11 @@ class AnkletGraph[T: Hashable]:
     def clear_hyperedges(self) -> None:
         """Remove all hyperedges.
 
-        The graph's name, attributes and nodes are left unchanged.
+        The anklet graph's name, attributes and nodes are left unchanged.
 
         See Also
         -------
-        :meth:`clear`
+        :meth:`AnkletGraph.clear`
         """
         self._edge.clear()
         self._reduced = True
@@ -811,11 +848,11 @@ class AnkletGraph[T: Hashable]:
     def clear(self) -> None:
         """Remove all nodes and hyperedges.
 
-        The graph's name and attributes are left unchanged.
+        The anklet graph's name and attributes are left unchanged.
 
         See Also
         --------
-        :meth:`clear_hyperedges`
+        :meth:`AnkletGraph.clear_hyperedges`
         """
         self.clear_hyperedges()
         self._node.clear()
@@ -831,18 +868,17 @@ class AnkletGraph[T: Hashable]:
         -------
         dict[T, set[Anklet[T]]]
             Dictionary keyed by nodes.
-            Values are the sets of hyperedges in the graph containing that node.
+            Values are the sets of hyperedges in the anklet graph containing that node.
 
         See Also
         --------
-        :meth:`adjacency`,
-        :meth:`anklet_adjacency`,
-        :meth:`to_incidence_graph`
+        :meth:`AnkletGraph.adjacency`,
+        :meth:`AnkletGraph.anklet_adjacency`,
+        :meth:`AnkletGraph.to_incidence_graph`
 
         Examples
         --------
-        >>> g = AnkletGraph(range(4))
-        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2): 4})
+        >>> g = AnkletGraph(range(4), {Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2): 4})
         >>> g.incidence()
         {0: {A(0, 1), A(0, 2)}, 1: {A(0, 1), A(1)}, 2: {A(0, 2)}, 3: set()}
         """
@@ -866,14 +902,13 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`incidence`,
-        :meth:`anklet_adjacency`,
-        :meth:`to_adjacency_graph`
+        :meth:`AnkletGraph.incidence`,
+        :meth:`AnkletGraph.anklet_adjacency`,
+        :meth:`AnkletGraph.to_adjacency_graph`
 
         Examples
         --------
-        >>> g = AnkletGraph(range(5))
-        >>> g.add_hyperedges_from({Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2, 3): 4})
+        >>> g = AnkletGraph(range(5), {Anklet(0, 1): 2, Anklet(1): 3, Anklet(0, 2, 3): 4})
         >>> g.adjacency()
         {0: {1, 2, 3}, 1: {0}, 2: {0, 3}, 3: {0, 2}, 4: set()}
         """
@@ -890,7 +925,7 @@ class AnkletGraph[T: Hashable]:
         Nodes are anklet-adjacent if they appear sequentially in one or more hyperedge.
 
         Note that a node `n` is anklet-adjacent to itself *if and only if* the hyperedge `A(n)`
-        is present in the graph.
+        is present in the anklet graph.
 
         Returns
         -------
@@ -899,13 +934,12 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`incidence`,
-        :meth:`adjacency`
+        :meth:`AnkletGraph.incidence`,
+        :meth:`AnkletGraph.adjacency`
 
         Examples
         --------
-        >>> g = AnkletGraph(range(6))
-        >>> g.add_hyperedges_from({Anklet(0, 1, 2, 3, 4): 2, Anklet(1): 3})
+        >>> g = AnkletGraph(range(6), {Anklet(0, 1, 2, 3, 4): 2, Anklet(1): 3})
         >>> g.anklet_adjacency()
         {0: {1, 4}, 1: {0, 1, 2}, 2: {1, 3}, 3: {2, 4}, 4: {0, 3}, 5: set()}
         """
@@ -938,14 +972,13 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`incidence`,
-        :meth:`to_adjacency_graph`,
-        :meth:`to_wheel_graph`
+        :meth:`AnkletGraph.incidence`,
+        :meth:`AnkletGraph.to_adjacency_graph`,
+        :meth:`AnkletGraph.to_wheel_graph`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
         >>> inc_graph = g.to_incidence_graph()
         >>> list(inc_graph.nodes)
         [0, 1, 2, 3, (A(0, 1), 0), (A(1, 2, 3), 0), (A(1, 2, 3), 1)]
@@ -974,14 +1007,13 @@ class AnkletGraph[T: Hashable]:
 
         See Also
         --------
-        :meth:`adjacency`,
-        :meth:`to_incidence_graph`,
-        :meth:`to_wheel_graph`
+        :meth:`AnkletGraph.adjacency`,
+        :meth:`AnkletGraph.to_incidence_graph`,
+        :meth:`AnkletGraph.to_wheel_graph`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from({Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2, 3): 2})
         >>> adj_graph = g.to_adjacency_graph()
         >>> sorted(adj_graph.nodes)
         [0, 1, 2, 3]
@@ -1006,18 +1038,17 @@ class AnkletGraph[T: Hashable]:
         -------
         networkx.Graph
             A simple graph whose nodes are both the nodes of the anklet graph
-            as well as `n + 1` integer nodes for each hyperedge of size `n`.
+            as well as `n + 1` integer nodes for each hyperedge of length `n`.
 
         See Also
         --------
-        :meth:`to_incidence_graph`,
-        :meth:`to_adjacency_graph`,
+        :meth:`AnkletGraph.to_incidence_graph`,
+        :meth:`AnkletGraph.to_adjacency_graph`,
         :meth:`Anklet.to_wheel_graph`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedge(Anklet('a', 'b', 'c'))
+        >>> g = AnkletGraph(hyperedges=[Anklet.from_iterable('abc')])
         >>> wh_graph = g.to_wheel_graph()
         >>> sorted(wh_graph.nodes, key=lambda x: (isinstance(x, int), x))
         ['a', 'b', 'c', 0, 1, 2, 3]
@@ -1088,8 +1119,7 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph(range(7))
-        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(2, 3)])
+        >>> g = AnkletGraph(range(7), {Anklet(0, 1, 2): 2, Anklet(2, 3): 1})
         >>> list(g.connected_components())
         [{0, 1, 2, 3}, {4}, {5}, {6}]
         >>> g.add_hyperedges_from([Anklet(4), Anklet(5, 6)])
@@ -1104,21 +1134,15 @@ class AnkletGraph[T: Hashable]:
     def is_connected(self) -> bool:
         """Return whether the anklet graph is connected.
 
-        Returns
-        -------
-        bool
-            `True` if the anklet graph is connected, `False` otherwise.
-
         See Also
         --------
-        :meth:`connected_components`,
-        :meth:`is_biconnected`
+        :meth:`AnkletGraph.connected_components`,
+        :meth:`AnkletGraph.is_biconnected`
 
         Examples
         --------
-        >>> g = AnkletGraph(range(4))
-        >>> g.add_hyperedge(Anklet(0, 1, 2))
-        >>> g.is_connected()
+        >>> g = AnkletGraph(range(4), [Anklet(0, 1, 2)])
+        >>> g.is_connected()  # node '3' is not connected to the others
         False
         >>> g.add_hyperedge(Anklet(2, 3))
         >>> g.is_connected()
@@ -1133,29 +1157,21 @@ class AnkletGraph[T: Hashable]:
         one node. Note that in erasing a node its incident hyperedges are *not* removed
         if they are incident to other other nodes.
 
-        Returns
-        -------
-        bool
-            `True` if the anklet graph is biconnected, `False` otherwise.
-
         See Also
         --------
-        :meth:`connected_components`,
-        :meth:`is_connected`
+        :meth:`AnkletGraph.connected_components`,
+        :meth:`AnkletGraph.is_connected`
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedge(Anklet(0, 1, 2))
-        >>> g.is_biconnected()
+        >>> AnkletGraph(hyperedges=[Anklet(0, 1, 2)]).is_biconnected()
         True
-        >>> g.clear_hyperedges()
-        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(0, 1, 3)])
-        >>> g.is_biconnected()
+        >>> AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(0, 1, 3)]).is_biconnected()
         True
-        >>> g.clear_hyperedges()
-        >>> g.add_hyperedges_from([Anklet(0, 1, 2), Anklet(0, 3, 4)])
-        >>> g.is_biconnected()
+
+        In the following example `0` is an articulation node:
+
+        >>> AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(0, 3, 4)]).is_biconnected()
         False
         """
         return nx.is_biconnected(self.to_adjacency_graph())
@@ -1174,9 +1190,8 @@ class AnkletGraph[T: Hashable]:
 
         Examples
         --------
-        >>> g = AnkletGraph()
-        >>> g.add_hyperedges_from(
-        ...     {Anklet(0): 2, Anklet(0, 1): 3, Anklet(1, 2): 4, Anklet(1, 2, 3): 2}
+        >>> g = AnkletGraph(
+        ...     hyperedges={Anklet(0): 2, Anklet(0, 1): 3, Anklet(1, 2): 4, Anklet(1, 2, 3): 2}
         ... )
         >>> g.reduce()
         >>> g.hyperedges
@@ -1276,7 +1291,8 @@ class AnkletGraph[T: Hashable]:
     def __lt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and not `other <= self`.
 
-        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        See :meth:`AnkletGraph.__le__` for the definition
+        of the underlying relation on anklet graphs.
         """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
@@ -1285,7 +1301,8 @@ class AnkletGraph[T: Hashable]:
     def __ge__(self, other: object) -> NotImplementedType | bool:
         """Return whether `other <= self`.
 
-        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        See :meth:`AnkletGraph.__le__` for the definition
+        of the underlying relation on anklet graphs.
         """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
@@ -1294,7 +1311,8 @@ class AnkletGraph[T: Hashable]:
     def __gt__(self, other: object) -> NotImplementedType | bool:
         """Return whether `other <= self` and not `self <= other`.
 
-        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        See :meth:`AnkletGraph.__le__` for the definition
+        of the underlying relation on anklet graphs.
         """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
@@ -1303,12 +1321,16 @@ class AnkletGraph[T: Hashable]:
     def __eq__(self, other: object) -> NotImplementedType | bool:
         """Return whether `self <= other` and `other <= self`.
 
-        See :meth:`__le__` for the definition of the underlying relation on anklet graphs.
+        See :meth:`AnkletGraph.__le__` for the definition
+        of the underlying relation on anklet graphs.
 
-        Two anklet graphs are equal if each embeds into the other. This clearly requires that they
-        have the same set of nodes, but it does not mean that they have the same set of hyperedges.
-        However, it *is* the case that two equal anklet graphs must have all hyperedges
-        of length `n ≥ 3` in common.
+        Two anklet graphs are equal if each embeds into the other.
+        This clearly requires that they have the same set of nodes,
+        but it does not necessarily mean that they have the same hyperedges.
+
+        Rather, two anklet graphs are equal *if and only if* they have the same nodes and their
+        sets of hyperedges are equal *after having being reduced* (see :meth:`AnkletGraph.reduce`).
+        In particular, they must have the same hyperedges with three or more nodes.
         """
         if not isinstance(other, AnkletGraph):
             return NotImplemented
