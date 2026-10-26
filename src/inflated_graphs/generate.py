@@ -16,14 +16,14 @@ def powerset[T](iterable: Iterable[T]) -> chain[tuple[T, ...]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
 
-def get_anklets[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet[T]]:
+def anklets_on[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet[T]]:
     """Return anklets on a set of beads.
 
-    If `subsets` is `False`, returns all anklets which contain all of the beads.
+    If `subsets` is `False`, returns all anklets which contain *all* of the beads.
     For `n ≥ 1` beads the number of such anklets is the order of the alternating group `Aₙ₋₁`,
     OEIS sequence [A001710](https://oeis.org/A001710).
 
-    If `subsets` is `True`, returns all anklets which contain any subset of the beads.
+    If `subsets` is `True`, returns all anklets which contain any *subset* of the beads.
     The number of such anklets is given by OEIS sequence [A116723](https://oeis.org/A116723).
 
     Parameters
@@ -40,21 +40,21 @@ def get_anklets[T](beads: Collection[T], *, subsets: bool = False) -> set[Anklet
 
     Examples
     --------
-    >>> list(get_anklets(range(4)))
+    >>> list(anklets_on(range(4)))
     [A(0, 1, 2, 3), A(0, 1, 3, 2), A(0, 2, 1, 3)]
-    >>> sorted(get_anklets(range(3), subsets=True), key=lambda x: (len(x), tuple(x)))
+    >>> sorted(anklets_on(range(3), subsets=True), key=lambda x: (len(x), tuple(x)))
     [A(), A(0), A(1), A(2), A(0, 1), A(0, 2), A(1, 2), A(0, 1, 2)]
-    >>> [len(get_anklets(range(n))) for n in range(8)]
+    >>> [len(anklets_on(range(n))) for n in range(8)]  # A001710
     [1, 1, 1, 1, 3, 12, 60, 360]
-    >>> [len(get_anklets(range(n), subsets=True)) for n in range(8)]
+    >>> [len(anklets_on(range(n), subsets=True)) for n in range(8)]  # A116723
     [1, 2, 4, 8, 18, 53, 219, 1201]
     """
     if subsets:
-        return set.union(*[get_anklets(bead_subset) for bead_subset in powerset(beads)])
+        return set.union(*[anklets_on(bead_subset) for bead_subset in powerset(beads)])
     return {Anklet.from_iterable(bead_perm) for bead_perm in permutations(beads)}
 
 
-def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
+def anklet_graphs_on[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
     """Return all reduced, connected, planar anklet graphs on subsets of `nodes`.
 
     Parameters
@@ -65,32 +65,50 @@ def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
     Returns
     -------
     list[AnkletGraph[T]]
-        Anklet graphs on subsets of `nodes` which are reduced
-        (i.e. unchanged by :meth:`AnkletGraph.reduce`), connected and planar.
+        Anklet graphs on non-empty subsets of `nodes` which are reduced, connected and planar.
+
+    Examples
+    --------
+    >>> [len(anklet_graphs_on(range(n))) for n in range(5)]
+    [0, 1, 3, 12, 189]
+    >>> for ag in anklet_graphs_on(range(2)):
+    ...     print("nodes = {:7} hyperedges = {}".format(*ag.get_data_strings()))
+    nodes = 0       hyperedges = 
+    nodes = 1       hyperedges = 
+    nodes = 0, 1    hyperedges = A(0, 1)
+    >>> for ag in anklet_graphs_on(range(3)):
+    ...     print("nodes = {:10} hyperedges = {}".format(*ag.get_data_strings()))
+    nodes = 0          hyperedges = 
+    nodes = 1          hyperedges = 
+    nodes = 2          hyperedges = 
+    nodes = 1, 2       hyperedges = A(1, 2)
+    nodes = 0, 1, 2    hyperedges = A(0, 1, 2)
+    nodes = 0, 1       hyperedges = A(0, 1)
+    nodes = 0, 2       hyperedges = A(0, 2)
+    nodes = 0, 1, 2    hyperedges = A(0, 1) + A(1, 2)
+    nodes = 0, 1, 2    hyperedges = A(0, 2) + A(1, 2)
+    nodes = 0, 1, 2    hyperedges = 2 × A(0, 1, 2)
+    nodes = 0, 1, 2    hyperedges = A(0, 1) + A(0, 2)
+    nodes = 0, 1, 2    hyperedges = A(0, 1) + A(0, 2) + A(1, 2)
     """
 
     # Fix an order for the non-trivial anklets
-    anklets = [a for a in get_anklets(nodes, subsets=True) if len(a) > 1]
+    anklets = [a for a in anklets_on(nodes, subsets=True) if len(a) > 1]
 
     # Record which pairs of anklets taken together as hyperedges give a reduced planar anklet graph
     compatible = {i: set[int]() for i in range(len(anklets))}
     for (i, a), (j, b) in combinations_with_replacement(enumerate(anklets), 2):
-        g = AnkletGraph[T]()
-        g.add_hyperedges_from([a, b])
+        g = AnkletGraph(hyperedges=[a, b])
         g.reduce()
         if g.number_of_hyperedges() == 2 and g.is_planar():
             compatible[i].add(j)
 
     # Init queue with single-hyperedge anklet graphs
-    queue = []
-    for i, a in enumerate(anklets):
-        g = AnkletGraph[T](indices=(i,))
-        g.add_hyperedge(a)
-        queue.append(g)
+    queue = [AnkletGraph(hyperedges=[a], indices=(i,)) for i, a in enumerate(anklets)]
 
-    # Add single-node anklet graphs to list of connected graphs
+    # Add single-node anklet graphs to list of reduced, connected, planar anklet graphs
     # (but not to the queue to have edges added)
-    ankletgraphs = [AnkletGraph[T]([n]) for n in nodes]
+    anklet_graphs = [AnkletGraph([n]) for n in nodes]
 
     while queue:
         g = queue.pop(0)
@@ -107,45 +125,70 @@ def get_ankletgraphs[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
 
         if g.is_connected():
             g.attributes.clear()
-            ankletgraphs.append(g)
+            anklet_graphs.append(g)
 
-    return ankletgraphs
+    return anklet_graphs
 
 
-def get_balloongraphs[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]]:
-    """Return all balloon graphs on the given nodes.
+def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]]:
+    """Return all reduced balloon graphs on the given nodes.
 
     Parameters
     ----------
     nodes : Collection[T]
-        Set of nodes.
+        Nodes for the balloon graphs.
 
     Returns
     -------
     list[BalloonGraph[T]]
-        Balloon graphs on with node set `nodes`
+        Balloon graphs with node set `nodes`
 
     Examples
     --------
-    >>> [len(get_balloongraphs(range(n))) for n in range(5)]
+    >>> [len(balloon_graphs_on(range(n))) for n in range(5)]
     [1, 1, 3, 20, 361]
+    >>> for g in balloon_graphs_on(range(2)):
+    ...     print(g.get_data_string())
+    [0 | 0, 1 | A(0, 1)]
+    [0 | 0 | ], [0 | 1 | ]
+    [0 | 0 | ], [1 | 1 | ]
+    >>> for g in balloon_graphs_on(range(3)):
+    ...     print(g.get_data_string())
+    [0 | 0, 1, 2 | A(0, 1, 2)]
+    [0 | 0, 1, 2 | A(0, 1) + A(1, 2)]
+    [0 | 0, 1, 2 | A(0, 2) + A(1, 2)]
+    [0 | 0, 1, 2 | 2 × A(0, 1, 2)]
+    [0 | 0, 1, 2 | A(0, 1) + A(0, 2)]
+    [0 | 0, 1, 2 | A(0, 1) + A(0, 2) + A(1, 2)]
+    [0 | 0 | ], [0 | 1, 2 | A(1, 2)]
+    [0 | 0 | ], [1 | 1, 2 | A(1, 2)]
+    [0 | 1 | ], [0 | 0, 2 | A(0, 2)]
+    [0 | 1 | ], [1 | 0, 2 | A(0, 2)]
+    [0 | 2 | ], [0 | 0, 1 | A(0, 1)]
+    [0 | 2 | ], [1 | 0, 1 | A(0, 1)]
+    [0 | 1, 2 | A(1, 2)], [0 | 0, 1 | A(0, 1)]
+    [0 | 1, 2 | A(1, 2)], [0 | 0, 2 | A(0, 2)]
+    [0 | 0, 1 | A(0, 1)], [0 | 0, 2 | A(0, 2)]
+    [0 | 0 | ], [0 | 1 | ], [0 | 2 | ]
+    [0 | 0 | ], [0 | 1 | ], [1 | 2 | ]
+    [0 | 0 | ], [1 | 1 | ], [0 | 2 | ]
+    [0 | 0 | ], [1 | 1 | ], [1 | 2 | ]
+    [0 | 0 | ], [1 | 1 | ], [2 | 2 | ]
     """
     # Store indices into the array with the anklet graphs themselves
-    ankletgraphs = get_ankletgraphs(nodes)
-    for i, ag in enumerate(ankletgraphs):
+    anklet_graphs = anklet_graphs_on(nodes)
+    for i, ag in enumerate(anklet_graphs):
         ag.attributes['index'] = i
 
-    # Init a queue with the empty balloon graph
     queue = [BalloonGraph[T]()]
-
-    balloongraphs = []
+    balloon_graphs: list[BalloonGraph[T]] = []
     while queue:
         bg = queue.pop(0)
 
         # Iterate over anklet graphs with index larger than those already present
         # that share at most one node with 'bg'
         i_start = 0 if not bg else max(g.attributes['index'] for g in bg) + 1
-        for ag in ankletgraphs[i_start:]:
+        for ag in anklet_graphs[i_start:]:
             if len(ag.nodes & bg.nodes) <= 1:
                 # Assign balloon attribute to the new component - up to one past the current largest
                 b_max = 0 if not bg else max(g.attributes['balloon'] for g in bg) + 1
@@ -162,6 +205,6 @@ def get_balloongraphs[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
         if bg.nodes == set(nodes):
             for ag in bg:
                 ag.attributes.pop('index')
-            balloongraphs.append(bg)
+            balloon_graphs.append(bg)
 
-    return balloongraphs
+    return balloon_graphs

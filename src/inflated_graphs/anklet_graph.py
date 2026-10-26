@@ -260,10 +260,15 @@ class AnkletGraph[T: Hashable]:
         >>> g.get_data_strings()
         ('0, 1, 2, 3, 4', '3 × A(0) + 2 × A(0, 1) + A(1, 2, 3)')
         """
-        return (
-            ", ".join(str(n) for n in self._node),
-            " + ".join(f"{k} × {hype}" if k > 1 else str(hype) for hype, k in self._edge.items())
-        )
+        try:
+            nodes = [str(n) for n in sorted(self.nodes)]  # type: ignore
+            hyperedges = [(hype.standardized(), k) for hype, k in self._edge.items()]
+        except TypeError:
+            nodes = sorted([str(n) for n in list(self._node)], key=lambda x: (len(x), x))
+            hyperedges = list(self._edge.items())
+        hyperedges = sorted(hyperedges, key=lambda x: (len(x[0]), tuple(x[0])))
+        hyperedges = [f"{k} × {hype}" if k > 1 else str(hype) for hype, k in hyperedges]
+        return ", ".join(nodes), " + ".join(hyperedges)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Nodes
