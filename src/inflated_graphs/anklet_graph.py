@@ -605,7 +605,19 @@ class AnkletGraph[T: Hashable]:
         return tuple((hype, k) for hype, k in self._edge.items())
 
     def _all_hyperedges(self) -> list[Anklet[T]]:
-        """Return a list of the hyperedges with multiplicity."""
+        """Return a list of the hyperedges with multiplicity.
+
+        Returns
+        -------
+        list[Anklet[T]]
+            The hyperedges of the anklet graph.
+
+        Examples
+        --------
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 2, Anklet(1, 2, 3): 3})
+        >>> g._all_hyperedges()
+        [A(0, 1), A(0, 1), A(1, 2, 3), A(1, 2, 3), A(1, 2, 3)]
+        """
         return [hype for hypes in [k * [hype] for hype, k in self._edge.items()] for hype in hypes]
 
     def number_of_hyperedges(self) -> int:
