@@ -27,7 +27,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         balloon_interpreter: Callable[[str], Any],
         node_interpreter: Callable[[str], T]
     ) -> Self:
-        """Construct a balloon graph from a string encoding of the component anklet graphs.
+        """Construct a balloon graph from a string encoding of its component anklet graphs.
 
         The input string must follow the format produced by :meth:`BalloonGraph.get_data_string`.
 
@@ -52,6 +52,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         Examples
         --------
+        A typical use case:
+
         >>> g = BalloonGraph.from_data_string(
         ...     "[a | 0, 1, 2 | 3 × A(0, 1) + A(1, 2)], [a | 2, 3 | A(2, 3)]", str, int
         ... )
@@ -59,6 +61,9 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         ...    print(ag.attributes['balloon'], str(ag.nodes).ljust(9), ag.hyperedges)
         a {0, 1, 2} ((A(0, 1), 3), (A(1, 2), 1))
         a {2, 3}    ((A(2, 3), 1),)
+
+        The data for each anklet graph must include a balloon attribute, nodes and hyperedges:
+
         >>> BalloonGraph.from_data_string(
         ...     "[a | 0, 1, 2 | 3 × A(0, 1) + A(1, 2)], [2, 3 | A(2, 3)]", str, int
         ... )
@@ -95,7 +100,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
     @property
     def name(self) -> str:
-        """The name of the graph."""
+        """The name of the balloon graph."""
         return self._name
 
     @name.setter
@@ -104,9 +109,9 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
     @property
     def attributes(self) -> dict[str, Any]:
-        """The balloon graph's mutable attribute dictionary.
+        """The attributes of the anklet graph.
 
-        Changes to the returned dictionary modify this graphs's attributes.
+        Changes to the returned dictionary modify this balloon graphs's attributes.
         Assigning a mapping replaces the dictionary with a shallow copy of that mapping.
         """
         return self._attr
@@ -123,8 +128,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
 
-        Graph attributes and each component anklet graph is copied.
-        If the graph has a name then '-copy' is appended: otherwise the copy remains unnamed.
+        Balloon graph attributes and each component anklet graph is copied. If the balloon graph
+        has a name then '-copy' is appended: otherwise the copy remains unnamed.
 
         Returns
         -------
@@ -141,7 +146,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         """Return a string encoding of the balloon graph's data.
 
         The balloon attribute and two data strings of each anklet graph are formated
-        as `"[{ballon} | {node_data} | {hyperedge_data}]"` and then joined via `", "`.
+        as `"[{ballon} | {nodes} | {hyperedges}]"` and then joined via `", "`.
 
         Returns
         -------
@@ -151,7 +156,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         Raises
         ------
         ValueError
-            If the balloon graph does not have a valid structure.
+            If an anklet graph does not have a 'balloon' attribute.
 
         Examples
         --------
@@ -391,7 +396,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
                 self._reset_valid_structure()
                 raise exc
 
-        # Check structure of the incidence graph:
+        # Check the structure of the incidence graph...
         inc_graph = self.to_incidence_graph()
 
         # 1) If a component anklet graph has a single node then that node
