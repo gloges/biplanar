@@ -14,8 +14,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     _attr: dict[str, Any]
     _valid_structure: int | None
 
-    def __init__(self, *ankletgraphs: AnkletGraph[T], name: str = "", **attr: Any) -> None:
-        super().__init__(ankletgraphs)
+    def __init__(self, *anklet_graphs: AnkletGraph[T], name: str = "", **attr: Any) -> None:
+        super().__init__(anklet_graphs)
         self._name = name
         self._attr = attr
         self._reset_valid_structure()
@@ -23,7 +23,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     @classmethod
     def from_data_string(
         cls,
-        data_string: str,
+        data: str,
         balloon_interpreter: Callable[[str], Any],
         node_interpreter: Callable[[str], T]
     ) -> Self:
@@ -33,8 +33,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         Parameters
         ----------
-        data_string : str
-            String representation of the anklet graphs,
+        data : str
+            String representation of the anklet graphs.
         balloon_interpreter : Callable[[str], Ant]
             A function that converts a balloon's string representation into the desired type.
         node_interpreter : Callable[[str], T]
@@ -67,27 +67,27 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         ValueError: the string '2, 3 | A(2, 3)' does not contain exactly
         two instances of ' | ' separating the balloon, node data and hyperedge data
         """
-        agraphs = []
-        if data_string[0] != '[' or data_string[-1] != ']':
+        anklet_graphs = []
+        if data[0] != '[' or data[-1] != ']':
             raise ValueError(
                 "data for individual anklet graphs must be enclosed by '[]' and separated by ', '"
             )
-        for agraph_strings in data_string[1:-1].split('], ['):
-            if agraph_strings.count(' | ') != 2:
+        for ag in data[1:-1].split('], ['):
+            if ag.count(' | ') != 2:
                 raise ValueError(
                     f"the string '{agraph_strings}' does not contain exactly\n"
                     "two instances of ' | ' separating the balloon, node data and hyperedge data"
                 )
-            balloon, node_data, hyperedge_data = agraph_strings.split(' | ')
-            agraphs.append(
+            balloon, nodes, hyperedges = ag.split(' | ')
+            anklet_graphs.append(
                 AnkletGraph.from_data_strings(
-                    node_data,
-                    hyperedge_data,
+                    nodes,
+                    hyperedges,
                     node_interpreter,
                     balloon=balloon_interpreter(balloon)
                 )
             )
-        return cls(*agraphs)
+        return cls(*anklet_graphs)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
