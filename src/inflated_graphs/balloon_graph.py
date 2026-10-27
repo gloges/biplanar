@@ -215,15 +215,17 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
 
         self._check_balloon_attributes()
 
-        if self[i].attributes['balloon'] == self[j].attributes['balloon']:
+        balloon_i = self[i].attributes['balloon']
+        balloon_j = self[j].attributes['balloon']
+
+        if balloon_i == balloon_j:
             raise ValueError(f"graphs {i} and {j} do not belong to different balloons")
 
         self[i] = anklet_graph_disjoint_union(self[i], self[j])
 
         for ag in self:
-            if ag.attributes['balloon'] == self[j].attributes['balloon']:
-                ag.attributes['balloon'] = self[i].attributes['balloon']
-
+            if ag.attributes['balloon'] == balloon_j:
+                ag.attributes['balloon'] = balloon_i
         self.pop(j)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
