@@ -143,7 +143,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         )
 
     def get_data_string(self) -> str:
-        """Return a string encoding of the balloon graph's data.
+        """Return a string summarizing the anklet graph data of the balloon graph.
 
         The balloon attribute and two data strings of each anklet graph are formated
         as `"[{ballon} | {nodes} | {hyperedges}]"` and then joined via `", "`.
@@ -230,6 +230,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         if i == j:
             raise ValueError('i and j must be distinct')
 
+        # Ensure all anklet graphs have a 'balloon' attribute
         self._check_balloon_attributes()
 
         balloon_i = self[i].attributes['balloon']
@@ -256,7 +257,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         -------
         dict[T, set[int]]
             Dictionary keyed by nodes.
-            Values are the sets of indices for the anklet graph components containing that node.
+            Values are the sets of indices for the anklet graphs containing that node.
 
         See Also
         --------
@@ -271,13 +272,13 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     def to_incidence_graph(self) -> nx.Graph:
         """Return the simple graph reflecting node-component incidences in the balloon graph.
 
-        The returned graph has the *nodes* and *components* of the balloon graph for nodes and edges
-        between "node" nodes and "component" nodes when a node belongs to a component anklet graph:
+        The returned graph has the *nodes* and *components* of the balloon graph for nodes
+        and edges between "node" nodes and "component" nodes when a node belongs to an anklet graph:
         this is a simple, bipartite graph.
 
-        All nodes in the bipartite graph are integers: "node" nodes have an attribute with name
-        'node' which stores the balloon graph nodes. Nodes without a 'node' attribute are
-        "component" nodes and are simply the integer index into the balloon graph.
+        All nodes in the returned bipartite graph are integers: "node" nodes have an attribute
+        with name 'node' which stores the corresponding balloon graph nodes. Nodes without a 'node'
+        attribute are "component" nodes and are simply the integer index into the balloon graph.
 
         Returns
         -------
@@ -288,13 +289,12 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         --------
         :meth:`incidence`
         """
-
         # Add integer nodes to the graph:
         # - For component-nodes use the indices of the component anklet graphs
-        # - For node-node just use the next 'n' integers (store the correspondence in 'node_ids')
+        # - For node-nodes just use the next 'n' integers (store the correspondence in 'node_ids')
         g = nx.Graph()
         g.add_nodes_from(range(len(self)))
-        node_ids = {n: len(self) + i for i, n in enumerate(self.nodes)}
+        node_ids = {n: i for i, n in enumerate(self.nodes, start=len(self))}
         g.add_nodes_from((i, {'node': n}) for n, i in node_ids.items())
 
         # Add edges between component-nodes and node-nodes when one contains the other
@@ -309,15 +309,19 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def _get_structure_hash(self) -> int:
+        """Return a hash used in :meth:`BalloonGraph.check_structure` to determine if the balloon
+        graph's structure has changed since the last validation.
+        """
         return hash(self.get_data_string())
 
     def _reset_valid_structure(self) -> None:
+        """Force a full validation on the next call of :meth:`BalloonGraph.check_structure`."""
         self._valid_structure = None
 
     def _check_balloon_attributes(self) -> None:
         """Validate that all anklet graphs belong to balloons.
 
-        Returns silently if all anklet graphs are assigned to balloons.
+        Returns quietly if all anklet graphs are assigned to balloons.
 
         Raises
         ------
@@ -361,10 +365,9 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         """Validate the structure of the balloon graph.
 
         Several conditions must be met for the structure of a balloon graph to be considered valid:
-        - All components must be non-empty, connected and planar.
-        - If a component has a single node then that node does not appear in any other component.
-        - The component anklet graphs have 'balloon' attributes which are equal
-        for components which share a node.
+        - All component anklet graphs must be non-empty, connected and planar.
+        - If an anklet graph has a single node then that node does not appear in any other.
+        - The anklet graphs have 'balloon' attributes which are equal for those which share a node.
         - The *incidence* graph, with nodes both the nodes and components of the balloon graph
         and with edges between "node" nodes and "component" nodes when that component contains
         that node, is acyclic (i.e. a forest graph).
@@ -416,8 +419,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         # Check the structure of the incidence graph...
         inc_graph = self.to_incidence_graph()
 
-        # 1) If a component anklet graph has a single node then that node
-        #    is not contained in any other component.
+        # 1) If an anklet graph has a single node then that node is not contained in any others.
         for i, ag in enumerate(self):
             if len(ag.nodes) == 1:
                 # The node 'n' of 'g' corresponds to the unique node of 'ag'. It should only have
