@@ -466,6 +466,43 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def _balloon_components(self) -> list[set[T]]:
+        """Returns sets of nodes which belong to anklet graphs with common 'balloon' attribute.
+
+        Note that a node may appear in multiple balloons if the structure is invalid.
+
+        Returns
+        -------
+        list[set[T]]
+            Sets of nodes belonging to the same balloon.
+            If the balloon graph has valid structure then these sets are disjoint.
+
+        Raises
+        ------
+        ValueError
+            If one of the anklet graphs does not have a 'balloon' attribute.
+
+        Examples
+        --------
+        A typical use case with a balloon graph with valid structure:
+
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[a | 0, 1 | A(0, 1)], "
+        ...     "[b | 2, 3, 4 | A(2, 3, 4)], "
+        ...     "[c | 5, 6 | 3 × A(5, 6)], "
+        ...     "[c | 6, 7 | A(6, 7)]",
+        ...     str, int
+        ... )
+        >>> g._balloon_components()
+        [{0, 1}, {2, 3, 4}, {5, 6, 7}]
+
+        In a balloon graph with invalid structure the returned node sets may not be disjoint:
+
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[a | 0, 1 | A(0, 1)], [b | 1, 2, 3 | A(1, 2) + 3 × A(2, 3)]", str, int
+        ... )
+        >>> g._balloon_components()
+        [{0, 1}, {1, 2, 3}]
+        """
         self._check_balloon_attributes()
 
         balloons: list[tuple[Any, set[T]]] = []
