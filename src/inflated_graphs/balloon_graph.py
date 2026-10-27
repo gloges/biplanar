@@ -162,9 +162,13 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         --------
         >>> from inflated_graphs import Anklet
         >>> ag1 = AnkletGraph(range(0, 4), {Anklet(0, 1): 1, Anklet(1, 2, 3): 2}, balloon='a')
-        >>> ag2 = AnkletGraph(range(4, 7), {Anklet(4, 5): 3}, balloon='b')
-        >>> bg = BalloonGraph(ag1, ag2)
-        >>> bg.get_data_string()
+        >>> ag2 = AnkletGraph(range(4, 7), {Anklet(4, 5): 3})
+        >>> BalloonGraph(ag1, ag2).get_data_string()
+        Traceback (most recent call last):
+        ...
+        ValueError: the anklet graph at index 1 does not have a 'balloon' attribute
+        >>> ag2.attributes['balloon'] = 'b'
+        >>> BalloonGraph(ag1, ag2).get_data_string()
         '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
         """
         self._check_balloon_attributes()
@@ -209,6 +213,19 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         ValueError
             If `i == j`, if any anklet graph does not have a 'balloon' attribute
             or if anklet graph `i` and anklet graph `j` belong to the same balloon.
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[a | 0, 1 | A(0, 1)], "
+        ...     "[b | 2, 3, 4 | A(2, 3, 4)], "
+        ...     "[c | 5, 6 | 3 × A(5, 6)], "
+        ...     "[c | 6, 7 | A(6, 7)]",
+        ...     str, int
+        ... )
+        >>> g._combine(0, 2)
+        >>> print(g.get_data_string())
+        [a | 0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)], [b | 2, 3, 4 | A(2, 3, 4)], [a | 6, 7 | A(6, 7)]
         """
         if i == j:
             raise ValueError('i and j must be distinct')
@@ -362,10 +379,8 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         Examples
         --------
         >>> from inflated_graphs import Anklet
-        >>> g1 = AnkletGraph(balloon='a')
-        >>> g1.add_hyperedge(Anklet(0, 1, 2))
-        >>> g2 = AnkletGraph()
-        >>> g2.add_hyperedge(Anklet(2, 3, 4))
+        >>> g1 = AnkletGraph(hyperedges=[Anklet(0, 1, 2)], balloon='a')
+        >>> g2 = AnkletGraph(hyperedges=[Anklet(2, 3, 4)])
         >>> BalloonGraph(g1, g2).check_structure()
         Traceback (most recent call last):
         ...
@@ -377,7 +392,7 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         ValueError: the anklet graphs containing node 2 (indices: [0, 1])
         do not all have the same value for their 'balloon' attribute
         >>> g2.attributes['balloon'] = 'a'
-        >>> BalloonGraph(g1, g2).check_structure()
+        >>> BalloonGraph(g1, g2).check_structure()  # Valid structure
         >>> g2.add_hyperedge(Anklet(1, 2))
         >>> BalloonGraph(g1, g2).check_structure()
         Traceback (most recent call last):
