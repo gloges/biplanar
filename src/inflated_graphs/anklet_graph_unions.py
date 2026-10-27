@@ -10,6 +10,9 @@ def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]
     The returned anklet graph has for its nodes and hyperedge multiset
     the union of the nodes and hyperedge multisets over the individual anklet graphs.
 
+    The attributes of the union are updated in iterating over `graphs`;
+    attributes of later anklet graphs overwrite those of earlier anklet graphs.
+
     Parameters
     ----------
     graphs : Collection[AnkletGraph[T]]
@@ -30,6 +33,7 @@ def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]
     for g in graphs:
         graph_union.add_nodes_from(g)
         graph_union.add_hyperedges_from(dict(g.hyperedges))
+        graph_union.attributes.update(g.attributes)
     return graph_union
 
 
@@ -38,6 +42,9 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
 
     The returned anklet graph has for its nodes and hyperedge multiset
     the union of the nodes and hyperedge multisets over `g` and `h`.
+
+    The attributes of the union are a combination of those of `g` and `h`. If `g` and `h` both
+    have the same attribute then the value of that attribute for `h` takes precidence.
 
     Parameters
     ----------
