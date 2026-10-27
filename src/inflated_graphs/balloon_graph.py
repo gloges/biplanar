@@ -460,3 +460,23 @@ class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
         # The structure is valid:
         # save the hash to avoid checking the structure again if it doesn't change
         self._valid_structure = self._get_structure_hash()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Balloon components
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def _balloon_components(self) -> list[set[T]]:
+        self._check_balloon_attributes()
+
+        balloons: list[tuple[Any, set[T]]] = []
+        for ag in self:
+            id_found = False
+            for i, (balloon_id, balloon_nodes) in enumerate(balloons):
+                if ag.attributes['balloon'] == balloon_id:
+                    id_found = True
+                    balloons[i] = (balloon_id, balloon_nodes.union(ag.nodes))
+                    break
+            if not id_found:
+                balloons.append((ag.attributes['balloon'], ag.nodes))
+
+        return [balloon_nodes for _, balloon_nodes in balloons]
