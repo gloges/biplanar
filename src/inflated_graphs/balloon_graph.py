@@ -236,23 +236,24 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     #   Incidence
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def incidence(self) -> dict[T, set[int]]:
+    def incidence(self) -> dict[T, set[tuple[int, int]]]:
         """Return the incidence data.
 
         Returns
         -------
-        dict[T, set[int]]
-            Dictionary keyed by nodes.
-            Values are the sets of indices for the anklet graphs containing that node.
+        dict[T, set[tuple[int, int]]]
+            Dictionary keyed by nodes. Values are the sets of index pairs giving
+            the positions of the anklet graphs containing that node.
 
         See Also
         --------
         :meth:`to_incidence_graph`
         """
         inc = {n: set() for n in self.nodes}
-        for i, ag in enumerate(self):
-            for n in ag.nodes:
-                inc[n].add(i)
+        for i, balloon in enumerate(self):
+            for j, ag in enumerate(balloon):
+                for n in ag.nodes:
+                    inc[n].add((i, j))
         return inc
 
     def to_incidence_graph(self) -> nx.Graph:
@@ -262,9 +263,9 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         and edges between "node" nodes and "anklet graphs" nodes when a node belongs
         to an anklet graph: this is a simple, bipartite graph.
 
-        All nodes in the returned bipartite graph are integers: "node" nodes have an attribute
-        with name 'node' which stores the corresponding balloon graph nodes. Nodes without a 'node'
-        attribute are "anklet graph" nodes and are simply the integer index into the balloon graph.
+        "Node" nodes in the returned bipartite graph are integers and have an attribute with name
+        'node' storing the corresponding node from the balloon graph. "Anklet graph" nodes
+        are pairs of integers giving the position of the anklet graph in the balloon graph.
 
         Returns
         -------
@@ -275,18 +276,16 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         --------
         :meth:`incidence`
         """
-        # Add integer nodes to the graph:
-        # - For "anklet graph" nodes use the indices of the anklet graphs
-        # - For "node" nodes just use the next 'n' integers (store the correspondence in 'node_ids')
         g = nx.Graph()
-        g.add_nodes_from(range(len(self)))
-        node_ids = {n: i for i, n in enumerate(self.nodes, start=len(self))}
+        node_ids = {n: i for i, n in enumerate(self.nodes)}
         g.add_nodes_from((i, {'node': n}) for n, i in node_ids.items())
+        g.add_nodes_from((i, j) for i, balloon in enumerate(self) for j in range(len(balloon)))
 
         # Add edges between "anklet graph" nodes and "node" nodes when one contains the other
-        for i, ag in enumerate(self):
-            for n in ag:
-                g.add_edge(i, node_ids[n])
+        for i, balloon in enumerate(self):
+            for j, ag in enumerate(balloon):
+                for n in ag:
+                    g.add_edge((i, j), node_ids[n])
 
         return g
 
