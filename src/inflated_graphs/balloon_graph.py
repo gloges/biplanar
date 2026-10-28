@@ -1,6 +1,6 @@
 """Balloon graphs."""
 
-from collections.abc import Callable, Hashable, Mapping
+from collections.abc import Callable, Hashable, Iterator, Mapping
 from typing import Any, Self
 import networkx as nx
 from .anklet_graph import AnkletGraph
@@ -123,6 +123,12 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """The sets of nodes in each balloon."""
         return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
 
+    def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
+        """Yield (balloon, index, anklet_graph) tuples."""
+        for i, balloon in enumerate(self):
+            for j, ag in enumerate(balloon):
+                yield i, j, ag
+
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
 
@@ -173,9 +179,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
     def reduce(self) -> None:
         """Reduce each anklet graph: see :meth:`AnkletGraph.reduce`."""
-        for balloon in self:
-            for ag in balloon:
-                ag.reduce()
+        for _, _, ag in self.iter_anklet_graphs():
+            ag.reduce()
 
     def _combine(self, pos_a: tuple[int, int], pos_b: tuple[int, int]) -> None:
         """Combine two anklet graphs.
@@ -250,10 +255,9 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         :meth:`to_incidence_graph`
         """
         inc = {n: set() for n in self.nodes}
-        for i, balloon in enumerate(self):
-            for j, ag in enumerate(balloon):
-                for n in ag.nodes:
-                    inc[n].add((i, j))
+        for i, j, ag in self.iter_anklet_graphs():
+            for n in ag.nodes:
+                inc[n].add((i, j))
         return inc
 
     def to_incidence_graph(self) -> nx.Graph:
@@ -279,13 +283,12 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         g = nx.Graph()
         node_ids = {n: i for i, n in enumerate(self.nodes)}
         g.add_nodes_from((i, {'node': n}) for n, i in node_ids.items())
-        g.add_nodes_from((i, j) for i, balloon in enumerate(self) for j in range(len(balloon)))
+        g.add_nodes_from((i, j) for i, j, _ in self.iter_anklet_graphs())
 
         # Add edges between "anklet graph" nodes and "node" nodes when one contains the other
-        for i, balloon in enumerate(self):
-            for j, ag in enumerate(balloon):
-                for n in ag:
-                    g.add_edge((i, j), node_ids[n])
+        for i, j, ag in self.iter_anklet_graphs():
+            for n in ag:
+                g.add_edge((i, j), node_ids[n])
 
         return g
 
@@ -341,17 +344,16 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             If a node appears in two (or more) anklet graphs belonging to different balloons.
         """
         node_balloons = {}
-        for i, balloon in enumerate(self):
-            for ag in balloon:
-                for n in ag:
-                    if n not in node_balloons:
-                        node_balloons[n] = i
-                    elif node_balloons[n] != i:
-                        self._reset_valid_structure()
-                        raise ValueError(
-                            f"the node '{n}' appears in at least two balloons"
-                            f" ({node_balloons[n]} and {i})"
-                        )
+        for i, _, ag in self.iter_anklet_graphs():
+            for n in ag:
+                if n not in node_balloons:
+                    node_balloons[n] = i
+                elif node_balloons[n] != i:
+                    self._reset_valid_structure()
+                    raise ValueError(
+                        f"the node '{n}' appears in at least two balloons"
+                        f" ({node_balloons[n]} and {i})"
+                    )
 
     def check_structure(self) -> None:
         """Validate the structure of the balloon graph.
