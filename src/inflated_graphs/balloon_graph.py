@@ -173,68 +173,64 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
     def reduce(self) -> None:
         """Reduce each anklet graph: see :meth:`AnkletGraph.reduce`."""
-        for ag in self:
-            ag.reduce()
+        for balloon in self:
+            for ag in balloon:
+                ag.reduce()
 
-    def _combine(self, i: int, j: int) -> None:
+    def _combine(self, pos_a: tuple[int, int], pos_b: tuple[int, int]) -> None:
         """Combine two anklet graphs.
 
-        The anklet graphs at indices `i` and `j` must (i) belong to different balloons and
-        (ii) have no nodes in common. Note that (ii) follows from (i) if the balloon graph
+        The two anklet graphs at positions `pos_a` and `pos_b` must be in different balloons
+        (*i.e.* the zeroth elements of `pos_a` and `pos_b` must be different) and have no nodes
+        in common. Note that the latter condition follows from the former if the balloon graph
         has valid structure (see :meth:`BalloonGraph.check_structure`).
 
         In order, the following changes are made:
-        - The graph at index `i` is replaced by the *disjoint* union
-        of itself and the graph at index `j`
-        - The anklet graphs in the same balloon as that at index `j` have their balloon attributes
-        updated to match that of the graph at index `i`.
-        - The graph at index `j` is removed.
+        - The anklet graph at position `pos_a` is replaced by the *disjoint* union
+        of itself and the anklet graph at position `pos_b`.
+        - The anklet graph at position `pos_b` is removed.
+        - The anklet graphs of balloon `b` are moved into balloon `a`.
+        - Balloon `b` is removed.
 
         Note that since the disjoint union produces an anklet graph which is not connected,
         the balloon graph will *not* have a valid structure after calling this method.
 
         Parameters
         ----------
-        i, j : int
-            Indicies for the anklet graphs to combine.
+        pos_a, pos_b : tuple[int, int]
+            Positions of the two anklet graphs to be combined.
 
         Raises
         ------
         ValueError
-            If `i == j`, if any anklet graph does not have a 'balloon' attribute
-            or if anklet graph `i` and anklet graph `j` belong to the same balloon.
+            If the anklet graphs at positions `pos_a` and `pos_b`
+            are in the same balloon or share a node.
 
         Examples
         --------
         >>> g = BalloonGraph.from_data_string(
-        ...     "[a | 0, 1 | A(0, 1)], "
-        ...     "[b | 2, 3, 4 | A(2, 3, 4)], "
-        ...     "[c | 5, 6 | 3 × A(5, 6)], "
-        ...     "[c | 6, 7 | A(6, 7)]",
-        ...     str, int
+        ...     "[<0, 1 | A(0, 1)>], "
+        ...     "[<2, 3, 4 | A(2, 3, 4)>], "
+        ...     "[<5, 6 | 3 × A(5, 6)>, <6, 7 | A(6, 7)>]",
+        ...     int
         ... )
-        >>> g._combine(0, 2)
+        >>> g._combine((0, 0), (2, 0))
         >>> print(g.get_data_string())
-        [a | 0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)], [b | 2, 3, 4 | A(2, 3, 4)], [a | 6, 7 | A(6, 7)]
+        [<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]
         """
-        if i == j:
-            raise ValueError('i and j must be distinct')
+        balloon_a, index_a = pos_a
+        balloon_b, index_b = pos_b
 
-        # Ensure all anklet graphs have a 'balloon' attribute
-        self._check_balloon_attributes()
+        if balloon_a == balloon_b:
+            raise ValueError(f'the positions {pos_a} and {pos_b} point to the same balloon')
 
-        balloon_i = self[i].attributes['balloon']
-        balloon_j = self[j].attributes['balloon']
-
-        if balloon_i == balloon_j:
-            raise ValueError(f"graphs {i} and {j} do not belong to different balloons")
-
-        self[i] = anklet_graph_disjoint_union(self[i], self[j])
-
-        for ag in self:
-            if ag.attributes['balloon'] == balloon_j:
-                ag.attributes['balloon'] = balloon_i
-        self.pop(j)
+        self[balloon_a][index_a] = anklet_graph_disjoint_union(
+            self[balloon_a][index_a],
+            self[balloon_b][index_b]
+        )
+        self[balloon_b].pop(index_b)
+        self[balloon_a].extend(self[balloon_b])
+        self.pop(balloon_b)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence
