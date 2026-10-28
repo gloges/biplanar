@@ -303,48 +303,55 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """Force a full validation on the next call of :meth:`BalloonGraph.check_structure`."""
         self._valid_structure = None
 
-    def _check_balloon_attributes(self) -> None:
-        """Validate that all anklet graphs belong to balloons.
+    def _check_anklet_graph_structure(self, pos: tuple[int, int]) -> None:
+        """Validate the structure of an anklet graph.
 
-        Returns quietly if all anklet graphs are assigned to balloons.
+        Checks if the anklet graph (i) is non-empty, (ii) is connected and (iii) is planar.
 
-        Raises
-        ------
-        ValueError
-            If one of the anklet graphs does not have a 'balloon' attribute.
-        """
-        for i, ag in enumerate(self):
-            if 'balloon' not in ag.attributes:
-                raise ValueError(
-                    f"the anklet graph at index {i} does not have a 'balloon' attribute"
-                )
-
-    def _check_anklet_graph_structure(self, i: int) -> None:
-        """Validate the structure of the `i`ᵗʰ anklet graph.
-
-        Checks if the anklet graph (i) is non-empty, (ii) has a 'balloon' attribute,
-        (iii) is connected and (iv) is planar.
-
-        Returns silently if the structure of the `i`ᵗʰ anklet graph is valid.
+        Returns silently if the structure of the anklet graph is valid.
 
         Raises
         ------
         ValueError
-            If one of the four requirements above is not met (a short message explains the issue).
+            If one of the three requirements above is not met (a short message explains the issue).
         """
-        if not self[i].nodes:
-            raise ValueError(f"the anklet graph at index {i} is empty")
+        balloon, index = pos
+        anklet_graph = self[balloon][index]
 
-        if 'balloon' not in self[i].attributes:
-            raise ValueError(
-                f"the anklet graph at index {i} does not have a 'balloon' attribute"
-            )
+        if not anklet_graph.nodes:
+            self._reset_valid_structure()
+            raise ValueError(f"the anklet graph at position {pos} is empty")
 
-        if not self[i].is_connected():
-            raise ValueError(f"the anklet graph at index {i} is not connected")
+        if not anklet_graph.is_connected():
+            self._reset_valid_structure()
+            raise ValueError(f"the anklet graph at position {pos} is not connected")
 
-        if not self[i].is_planar():
-            raise ValueError(f"the anklet graph at index {i} is not planar")
+        if not anklet_graph.is_planar():
+            self._reset_valid_structure()
+            raise ValueError(f"the anklet graph at position {pos} is not planar")
+
+    def _check_node_monogamy(self) -> None:
+        """Validates that each node appears in only one balloon.
+
+        Returns silently if each node is "monogamous".
+
+        Raises
+        ------
+        ValueError
+            If a node appears in two (or more) anklet graphs belonging to different balloons.
+        """
+        node_balloons = {}
+        for i, balloon in enumerate(self):
+            for ag in balloon:
+                for n in ag:
+                    if n not in node_balloons:
+                        node_balloons[n] = i
+                    elif node_balloons[n] != i:
+                        self._reset_valid_structure()
+                        raise ValueError(
+                            f"the node '{n}' appears in at least two balloons"
+                            f" ({node_balloons[n]} and {i})"
+                        )
 
     def check_structure(self) -> None:
         """Validate the structure of the balloon graph.
