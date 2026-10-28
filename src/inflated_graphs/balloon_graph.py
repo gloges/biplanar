@@ -7,15 +7,15 @@ from .anklet_graph import AnkletGraph
 from .anklet_graph_unions import disjoint_union as anklet_graph_disjoint_union
 
 
-class BalloonGraph[T: Hashable](list[AnkletGraph[T]]):
+class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
 
     _name: str
     _attr: dict[str, Any]
     _valid_structure: int | None
 
-    def __init__(self, *anklet_graphs: AnkletGraph[T], name: str = "", **attr: Any) -> None:
-        super().__init__(anklet_graphs)
+    def __init__(self, *balloons: list[AnkletGraph[T]], name: str = "", **attr: Any) -> None:
+        super().__init__(balloons)
         self._name = name
         self._attr = attr
         self._reset_valid_structure()
