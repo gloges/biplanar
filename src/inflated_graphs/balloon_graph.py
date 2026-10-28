@@ -1,6 +1,6 @@
 """Balloon graphs."""
 
-from collections.abc import Callable, Hashable, Mapping
+from collections.abc import Callable, Hashable, Iterator, Mapping
 from typing import Any, Self
 import networkx as nx
 from .anklet_graph import AnkletGraph
@@ -122,6 +122,12 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     def balloon_nodes(self) -> list[set[T]]:
         """The sets of nodes in each balloon."""
         return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
+
+    def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
+        """Yield (balloon, index, anklet_graph) tuples."""
+        for i, balloon in enumerate(self):
+            for j, ag in enumerate(balloon):
+                yield i, j, ag
 
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
