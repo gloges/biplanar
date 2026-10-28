@@ -123,7 +123,11 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     @property
     def nodes(self) -> set[T]:
         """The set of nodes."""
-        return set().union(*[ag.nodes for ag in self])
+        return set().union(*[ag.nodes for balloon in self for ag in balloon])
+
+    def balloon_nodes(self) -> list[set[T]]:
+        """The sets of nodes in each balloon."""
+        return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
 
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
@@ -137,7 +141,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             A copy of the balloon graph.
         """
         return type(self)(
-            *[ag.copy() for ag in self],
+            *[[ag.copy() for ag in balloon] for balloon in self],
             name=self.name + '-copy' if self.name else '',
             **self._attr.copy()
         )
