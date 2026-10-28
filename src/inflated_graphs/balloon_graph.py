@@ -357,9 +357,10 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """Validate the structure of the balloon graph.
 
         Several conditions must be met for the structure of a balloon graph to be considered valid:
-        - All anklet graphs must be non-empty, connected and planar.
-        - If an anklet graph has a single node then that node does not appear in any other.
-        - The anklet graphs have 'balloon' attributes which are equal for pairs which share a node.
+        - Each anklet graphs is non-empty, connected and planar.
+        - The sets of nodes contained in each balloon are disjoint.
+        - If an anklet graph has a single node then that node
+        does not appear in any other anklet graph.
         - The *incidence* graph, with nodes both the nodes and anklet graphs of the balloon graph
         and with edges between "node" nodes and "anklet graph" nodes when that anklet graph contains
         that node, is acyclic (i.e. a forest graph).
@@ -374,68 +375,60 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         Examples
         --------
         >>> from inflated_graphs import Anklet
-        >>> g1 = AnkletGraph(hyperedges=[Anklet(0, 1, 2)], balloon='a')
-        >>> g2 = AnkletGraph(hyperedges=[Anklet(2, 3, 4)])
-        >>> BalloonGraph(g1, g2).check_structure()
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | 3 × A(0, 1, 2)>, < | >], [<3 | >]", int
+        ... )
+        >>> g.check_structure()
         Traceback (most recent call last):
         ...
-        ValueError: the anklet graph at index 1 does not have a 'balloon' attribute
-        >>> g2.attributes['balloon'] = 'b'
-        >>> BalloonGraph(g1, g2).check_structure()
+        ValueError: the anklet graph at position (0, 0) is not planar
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | 2 × A(0, 1, 2)>, < | >], [<3 | >]", int
+        ... )
+        >>> g.check_structure()
         Traceback (most recent call last):
         ...
-        ValueError: the anklet graphs containing node 2 (indices: [0, 1])
-        do not all have the same value for their 'balloon' attribute
-        >>> g2.attributes['balloon'] = 'a'
-        >>> BalloonGraph(g1, g2).check_structure()  # Valid structure
-        >>> g2.add_hyperedge(Anklet(1, 2))
-        >>> BalloonGraph(g1, g2).check_structure()
+        ValueError: the anklet graph at position (0, 1) is empty
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | 2 × A(0, 1, 2)>, <2 | >], [<3 | >]", int
+        ... )
+        >>> g.check_structure()
         Traceback (most recent call last):
         ...
-        ValueError: Invalid structure. the node / anklet graph incidence graph contains the cycle
-        (graph 0) → (node 1) → (graph 1) → (node 2) → (graph 0)
+        ValueError: the anklet graph at position (0, 1) has only one node
+        which also appears in the anklet graph at position (0, 0)
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | 2 × A(0, 1, 2)>, <2, 3 | A(2, 3)>], [<3 | >]", int
+        ... )
+        >>> g.check_structure()
+        Traceback (most recent call last):
+        ...
+        ValueError: the node '3' appears in at least two balloons (0 and 1)
         """
         if self._get_structure_hash() == self._valid_structure:
             # If the hash has not changed since the last successful structure check,
             # there is no need to check again
             return
 
-        # Check the structure of individual anklet graphs
-        for i in range(len(self)):
-            try:
-                self._check_anklet_graph_structure(i)
-            except ValueError as exc:
-                self._reset_valid_structure()
-                raise exc
+        for i, balloon in enumerate(self):
+            for j in range(len(balloon)):
+                self._check_anklet_graph_structure((i, j))
 
-        # Check the structure of the incidence graph...
+        self._check_node_monogamy()
+
+        for i, balloon in enumerate(self):
+            for j, ag in enumerate(balloon):
+                if len(ag.nodes) == 1:
+                    for j2, ag2 in enumerate(balloon):
+                        if j != j2 and ag.nodes & ag2.nodes:
+                            self._reset_valid_structure()
+                            raise ValueError(
+                                f"the anklet graph at position ({i}, {j}) has only one node\n"
+                                f"which also appears in the anklet graph at position ({i}, {j2})"
+                            )
+
         inc_graph = self.to_incidence_graph()
 
-        # 1) If an anklet graph has a single node then that node is not contained in any others.
-        for i, ag in enumerate(self):
-            if len(ag.nodes) == 1:
-                # The node 'n' of 'g' corresponds to the unique node of 'ag'. It should only have
-                # one neighbor in the incidence graph, namely node 'i' (corresponding to 'ag')
-                n = list(inc_graph.adj[i])[0]
-                if set(inc_graph.adj[n]) != {i}:
-                    self._reset_valid_structure()
-                    raise ValueError(
-                        f"the anklet graph at index {i} has only one node {ag.nodes}"
-                        f"\nand this node appears in multiple anklet graphs: {inc_graph.adj[n]}"
-                    )
-
-        # 2) For each node the anklet graphs containing it must have the same value for 'balloon'.
-        for i in inc_graph:
-            if 'node' in inc_graph.nodes[i]:
-                if len({self[j].attributes['balloon'] for j in inc_graph.neighbors(i)}) != 1:
-                    self._reset_valid_structure()
-                    raise ValueError(
-                        f"the anklet graphs containing node {inc_graph.nodes[i]['node']}"
-                        f" (indices: {sorted(inc_graph.neighbors(i))})\n"
-                        "do not all have the same value for their 'balloon' attribute"
-                    )
-
-        # 3) There are no cycles.
         if not nx.is_forest(inc_graph):
             cycle_data = [
                 f"(node {inc_graph.nodes[i]['node']})"
