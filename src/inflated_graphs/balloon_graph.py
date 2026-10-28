@@ -21,23 +21,16 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         self._reset_valid_structure()
 
     @classmethod
-    def from_data_string(
-        cls,
-        data: str,
-        balloon_interpreter: Callable[[str], Any],
-        node_interpreter: Callable[[str], T]
-    ) -> Self:
-        """Construct a balloon graph from a string encoding of its anklet graphs.
+    def from_data_string(cls, data: str, interpreter: Callable[[str], T]) -> Self:
+        """Construct a balloon graph from a string summarizing its balloons and anklet graphs.
 
         The input string must follow the format produced by :meth:`BalloonGraph.get_data_string`.
 
         Parameters
         ----------
         data : str
-            String representation of the anklet graphs.
-        balloon_interpreter : Callable[[str], Ant]
-            A function that converts a balloon's string representation into the desired type.
-        node_interpreter : Callable[[str], T]
+            String encoding of the balloon graph.
+        interpreter : Callable[[str], T]
             A function that converts a node's string representation into a node of type `T`.
 
         Returns
@@ -55,44 +48,45 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         A typical use case:
 
         >>> g = BalloonGraph.from_data_string(
-        ...     "[a | 0, 1, 2 | 3 × A(0, 1) + A(1, 2)], [a | 2, 3 | A(2, 3)]", str, int
+        ...     "[<0, 1, 2 | 3 × A(0, 1) + A(1, 2)>, <2, 3 | A(2, 3)>], [<4 | >]", int
         ... )
-        >>> for ag in g:
-        ...    print(ag.attributes['balloon'], str(ag.nodes).ljust(9), ag.hyperedges)
-        a {0, 1, 2} ((A(0, 1), 3), (A(1, 2), 1))
-        a {2, 3}    ((A(2, 3), 1),)
-
-        The data for each anklet graph must include a balloon attribute, nodes and hyperedges:
-
-        >>> BalloonGraph.from_data_string(
-        ...     "[a | 0, 1, 2 | 3 × A(0, 1) + A(1, 2)], [2, 3 | A(2, 3)]", str, int
-        ... )
-        Traceback (most recent call last):
-        ...
-        ValueError: the string '2, 3 | A(2, 3)'
-        is not of the expected format '{balloon} | {nodes} | {hyperedges}'
+        >>> for i, balloon in enumerate(g):
+        ...    print(f"balloon {i}:")
+        ...    for ag in balloon:
+        ...        print('   ', str(ag.nodes).ljust(9), ag.hyperedges)
+        balloon 0:
+            {0, 1, 2} ((A(0, 1), 3), (A(1, 2), 1))
+            {2, 3}    ((A(2, 3), 1),)
+        balloon 1:
+            {4}       ()
         """
-        anklet_graphs = []
-        if data[0] != '[' or data[-1] != ']':
-            raise ValueError(
-                "data for individual anklet graphs must be enclosed by '[]' and separated by ', '"
-            )
-        for ag in data[1:-1].split('], ['):
-            if ag.count(' | ') != 2:
+        balloons = []
+        if data:
+            if data[0] != '[' or data[-1] != ']':
                 raise ValueError(
-                    f"the string '{ag}'\n"
-                    "is not of the expected format '{balloon} | {nodes} | {hyperedges}'"
+                    "data for each ballon must be enclosed by '[ ]' and separated by ', '"
                 )
-            balloon, nodes, hyperedges = ag.split(' | ')
-            anklet_graphs.append(
-                AnkletGraph.from_data_strings(
-                    nodes,
-                    hyperedges,
-                    node_interpreter,
-                    balloon=balloon_interpreter(balloon)
-                )
-            )
-        return cls(*anklet_graphs)
+            for balloon_data in data[1:-1].split('], ['):
+                if balloon_data[0] != '<' or balloon_data[-1] != '>':
+                    raise ValueError(
+                        "data for each anklet graph in a balloon must"
+                        " be enclosed by '< >' and separated by ', '"
+                    )
+
+                balloon = []
+                for anklet_graph_data in balloon_data[1:-1].split('>, <'):
+                    if anklet_graph_data.count(' | ') != 1:
+                        raise ValueError(
+                            f"the string '{anklet_graph_data}'\n"
+                            "is not of the expected format '{nodes} | {hyperedges}'"
+                        )
+                    nodes, hyperedges = anklet_graph_data.split(' | ')
+                    balloon.append(
+                        AnkletGraph.from_data_strings(nodes, hyperedges, interpreter)
+                    )
+                balloons.append(balloon)
+
+        return cls(*balloons)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -147,39 +141,31 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         )
 
     def get_data_string(self) -> str:
-        """Return a string summarizing the anklet graph data of the balloon graph.
+        """Return a string summarizing the balloons and anklet graphs of the balloon graph.
 
-        The balloon attribute and two data strings of each anklet graph are formated
-        as `"[{ballon} | {nodes} | {hyperedges}]"` and then joined via `", "`.
+        The data strings for each anklet graph are formated as `<{nodes} | {hyperedges}>`
+        (using the strings produced by :meth:`AnkletGraph.get_data_strings()`).
+        These are then collected into brackets by balloon and joined by commas:
+        `[<{nodes_0} | {hyperedges_0}>, <{nodes_1} | {hyperedges_1}>, ...], [...], ...`.
 
         Returns
         -------
         str
-            String encoding of the data needed to reconstruct the balloon graph.
-
-        Raises
-        ------
-        ValueError
-            If an anklet graph does not have a 'balloon' attribute.
+            An encoding of the balloon graph.
 
         Examples
         --------
         >>> from inflated_graphs import Anklet
-        >>> ag1 = AnkletGraph(range(0, 4), {Anklet(0, 1): 1, Anklet(1, 2, 3): 2}, balloon='a')
-        >>> ag2 = AnkletGraph(range(4, 7), {Anklet(4, 5): 3})
-        >>> BalloonGraph(ag1, ag2).get_data_string()
-        Traceback (most recent call last):
-        ...
-        ValueError: the anklet graph at index 1 does not have a 'balloon' attribute
-        >>> ag2.attributes['balloon'] = 'b'
-        >>> BalloonGraph(ag1, ag2).get_data_string()
-        '[a | 0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)], [b | 4, 5, 6 | 3 × A(4, 5)]'
+        >>> ag1 = AnkletGraph(range(0, 3), {Anklet(0, 1): 1, Anklet(0, 1, 2): 2})
+        >>> ag2 = AnkletGraph(range(3, 6), {Anklet(3, 4): 3})
+        >>> ag3 = AnkletGraph(range(6, 9), {Anklet(6, 7, 8)})
+        >>> BalloonGraph([ag1, ag2], [ag3]).get_data_string()
+        '[<0, 1, 2 | A(0, 1) + 2 × A(0, 1, 2)>, <3, 4, 5 | 3 × A(3, 4)>], [<6, 7, 8 | A(6, 7, 8)>]'
         """
-        self._check_balloon_attributes()
-        return ", ".join(
-            '[' + " | ".join([str(ag.attributes['balloon']), *ag.get_data_strings()]) + ']'
-            for ag in self
-        )
+        return ", ".join([
+            '[' + ", ".join(['<' + " | ".join(ag.get_data_strings()) + '>' for ag in balloon]) + ']'
+            for balloon in self
+        ])
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Graph operations
