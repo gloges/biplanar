@@ -1,18 +1,27 @@
 """Combinatorial anklets."""
 
-from collections.abc import Collection, Container, Iterable, Iterator
+from collections.abc import Callable, Collection, Container, Iterable, Iterator
 from itertools import combinations
 from types import NotImplementedType
-from typing import Self
+from typing import Any, Self
 import networkx as nx
 
 
 class Anklet[T](tuple[T, ...]):
-    """An anklet is a combinatorial bracelet with all beads distinct.
+    """An **anklet** is a combinatorial bracelet with all beads distinct.
+
+    Anklets can be thought of as tuples with a weaker notion of equality, where two tuples
+    are "equal" if one can be obtained from the other by cyclic rotation and reversal.
+    Equivalently, an anklet with `n` beads can be viewed as an *equivalence class* of tuples given
+    by the orbit of its defining `n`-tuple under the group action of `Dihₙ`.
 
     Examples
     --------
     >>> Anklet(0, 1, 2, 3) == Anklet(1, 2, 3, 0)
+    True
+    >>> Anklet(0, 1, 2, 3) == Anklet(2, 3, 0, 1)
+    True
+    >>> Anklet(0, 1, 2, 3) == Anklet(2, 1, 0, 3)
     True
     >>> Anklet(0, 1, 2, 3) == Anklet(0, 1, 3, 2)
     False
@@ -73,7 +82,7 @@ class Anklet[T](tuple[T, ...]):
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def without_bead(self, bead_to_remove: T, /) -> Self:
-        """Return the anklet with a bead removed.
+        """Return the sub-anklet formed by removing a bead.
 
         The relative order of all retained beads is preserved.
 
@@ -103,7 +112,7 @@ class Anklet[T](tuple[T, ...]):
         return type(self).from_iterable(b for b in self if b is not bead_to_remove)
 
     def without_beads(self, beads_to_remove: Container[T], /) -> Self:
-        """Return the anklet with beads removed.
+        """Return the sub-anklet formed by removing beads.
 
         The relative order of all retained beads is preserved.
 
@@ -132,7 +141,7 @@ class Anklet[T](tuple[T, ...]):
         return type(self).from_iterable(b for b in self if b not in beads_to_remove)
 
     def restrict_beads(self, beads_to_keep: Container[T], /) -> Self:
-        """Return the anklet with beads removed.
+        """Return the sub-anklet formed by restricting to a subset of the beads.
 
         The relative order of all retained beads is preserved.
 
@@ -213,9 +222,9 @@ class Anklet[T](tuple[T, ...]):
     def __le__(self, other: object) -> NotImplementedType | bool:
         """Return whether the anklet is a *sub-anklet* of `other`.
 
-        An anklet `a` is a sub-anklet of another anklet `b` (*i.e.* `a <= b`) if the beads of `a`
-        appear in the prescribed cyclic order as a subsequence of `b`. Equivalently, `a <= b` means
-        that it is possible to delete beads from `b` to produce `a`.
+        An anklet `a` is a sub-anklet of another anklet `b` (*i.e.* `a <= b`)
+        if the beads of `a` appear in the prescribed cyclic order as a subsequence of `b`.
+        Equivalently, `a <= b` means that it is possible to delete beads from `b` to produce `a`.
 
         This "sub-anklet" relation is a partial order on anklets
         with the empty anklet of length zero as its least element.
@@ -283,8 +292,13 @@ class Anklet[T](tuple[T, ...]):
     #   Other
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def standardized(self) -> Self:
+    def standardized(self, bead_key: Callable[[T], Any] | None = None) -> Self:
         """Return an equivalent anklet with minimal defining tuple.
+
+        Parameters
+        ----------
+        bead_key : Callable[[T], Any] or None, optional (default=None)
+            Function mapping beads to orderable keys. If None, compare beads directly.
 
         Returns
         -------
@@ -302,12 +316,19 @@ class Anklet[T](tuple[T, ...]):
         A(0, 1, 2)
         >>> Anklet(2, 1, 0, 3).standardized()
         A(0, 1, 2, 3)
-        >>> Anklet(0j, 1j).standardized()
+        >>> Anklet(1+0j, 1j).standardized()
         Traceback (most recent call last):
         ...
         TypeError: '<' not supported between instances of 'complex' and 'complex'
+        >>> Anklet(1+0j, 1j).standardized(lambda z: (z.real, z.imag))
+        A(1j, (1+0j))
         """
-        return type(self).from_iterable(min(self.representatives()))
+        return type(self).from_iterable(
+            min(
+                self.representatives(),
+                key=None if bead_key is None else lambda t: tuple(map(bead_key, t))
+            )
+        )
 
     def to_wheel_graph(self) -> nx.Graph:
         """Return a wheel graph representation of the anklet.
@@ -405,12 +426,12 @@ class Anklet[T](tuple[T, ...]):
             return False
 
         # Form the disjoint union of three labeled wheel graphs,
-        # one for the parent anklet and one each for the subanklets corresponding to 'x' and 'y'
-        subanklet_x = self.restrict_beads(x)
-        subanklet_y = self.restrict_beads(y)
-        g = nx.disjoint_union_all(a.to_wheel_graph() for a in [self, subanklet_x, subanklet_y])
+        # one for the parent anklet and one each for the sub-anklets corresponding to 'x' and 'y'
+        g = nx.disjoint_union_all(
+            a.to_wheel_graph() for a in [self, self.restrict_beads(x), self.restrict_beads(y)]
+        )
 
-        # Join nodes which share a bead label
+        # Join by an edge all pairs of nodes which share a bead label
         label_groups = {}
         for n, label in nx.get_node_attributes(g, 'anklet').items():
             if label not in label_groups:
