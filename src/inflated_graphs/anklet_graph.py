@@ -56,27 +56,21 @@ class AnkletGraph[T: Hashable]:
         self.add_hyperedges_from(hyperedges)
 
     @classmethod
-    def from_data_strings(
+    def from_data_string(
         cls,
-        nodes: str,
-        hyperedges: str,
+        data: str,
         interpreter: Callable[[str], T],
         name: str = "",
         **attr: Any
     ) -> Self:
-        """Construct an anklet graph from string encodings of the nodes and hyperedges.
+        """Construct an anklet graph from a string encoding of the nodes and hyperedges.
 
-        The node and hyperedge strings must follow the format
-        produced by :meth:`AnkletGraph.get_data_strings`.
+        The input data must follow the format produced by :meth:`AnkletGraph.data_string`.
 
         Parameters
         ----------
-        nodes : str
-            String representations of nodes, separated by `', '`.
-        hyperedges : str
-            String representations of the hyperedges, separated by `' + '`.
-            Each hyperedge must have the form `k × A(...)` or `A(...)`,
-            with the latter indicating a multiplicity of one.
+        data : str
+            String encoding of nodes and hyperedges: see :meth:`AnkletGraph.data_string`.
         interpreter : Callable[[str], T]
             A function that converts a node's string representation into a node of type `T`.
         name : str, optional (default="")
@@ -99,31 +93,33 @@ class AnkletGraph[T: Hashable]:
         --------
         A typical use case:
 
-        >>> g = AnkletGraph.from_data_strings('1, 3, 5', '2 × A(1, 3) + A(1, 3, 5)', int)
+        >>> g = AnkletGraph.from_data_string('<1, 3, 5 | 2 × A(1, 3) + A(1, 3, 5)>', int)
         >>> sorted(g.nodes)
         [1, 3, 5]
         >>> g.hyperedges
         ((A(1, 3), 2), (A(1, 3, 5), 1))
 
-        The hyperedges' incident nodes are automatically added to the anklet graph
-        and may be omitted from `node_string`:
+        The hyperedges' incident nodes are automatically added to the anklet graph:
 
-        >>> g = AnkletGraph.from_data_strings('0', '2 × A(1, 3) + A(1, 3, 5)', int)
+        >>> g = AnkletGraph.from_data_string('<0 | 2 × A(1, 3) + A(1, 3, 5)>', int)
         >>> sorted(g.nodes)
         [0, 1, 3, 5]
-        >>> g.hyperedges
-        ((A(1, 3), 2), (A(1, 3, 5), 1))
 
-        An anklet graph is equal to the anklet graph created from its data strings:
+        An anklet graph is equal to the anklet graph created from its data string:
 
         >>> g = AnkletGraph(range(5))
         >>> g.add_hyperedges_from({Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
-        >>> g == AnkletGraph.from_data_strings(*g.get_data_strings(), int)
+        >>> g == AnkletGraph.from_data_string(g.data_string(), int)
         True
 
         Parsing errors result in a `ValueError`:
 
-        >>> AnkletGraph.from_data_strings('1, 3, 5', '2 × (1, 3) + (1, 3, 5)', int)
+        >>> AnkletGraph.from_data_string('1, 3, 5 | 2 × (1, 3) + (1, 3, 5)', int)
+        Traceback (most recent call last):
+        ...
+        ValueError: data = '1, 3, 5 | 2 × (1, 3) + (1, 3, 5)'
+        is not of the expected format <{nodes} | {hyperedges}>
+        >>> AnkletGraph.from_data_string('<1, 3, 5 | 2 × (1, 3) + (1, 3, 5)>', int)
         Traceback (most recent call last):
         ...
         ValueError: unexpected format for hyperedge: '(1, 3)'
@@ -131,16 +127,22 @@ class AnkletGraph[T: Hashable]:
         Nominally different nodes may in fact be mapped to the same node by `interpreter`
         and result in an invalid hyperedge with repeated nodes:
 
-        >>> AnkletGraph.from_data_strings('0, 1, 2', '3 × A(0, 1)', bool)
+        >>> AnkletGraph.from_data_string('<0, 1, 2 | 3 × A(0, 1)>', bool)
         Traceback (most recent call last):
         ...
         ValueError: the beads (True, True) are not distinct
         """
         g = cls(name=name, **attr)
-        if nodes:
-            g.add_nodes_from(interpreter(n) for n in nodes.split(', '))
-        if hyperedges:
-            for hype in hyperedges.split(' + '):
+        if data[0] != '<' or data[-1] != '>' or data.count(' | ') != 1:
+            raise ValueError(
+                f"data = '{data}'\n"
+                "is not of the expected format <{nodes} | {hyperedges}>"
+            )
+        node_data, hyperedge_data = data[1:-1].split(' | ')
+        if node_data:
+            g.add_nodes_from(interpreter(n) for n in node_data.split(', '))
+        if hyperedge_data:
+            for hype in hyperedge_data.split(' + '):
                 if '×' in hype:
                     k, hype = hype.split(' × ')
                 else:
