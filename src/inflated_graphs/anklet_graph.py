@@ -56,27 +56,21 @@ class AnkletGraph[T: Hashable]:
         self.add_hyperedges_from(hyperedges)
 
     @classmethod
-    def from_data_strings(
+    def from_data_string(
         cls,
-        nodes: str,
-        hyperedges: str,
+        data: str,
         interpreter: Callable[[str], T],
         name: str = "",
         **attr: Any
     ) -> Self:
-        """Construct an anklet graph from string encodings of the nodes and hyperedges.
+        """Construct an anklet graph from a string encoding of the nodes and hyperedges.
 
-        The node and hyperedge strings must follow the format
-        produced by :meth:`AnkletGraph.get_data_strings`.
+        The input data must follow the format produced by :meth:`AnkletGraph.data_string`.
 
         Parameters
         ----------
-        nodes : str
-            String representations of nodes, separated by `', '`.
-        hyperedges : str
-            String representations of the hyperedges, separated by `' + '`.
-            Each hyperedge must have the form `k × A(...)` or `A(...)`,
-            with the latter indicating a multiplicity of one.
+        data : str
+            String encoding of nodes and hyperedges: see :meth:`AnkletGraph.data_string`.
         interpreter : Callable[[str], T]
             A function that converts a node's string representation into a node of type `T`.
         name : str, optional (default="")
@@ -99,31 +93,33 @@ class AnkletGraph[T: Hashable]:
         --------
         A typical use case:
 
-        >>> g = AnkletGraph.from_data_strings('1, 3, 5', '2 × A(1, 3) + A(1, 3, 5)', int)
+        >>> g = AnkletGraph.from_data_string('<1, 3, 5 | 2 × A(1, 3) + A(1, 3, 5)>', int)
         >>> sorted(g.nodes)
         [1, 3, 5]
         >>> g.hyperedges
         ((A(1, 3), 2), (A(1, 3, 5), 1))
 
-        The hyperedges' incident nodes are automatically added to the anklet graph
-        and may be omitted from `node_string`:
+        The hyperedges' incident nodes are automatically added to the anklet graph:
 
-        >>> g = AnkletGraph.from_data_strings('0', '2 × A(1, 3) + A(1, 3, 5)', int)
+        >>> g = AnkletGraph.from_data_string('<0 | 2 × A(1, 3) + A(1, 3, 5)>', int)
         >>> sorted(g.nodes)
         [0, 1, 3, 5]
-        >>> g.hyperedges
-        ((A(1, 3), 2), (A(1, 3, 5), 1))
 
-        An anklet graph is equal to the anklet graph created from its data strings:
+        An anklet graph is equal to the anklet graph created from its data string:
 
         >>> g = AnkletGraph(range(5))
         >>> g.add_hyperedges_from({Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
-        >>> g == AnkletGraph.from_data_strings(*g.get_data_strings(), int)
+        >>> g == AnkletGraph.from_data_string(g.data_string(), int)
         True
 
         Parsing errors result in a `ValueError`:
 
-        >>> AnkletGraph.from_data_strings('1, 3, 5', '2 × (1, 3) + (1, 3, 5)', int)
+        >>> AnkletGraph.from_data_string('1, 3, 5 | 2 × (1, 3) + (1, 3, 5)', int)
+        Traceback (most recent call last):
+        ...
+        ValueError: data = '1, 3, 5 | 2 × (1, 3) + (1, 3, 5)'
+        is not of the expected format <{nodes} | {hyperedges}>
+        >>> AnkletGraph.from_data_string('<1, 3, 5 | 2 × (1, 3) + (1, 3, 5)>', int)
         Traceback (most recent call last):
         ...
         ValueError: unexpected format for hyperedge: '(1, 3)'
@@ -131,16 +127,22 @@ class AnkletGraph[T: Hashable]:
         Nominally different nodes may in fact be mapped to the same node by `interpreter`
         and result in an invalid hyperedge with repeated nodes:
 
-        >>> AnkletGraph.from_data_strings('0, 1, 2', '3 × A(0, 1)', bool)
+        >>> AnkletGraph.from_data_string('<0, 1, 2 | 3 × A(0, 1)>', bool)
         Traceback (most recent call last):
         ...
         ValueError: the beads (True, True) are not distinct
         """
         g = cls(name=name, **attr)
-        if nodes:
-            g.add_nodes_from(interpreter(n) for n in nodes.split(', '))
-        if hyperedges:
-            for hype in hyperedges.split(' + '):
+        if data[0] != '<' or data[-1] != '>' or data.count(' | ') != 1:
+            raise ValueError(
+                f"data = '{data}'\n"
+                "is not of the expected format <{nodes} | {hyperedges}>"
+            )
+        node_data, hyperedge_data = data[1:-1].split(' | ')
+        if node_data:
+            g.add_nodes_from(interpreter(n) for n in node_data.split(', '))
+        if hyperedge_data:
+            for hype in hyperedge_data.split(' + '):
                 if '×' in hype:
                     k, hype = hype.split(' × ')
                 else:
@@ -244,23 +246,24 @@ class AnkletGraph[T: Hashable]:
         g._reduced = self._reduced  # pylint: disable=W0212:protected-access
         return g
 
-    def get_data_strings(self) -> tuple[str, str]:
-        """Return two strings summarizing the node and hyperedge data of the anklet graph.
+    def data_string(self) -> str:
+        """Return a string summarizing the node and hyperedge data of the anklet graph.
 
         Returns
         -------
-        nodes, hyperedges : str
-            The first returned string is a comma-separated list of the nodes.
-            The second returned string contains the hyperedges with their multiplicities, each
-            formated as `"k × A(...)"` (or simply `"A(...)"` if `k = 1`), and joined by `" + "`.
+        str
+            Returns a string `"<{nodes} | {hyperedges}>"` where the nodes are comma-separated
+            and the hyperedges are joined by `" + "`. Each hyperedge is formated as
+            `"A(...)"` if the multiplicity is one and `"k × A(...)"` otherwise.
 
         Examples
         --------
         >>> g = AnkletGraph(range(5), {Anklet(0): 3, Anklet(0, 1): 2, Anklet(1, 2, 3): 1})
-        >>> g.get_data_strings()
-        ('0, 1, 2, 3, 4', '3 × A(0) + 2 × A(0, 1) + A(1, 2, 3)')
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 3 × A(0) + 2 × A(0, 1) + A(1, 2, 3)>'
         """
         try:
+            # Sort and standardize if comparison of nodes is allowed
             nodes = [str(n) for n in sorted(self.nodes)]  # type: ignore
             hyperedges = [(hype.standardized(), k) for hype, k in self._edge.items()]
         except TypeError:
@@ -268,7 +271,7 @@ class AnkletGraph[T: Hashable]:
             hyperedges = list(self._edge.items())
         hyperedges = sorted(hyperedges, key=lambda x: (len(x[0]), tuple(x[0])))
         hyperedges = [f"{k} × {hype}" if k > 1 else str(hype) for hype, k in hyperedges]
-        return ", ".join(nodes), " + ".join(hyperedges)
+        return '<' + ", ".join(nodes) + " | " + " + ".join(hyperedges) + '>'
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Nodes
@@ -384,10 +387,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.remove_node(1)
-        >>> g.nodes
-        {0, 2, 3, 4}
-        >>> g.hyperedges
-        ((A(2, 3, 4), 3),)
+        >>> g.data_string()
+        '<0, 2, 3, 4 | 3 × A(2, 3, 4)>'
         >>> g.remove_node('a')
         Traceback (most recent call last):
         ...
@@ -419,10 +420,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.remove_nodes_from([2, 4, 'a'])
-        >>> g.nodes
-        {0, 1, 3}
-        >>> g.hyperedges
-        ((A(0, 1), 1),)
+        >>> g.data_string()
+        '<0, 1, 3 | A(0, 1)>'
         """
         for n in nodes:
             try:
@@ -455,10 +454,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.erase_node(1)
-        >>> g.nodes
-        {0, 2, 3, 4}
-        >>> g.hyperedges
-        ((A(0, 4), 2), (A(2, 3, 4), 1))
+        >>> g.data_string()
+        '<0, 2, 3, 4 | 2 × A(0, 4) + A(2, 3, 4)>'
         """
         if n not in self.nodes:
             raise ValueError(f"the node {n} is not in the anklet graph")
@@ -491,10 +488,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.erase_nodes_from((1, 3, 5))
-        >>> g.nodes
-        {0, 2, 4}
-        >>> g.hyperedges
-        ((A(0, 4), 2), (A(2, 4), 1))
+        >>> g.data_string()
+        '<0, 2, 4 | 2 × A(0, 4) + A(2, 4)>'
         """
         for n in nodes:
             try:
@@ -697,13 +692,11 @@ class AnkletGraph[T: Hashable]:
         >>> hype = Anklet(0, 1, 2)
         >>> g = AnkletGraph()
         >>> g.add_hyperedge(hype, 2)
-        >>> g.nodes
-        {0, 1, 2}
-        >>> g.hyperedges
-        ((A(0, 1, 2), 2),)
+        >>> g.data_string()
+        '<0, 1, 2 | 2 × A(0, 1, 2)>'
         >>> g.add_hyperedge(hype, 3)
-        >>> g.hyperedges
-        ((A(0, 1, 2), 5),)
+        >>> g.data_string()
+        '<0, 1, 2 | 5 × A(0, 1, 2)>'
         """
         if not isinstance(k, int) or k <= 0:
             raise ValueError(f"k={k} is not a positive integer")
@@ -734,13 +727,11 @@ class AnkletGraph[T: Hashable]:
         --------
         >>> g = AnkletGraph()
         >>> g.add_hyperedges_from([Anklet(0, 1), Anklet(0, 1), Anklet(1, 2, 3, 4)])
-        >>> g.nodes
-        {0, 1, 2, 3, 4}
-        >>> g.hyperedges
-        ((A(0, 1), 2), (A(1, 2, 3, 4), 1))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 2 × A(0, 1) + A(1, 2, 3, 4)>'
         >>> g.add_hyperedges_from({Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 2})
-        >>> g.hyperedges
-        ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 2))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 2 × A(0, 1) + 2 × A(0, 2) + 3 × A(1, 2, 3, 4)>'
         """
         if isinstance(hypes, Mapping):
             for hype, k in hypes.items():
@@ -775,14 +766,14 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 2, Anklet(1, 2, 3, 4): 3, Anklet(0, 2): 4})
-        >>> g.hyperedges
-        ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 4))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 2 × A(0, 1) + 4 × A(0, 2) + 3 × A(1, 2, 3, 4)>'
         >>> g.remove_hyperedge(Anklet(1, 0))
-        >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3, 4), 3), (A(0, 2), 4))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | A(0, 1) + 4 × A(0, 2) + 3 × A(1, 2, 3, 4)>'
         >>> g.remove_hyperedge(Anklet(4, 3, 2, 1), 3)
-        >>> g.hyperedges
-        ((A(0, 1), 1), (A(0, 2), 4))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | A(0, 1) + 4 × A(0, 2)>'
         >>> g.remove_hyperedge(Anklet(0, 2), 5)
         Traceback (most recent call last):
         ...
@@ -818,14 +809,14 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 3})
-        >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3, 4), 2), (A(0, 2), 3))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | A(0, 1) + 3 × A(0, 2) + 2 × A(1, 2, 3, 4)>'
         >>> g.remove_hyperedges_from([Anklet(0, 2), Anklet(0, 1)])
-        >>> g.hyperedges
-        ((A(1, 2, 3, 4), 2), (A(0, 2), 2))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 2 × A(0, 2) + 2 × A(1, 2, 3, 4)>'
         >>> g.remove_hyperedges_from({Anklet(2, 0): 1, Anklet(3, 2, 1, 4): 2})
-        >>> g.hyperedges
-        ((A(0, 2), 1),)
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | A(0, 2)>'
         """
         if isinstance(hypes, Mapping):
             for hype, k in hypes.items():
@@ -1198,9 +1189,11 @@ class AnkletGraph[T: Hashable]:
         >>> g = AnkletGraph(
         ...     hyperedges={Anklet(0): 2, Anklet(0, 1): 3, Anklet(1, 2): 4, Anklet(1, 2, 3): 2}
         ... )
+        >>> g.data_string()
+        '<0, 1, 2, 3 | 2 × A(0) + 3 × A(0, 1) + 4 × A(1, 2) + 2 × A(1, 2, 3)>'
         >>> g.reduce()
-        >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3), 2))
+        >>> g.data_string()
+        '<0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)>'
         """
         if self._reduced:
             # The graph has previously been determined to be reduced (either by calling this method

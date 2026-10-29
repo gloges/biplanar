@@ -53,12 +53,12 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> for i, balloon in enumerate(g):
         ...    print(f"balloon {i}:")
         ...    for ag in balloon:
-        ...        print('   ', str(ag.nodes).ljust(9), ag.hyperedges)
+        ...        print('   ', ag.data_string())
         balloon 0:
-            {0, 1, 2} ((A(0, 1), 3), (A(1, 2), 1))
-            {2, 3}    ((A(2, 3), 1),)
+            <0, 1, 2 | 3 × A(0, 1) + A(1, 2)>
+            <2, 3 | A(2, 3)>
         balloon 1:
-            {4}       ()
+            <4 | >
         """
         balloons = []
         if data:
@@ -72,19 +72,10 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
                         "data for each anklet graph in a balloon must"
                         " be enclosed by '< >' and separated by ', '"
                     )
-
-                balloon = []
-                for anklet_graph_data in balloon_data[1:-1].split('>, <'):
-                    if anklet_graph_data.count(' | ') != 1:
-                        raise ValueError(
-                            f"the string '{anklet_graph_data}'\n"
-                            "is not of the expected format '{nodes} | {hyperedges}'"
-                        )
-                    nodes, hyperedges = anklet_graph_data.split(' | ')
-                    balloon.append(
-                        AnkletGraph.from_data_strings(nodes, hyperedges, interpreter)
-                    )
-                balloons.append(balloon)
+                balloons.append([
+                    AnkletGraph.from_data_string('<' + anklet_graph_data + '>', interpreter)
+                    for anklet_graph_data in balloon_data[1:-1].split('>, <')
+                ])
 
         return cls(*balloons)
 
@@ -124,7 +115,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
 
     def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
-        """Yield (balloon, index, anklet_graph) tuples."""
+        """Yield (balloon_index, index, anklet_graph) tuples."""
         for i, balloon in enumerate(self):
             for j, ag in enumerate(balloon):
                 yield i, j, ag
@@ -146,12 +137,12 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             **self._attr.copy()
         )
 
-    def get_data_string(self) -> str:
+    def data_string(self) -> str:
         """Return a string summarizing the balloons and anklet graphs of the balloon graph.
 
-        The data strings for each anklet graph are formated as `<{nodes} | {hyperedges}>`
-        (using the strings produced by :meth:`AnkletGraph.get_data_strings()`).
-        These are then collected into brackets by balloon and joined by commas:
+        The data strings for each anklet graph are of the form
+        `<{nodes} | {hyperedges}>` (see :meth:`AnkletGraph.data_string()`).
+        These are collected into brackets by balloon and joined by commas:
         `[<{nodes_0} | {hyperedges_0}>, <{nodes_1} | {hyperedges_1}>, ...], [...], ...`.
 
         Returns
@@ -165,11 +156,11 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> ag1 = AnkletGraph(range(0, 3), {Anklet(0, 1): 1, Anklet(0, 1, 2): 2})
         >>> ag2 = AnkletGraph(range(3, 6), {Anklet(3, 4): 3})
         >>> ag3 = AnkletGraph(range(6, 9), {Anklet(6, 7, 8)})
-        >>> BalloonGraph([ag1, ag2], [ag3]).get_data_string()
+        >>> BalloonGraph([ag1, ag2], [ag3]).data_string()
         '[<0, 1, 2 | A(0, 1) + 2 × A(0, 1, 2)>, <3, 4, 5 | 3 × A(3, 4)>], [<6, 7, 8 | A(6, 7, 8)>]'
         """
         return ", ".join([
-            '[' + ", ".join(['<' + " | ".join(ag.get_data_strings()) + '>' for ag in balloon]) + ']'
+            '[' + ", ".join([ag.data_string() for ag in balloon]) + ']'
             for balloon in self
         ])
 
@@ -220,8 +211,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ...     int
         ... )
         >>> g._combine((0, 0), (2, 0))
-        >>> print(g.get_data_string())
-        [<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]
+        >>> g.data_string()
+        '[<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]'
         """
         balloon_a, index_a = pos_a
         balloon_b, index_b = pos_b
@@ -300,7 +291,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """Return a hash used in :meth:`BalloonGraph.check_structure` to determine if the balloon
         graph's structure has changed since the last validation.
         """
-        return hash(self.get_data_string())
+        return hash(self.data_string())
 
     def _reset_valid_structure(self) -> None:
         """Force a full validation on the next call of :meth:`BalloonGraph.check_structure`."""
