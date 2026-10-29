@@ -115,7 +115,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
 
     def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
-        """Yield (balloon, index, anklet_graph) tuples."""
+        """Yield (balloon_index, index, anklet_graph) tuples."""
         for i, balloon in enumerate(self):
             for j, ag in enumerate(balloon):
                 yield i, j, ag
@@ -211,8 +211,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ...     int
         ... )
         >>> g._combine((0, 0), (2, 0))
-        >>> print(g.get_data_string())
-        [<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]
+        >>> g.data_string()
+        '[<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]'
         """
         balloon_a, index_a = pos_a
         balloon_b, index_b = pos_b
@@ -291,7 +291,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """Return a hash used in :meth:`BalloonGraph.check_structure` to determine if the balloon
         graph's structure has changed since the last validation.
         """
-        return hash(self.get_data_string())
+        return hash(self.data_string())
 
     def _reset_valid_structure(self) -> None:
         """Force a full validation on the next call of :meth:`BalloonGraph.check_structure`."""
