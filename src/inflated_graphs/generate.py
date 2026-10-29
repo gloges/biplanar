@@ -72,24 +72,24 @@ def anklet_graphs_on[T: Hashable](nodes: Collection[T]) -> list[AnkletGraph[T]]:
     >>> [len(anklet_graphs_on(range(n))) for n in range(5)]
     [0, 1, 3, 12, 189]
     >>> for ag in anklet_graphs_on(range(2)):
-    ...     print("nodes = {:7} hyperedges = {}".format(*ag.get_data_strings()))
-    nodes = 0       hyperedges = 
-    nodes = 1       hyperedges = 
-    nodes = 0, 1    hyperedges = A(0, 1)
+    ...     print(ag.data_string())
+    <0 | >
+    <1 | >
+    <0, 1 | A(0, 1)>
     >>> for ag in anklet_graphs_on(range(3)):
-    ...     print("nodes = {:10} hyperedges = {}".format(*ag.get_data_strings()))
-    nodes = 0          hyperedges = 
-    nodes = 1          hyperedges = 
-    nodes = 2          hyperedges = 
-    nodes = 1, 2       hyperedges = A(1, 2)
-    nodes = 0, 1, 2    hyperedges = A(0, 1, 2)
-    nodes = 0, 1       hyperedges = A(0, 1)
-    nodes = 0, 2       hyperedges = A(0, 2)
-    nodes = 0, 1, 2    hyperedges = A(0, 1) + A(1, 2)
-    nodes = 0, 1, 2    hyperedges = A(0, 2) + A(1, 2)
-    nodes = 0, 1, 2    hyperedges = 2 × A(0, 1, 2)
-    nodes = 0, 1, 2    hyperedges = A(0, 1) + A(0, 2)
-    nodes = 0, 1, 2    hyperedges = A(0, 1) + A(0, 2) + A(1, 2)
+    ...     print(ag.data_string())
+    <0 | >
+    <1 | >
+    <2 | >
+    <1, 2 | A(1, 2)>
+    <0, 1, 2 | A(0, 1, 2)>
+    <0, 1 | A(0, 1)>
+    <0, 2 | A(0, 2)>
+    <0, 1, 2 | A(0, 1) + A(1, 2)>
+    <0, 1, 2 | A(0, 2) + A(1, 2)>
+    <0, 1, 2 | 2 × A(0, 1, 2)>
+    <0, 1, 2 | A(0, 1) + A(0, 2)>
+    <0, 1, 2 | A(0, 1) + A(0, 2) + A(1, 2)>
     """
 
     # Fix an order for the non-trivial anklets
@@ -148,12 +148,12 @@ def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
     >>> [len(balloon_graphs_on(range(n))) for n in range(5)]
     [1, 1, 3, 20, 361]
     >>> for g in balloon_graphs_on(range(2)):
-    ...     print(g.get_data_string())
+    ...     print(g.data_string())
     [<0, 1 | A(0, 1)>]
     [<0 | >, <1 | >]
     [<0 | >], [<1 | >]
     >>> for g in balloon_graphs_on(range(3)):
-    ...     print(g.get_data_string())
+    ...     print(g.data_string())
     [<0, 1, 2 | A(0, 1, 2)>]
     [<0, 1, 2 | A(0, 1) + A(1, 2)>]
     [<0, 1, 2 | A(0, 2) + A(1, 2)>]
