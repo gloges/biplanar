@@ -244,23 +244,24 @@ class AnkletGraph[T: Hashable]:
         g._reduced = self._reduced  # pylint: disable=W0212:protected-access
         return g
 
-    def get_data_strings(self) -> tuple[str, str]:
-        """Return two strings summarizing the node and hyperedge data of the anklet graph.
+    def data_string(self) -> str:
+        """Return a string summarizing the node and hyperedge data of the anklet graph.
 
         Returns
         -------
-        nodes, hyperedges : str
-            The first returned string is a comma-separated list of the nodes.
-            The second returned string contains the hyperedges with their multiplicities, each
-            formated as `"k × A(...)"` (or simply `"A(...)"` if `k = 1`), and joined by `" + "`.
+        str
+            Returns a string `"<{nodes} | {hyperedges}>"` where the nodes are comma-separated
+            and the hyperedges are joined by `" + "`. Each hyperedge is formated as
+            `"A(...)"` if the multiplicity is one and `"k × A(...)"` otherwise.
 
         Examples
         --------
         >>> g = AnkletGraph(range(5), {Anklet(0): 3, Anklet(0, 1): 2, Anklet(1, 2, 3): 1})
-        >>> g.get_data_strings()
-        ('0, 1, 2, 3, 4', '3 × A(0) + 2 × A(0, 1) + A(1, 2, 3)')
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 3 × A(0) + 2 × A(0, 1) + A(1, 2, 3)>'
         """
         try:
+            # Sort and standardize if comparison of nodes is allowed
             nodes = [str(n) for n in sorted(self.nodes)]  # type: ignore
             hyperedges = [(hype.standardized(), k) for hype, k in self._edge.items()]
         except TypeError:
@@ -268,7 +269,7 @@ class AnkletGraph[T: Hashable]:
             hyperedges = list(self._edge.items())
         hyperedges = sorted(hyperedges, key=lambda x: (len(x[0]), tuple(x[0])))
         hyperedges = [f"{k} × {hype}" if k > 1 else str(hype) for hype, k in hyperedges]
-        return ", ".join(nodes), " + ".join(hyperedges)
+        return '<' + ", ".join(nodes) + " | " + " + ".join(hyperedges) + '>'
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Nodes
