@@ -1,9 +1,9 @@
 """Combinatorial anklets."""
 
-from collections.abc import Collection, Container, Iterable, Iterator
+from collections.abc import Callable, Collection, Container, Iterable, Iterator
 from itertools import combinations
 from types import NotImplementedType
-from typing import Self
+from typing import Any, Self
 import networkx as nx
 
 
@@ -292,8 +292,13 @@ class Anklet[T](tuple[T, ...]):
     #   Other
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def standardized(self) -> Self:
+    def standardized(self, bead_key: Callable[[T], Any] | None = None) -> Self:
         """Return an equivalent anklet with minimal defining tuple.
+
+        Parameters
+        ----------
+        bead_key : Callable[[T], Any] or None, optional (default=None)
+            Function mapping beads to orderable keys. If None, compare beads directly.
 
         Returns
         -------
@@ -311,12 +316,19 @@ class Anklet[T](tuple[T, ...]):
         A(0, 1, 2)
         >>> Anklet(2, 1, 0, 3).standardized()
         A(0, 1, 2, 3)
-        >>> Anklet(0j, 1j).standardized()
+        >>> Anklet(1+0j, 1j).standardized()
         Traceback (most recent call last):
         ...
         TypeError: '<' not supported between instances of 'complex' and 'complex'
+        >>> Anklet(1+0j, 1j).standardized(lambda z: (z.real, z.imag))
+        A(1j, (1+0j))
         """
-        return type(self).from_iterable(min(self.representatives()))
+        return type(self).from_iterable(
+            min(
+                self.representatives(),
+                key=None if bead_key is None else lambda t: tuple(map(bead_key, t))
+            )
+        )
 
     def to_wheel_graph(self) -> nx.Graph:
         """Return a wheel graph representation of the anklet.
