@@ -387,10 +387,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.remove_node(1)
-        >>> g.nodes
-        {0, 2, 3, 4}
-        >>> g.hyperedges
-        ((A(2, 3, 4), 3),)
+        >>> g.data_string()
+        '<0, 2, 3, 4 | 3 × A(2, 3, 4)>'
         >>> g.remove_node('a')
         Traceback (most recent call last):
         ...
@@ -422,10 +420,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.remove_nodes_from([2, 4, 'a'])
-        >>> g.nodes
-        {0, 1, 3}
-        >>> g.hyperedges
-        ((A(0, 1), 1),)
+        >>> g.data_string()
+        '<0, 1, 3 | A(0, 1)>'
         """
         for n in nodes:
             try:
@@ -458,10 +454,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.erase_node(1)
-        >>> g.nodes
-        {0, 2, 3, 4}
-        >>> g.hyperedges
-        ((A(0, 4), 2), (A(2, 3, 4), 1))
+        >>> g.data_string()
+        '<0, 2, 3, 4 | 2 × A(0, 4) + A(2, 3, 4)>'
         """
         if n not in self.nodes:
             raise ValueError(f"the node {n} is not in the anklet graph")
@@ -494,10 +488,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.nodes
         {0, 1, 2, 3, 4}
         >>> g.erase_nodes_from((1, 3, 5))
-        >>> g.nodes
-        {0, 2, 4}
-        >>> g.hyperedges
-        ((A(0, 4), 2), (A(2, 4), 1))
+        >>> g.data_string()
+        '<0, 2, 4 | 2 × A(0, 4) + A(2, 4)>'
         """
         for n in nodes:
             try:
@@ -700,13 +692,11 @@ class AnkletGraph[T: Hashable]:
         >>> hype = Anklet(0, 1, 2)
         >>> g = AnkletGraph()
         >>> g.add_hyperedge(hype, 2)
-        >>> g.nodes
-        {0, 1, 2}
-        >>> g.hyperedges
-        ((A(0, 1, 2), 2),)
+        >>> g.data_string()
+        '<0, 1, 2 | 2 × A(0, 1, 2)>'
         >>> g.add_hyperedge(hype, 3)
-        >>> g.hyperedges
-        ((A(0, 1, 2), 5),)
+        >>> g.data_string()
+        '<0, 1, 2 | 5 × A(0, 1, 2)>'
         """
         if not isinstance(k, int) or k <= 0:
             raise ValueError(f"k={k} is not a positive integer")
@@ -737,13 +727,11 @@ class AnkletGraph[T: Hashable]:
         --------
         >>> g = AnkletGraph()
         >>> g.add_hyperedges_from([Anklet(0, 1), Anklet(0, 1), Anklet(1, 2, 3, 4)])
-        >>> g.nodes
-        {0, 1, 2, 3, 4}
-        >>> g.hyperedges
-        ((A(0, 1), 2), (A(1, 2, 3, 4), 1))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 2 × A(0, 1) + A(1, 2, 3, 4)>'
         >>> g.add_hyperedges_from({Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 2})
-        >>> g.hyperedges
-        ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 2))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 2 × A(0, 1) + 2 × A(0, 2) + 3 × A(1, 2, 3, 4)>'
         """
         if isinstance(hypes, Mapping):
             for hype, k in hypes.items():
@@ -778,14 +766,14 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 2, Anklet(1, 2, 3, 4): 3, Anklet(0, 2): 4})
-        >>> g.hyperedges
-        ((A(0, 1), 2), (A(1, 2, 3, 4), 3), (A(0, 2), 4))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 2 × A(0, 1) + 4 × A(0, 2) + 3 × A(1, 2, 3, 4)>'
         >>> g.remove_hyperedge(Anklet(1, 0))
-        >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3, 4), 3), (A(0, 2), 4))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | A(0, 1) + 4 × A(0, 2) + 3 × A(1, 2, 3, 4)>'
         >>> g.remove_hyperedge(Anklet(4, 3, 2, 1), 3)
-        >>> g.hyperedges
-        ((A(0, 1), 1), (A(0, 2), 4))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | A(0, 1) + 4 × A(0, 2)>'
         >>> g.remove_hyperedge(Anklet(0, 2), 5)
         Traceback (most recent call last):
         ...
@@ -821,14 +809,14 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(1, 2, 3, 4): 2, Anklet(0, 2): 3})
-        >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3, 4), 2), (A(0, 2), 3))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | A(0, 1) + 3 × A(0, 2) + 2 × A(1, 2, 3, 4)>'
         >>> g.remove_hyperedges_from([Anklet(0, 2), Anklet(0, 1)])
-        >>> g.hyperedges
-        ((A(1, 2, 3, 4), 2), (A(0, 2), 2))
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | 2 × A(0, 2) + 2 × A(1, 2, 3, 4)>'
         >>> g.remove_hyperedges_from({Anklet(2, 0): 1, Anklet(3, 2, 1, 4): 2})
-        >>> g.hyperedges
-        ((A(0, 2), 1),)
+        >>> g.data_string()
+        '<0, 1, 2, 3, 4 | A(0, 2)>'
         """
         if isinstance(hypes, Mapping):
             for hype, k in hypes.items():
@@ -1201,9 +1189,11 @@ class AnkletGraph[T: Hashable]:
         >>> g = AnkletGraph(
         ...     hyperedges={Anklet(0): 2, Anklet(0, 1): 3, Anklet(1, 2): 4, Anklet(1, 2, 3): 2}
         ... )
+        >>> g.data_string()
+        '<0, 1, 2, 3 | 2 × A(0) + 3 × A(0, 1) + 4 × A(1, 2) + 2 × A(1, 2, 3)>'
         >>> g.reduce()
-        >>> g.hyperedges
-        ((A(0, 1), 1), (A(1, 2, 3), 2))
+        >>> g.data_string()
+        '<0, 1, 2, 3 | A(0, 1) + 2 × A(1, 2, 3)>'
         """
         if self._reduced:
             # The graph has previously been determined to be reduced (either by calling this method
