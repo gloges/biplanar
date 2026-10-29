@@ -137,12 +137,12 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             **self._attr.copy()
         )
 
-    def get_data_string(self) -> str:
+    def data_string(self) -> str:
         """Return a string summarizing the balloons and anklet graphs of the balloon graph.
 
-        The data strings for each anklet graph are formated as `<{nodes} | {hyperedges}>`
-        (using the strings produced by :meth:`AnkletGraph.get_data_strings()`).
-        These are then collected into brackets by balloon and joined by commas:
+        The data strings for each anklet graph are of the form
+        `<{nodes} | {hyperedges}>` (see :meth:`AnkletGraph.data_string()`).
+        These are collected into brackets by balloon and joined by commas:
         `[<{nodes_0} | {hyperedges_0}>, <{nodes_1} | {hyperedges_1}>, ...], [...], ...`.
 
         Returns
@@ -156,11 +156,11 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> ag1 = AnkletGraph(range(0, 3), {Anklet(0, 1): 1, Anklet(0, 1, 2): 2})
         >>> ag2 = AnkletGraph(range(3, 6), {Anklet(3, 4): 3})
         >>> ag3 = AnkletGraph(range(6, 9), {Anklet(6, 7, 8)})
-        >>> BalloonGraph([ag1, ag2], [ag3]).get_data_string()
+        >>> BalloonGraph([ag1, ag2], [ag3]).data_string()
         '[<0, 1, 2 | A(0, 1) + 2 × A(0, 1, 2)>, <3, 4, 5 | 3 × A(3, 4)>], [<6, 7, 8 | A(6, 7, 8)>]'
         """
         return ", ".join([
-            '[' + ", ".join(['<' + " | ".join(ag.get_data_strings()) + '>' for ag in balloon]) + ']'
+            '[' + ", ".join([ag.data_string() for ag in balloon]) + ']'
             for balloon in self
         ])
 
