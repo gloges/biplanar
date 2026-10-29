@@ -82,7 +82,7 @@ class Anklet[T](tuple[T, ...]):
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def without_bead(self, bead_to_remove: T, /) -> Self:
-        """Return the anklet with a bead removed.
+        """Return the sub-anklet formed by removing a bead.
 
         The relative order of all retained beads is preserved.
 
@@ -112,7 +112,7 @@ class Anklet[T](tuple[T, ...]):
         return type(self).from_iterable(b for b in self if b is not bead_to_remove)
 
     def without_beads(self, beads_to_remove: Container[T], /) -> Self:
-        """Return the anklet with beads removed.
+        """Return the sub-anklet formed by removing beads.
 
         The relative order of all retained beads is preserved.
 
@@ -141,7 +141,7 @@ class Anklet[T](tuple[T, ...]):
         return type(self).from_iterable(b for b in self if b not in beads_to_remove)
 
     def restrict_beads(self, beads_to_keep: Container[T], /) -> Self:
-        """Return the anklet with beads removed.
+        """Return the sub-anklet formed by restricting to a subset of the beads.
 
         The relative order of all retained beads is preserved.
 
@@ -222,9 +222,9 @@ class Anklet[T](tuple[T, ...]):
     def __le__(self, other: object) -> NotImplementedType | bool:
         """Return whether the anklet is a *sub-anklet* of `other`.
 
-        An anklet `a` is a sub-anklet of another anklet `b` (*i.e.* `a <= b`) if the beads of `a`
-        appear in the prescribed cyclic order as a subsequence of `b`. Equivalently, `a <= b` means
-        that it is possible to delete beads from `b` to produce `a`.
+        An anklet `a` is a sub-anklet of another anklet `b` (*i.e.* `a <= b`)
+        if the beads of `a` appear in the prescribed cyclic order as a subsequence of `b`.
+        Equivalently, `a <= b` means that it is possible to delete beads from `b` to produce `a`.
 
         This "sub-anklet" relation is a partial order on anklets
         with the empty anklet of length zero as its least element.
