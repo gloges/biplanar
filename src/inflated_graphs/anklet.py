@@ -8,11 +8,20 @@ import networkx as nx
 
 
 class Anklet[T](tuple[T, ...]):
-    """An anklet is a combinatorial bracelet with all beads distinct.
+    """An **anklet** is a combinatorial bracelet with all beads distinct.
+
+    Anklets can be thought of as tuples with a weaker notion of equality, where two tuples
+    are "equal" if one can be obtained from the other by cyclic rotation and reversal.
+    Equivalently, an anklet with `n` beads can be viewed as an *equivalence class* of tuples given
+    by the orbit of its defining `n`-tuple under the group action of `Dihₙ`.
 
     Examples
     --------
     >>> Anklet(0, 1, 2, 3) == Anklet(1, 2, 3, 0)
+    True
+    >>> Anklet(0, 1, 2, 3) == Anklet(2, 3, 0, 1)
+    True
+    >>> Anklet(0, 1, 2, 3) == Anklet(2, 1, 0, 3)
     True
     >>> Anklet(0, 1, 2, 3) == Anklet(0, 1, 3, 2)
     False
