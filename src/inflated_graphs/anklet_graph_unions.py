@@ -28,6 +28,20 @@ def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]
     :meth:`union`,
     :meth:`disjoint_union_all`,
     :meth:`disjoint_union`
+
+    Examples
+    --------
+    >>> from inflated_graphs import Anklet
+    >>> g = union_all([AnkletGraph([n, n+1], [Anklet(n, n+1)]) for n in range(4)])
+    >>> g.nodes
+    {0, 1, 2, 3, 4}
+    >>> g.hyperedges
+    ((A(0, 1), 1), (A(1, 2), 1), (A(2, 3), 1), (A(3, 4), 1))
+
+    The union of *zero* anklet graphs is the empty anklet graph:
+
+    >>> print(union_all([]))
+    AnkletGraph with 0 nodes and 0 hyperedges
     """
     graph_union = AnkletGraph[T]()
     for g in graphs:
@@ -99,9 +113,24 @@ def disjoint_union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> Ankle
     :meth:`union_all`,
     :meth:`union`,
     :meth:`disjoint_union`
+
+    Examples
+    --------
+    >>> from inflated_graphs import Anklet
+    >>> graphs = [AnkletGraph([n, n+1], [Anklet(n, n+1)]) for n in range(4)]
+    >>> disjoint_union_all(graphs)
+    Traceback (most recent call last):
+    ...
+    ValueError: the anklet graphs' nodes are not disjoint
+    >>> graphs = [AnkletGraph([n, n+1], [Anklet(n, n+1)]) for n in range(0, 7, 2)]
+    >>> graph_union = disjoint_union_all(graphs)
+    >>> graph_union.nodes
+    {0, 1, 2, 3, 4, 5, 6, 7}
+    >>> graph_union.hyperedges
+    ((A(0, 1), 1), (A(2, 3), 1), (A(4, 5), 1), (A(6, 7), 1))
     """
-    if len(set().union(g.nodes for g in graphs)) != sum(g.number_of_nodes() for g in graphs):
-        raise ValueError("two or more anklet graphs have node(s) in common")
+    if len(set().union(*[g.nodes for g in graphs])) != sum(g.number_of_nodes() for g in graphs):
+        raise ValueError("the anklet graphs' nodes are not disjoint")
     return union_all(graphs)
 
 
