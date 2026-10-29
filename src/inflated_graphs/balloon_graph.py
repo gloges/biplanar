@@ -53,12 +53,12 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> for i, balloon in enumerate(g):
         ...    print(f"balloon {i}:")
         ...    for ag in balloon:
-        ...        print('   ', str(ag.nodes).ljust(9), ag.hyperedges)
+        ...        print('   ', ag.data_string())
         balloon 0:
-            {0, 1, 2} ((A(0, 1), 3), (A(1, 2), 1))
-            {2, 3}    ((A(2, 3), 1),)
+            <0, 1, 2 | 3 × A(0, 1) + A(1, 2)>
+            <2, 3 | A(2, 3)>
         balloon 1:
-            {4}       ()
+            <4 | >
         """
         balloons = []
         if data:
@@ -72,19 +72,10 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
                         "data for each anklet graph in a balloon must"
                         " be enclosed by '< >' and separated by ', '"
                     )
-
-                balloon = []
-                for anklet_graph_data in balloon_data[1:-1].split('>, <'):
-                    if anklet_graph_data.count(' | ') != 1:
-                        raise ValueError(
-                            f"the string '{anklet_graph_data}'\n"
-                            "is not of the expected format '{nodes} | {hyperedges}'"
-                        )
-                    nodes, hyperedges = anklet_graph_data.split(' | ')
-                    balloon.append(
-                        AnkletGraph.from_data_strings(nodes, hyperedges, interpreter)
-                    )
-                balloons.append(balloon)
+                balloons.append([
+                    AnkletGraph.from_data_string('<' + anklet_graph_data + '>', interpreter)
+                    for anklet_graph_data in balloon_data[1:-1].split('>, <')
+                ])
 
         return cls(*balloons)
 
