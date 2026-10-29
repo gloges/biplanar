@@ -426,12 +426,12 @@ class Anklet[T](tuple[T, ...]):
             return False
 
         # Form the disjoint union of three labeled wheel graphs,
-        # one for the parent anklet and one each for the subanklets corresponding to 'x' and 'y'
-        subanklet_x = self.restrict_beads(x)
-        subanklet_y = self.restrict_beads(y)
-        g = nx.disjoint_union_all(a.to_wheel_graph() for a in [self, subanklet_x, subanklet_y])
+        # one for the parent anklet and one each for the sub-anklets corresponding to 'x' and 'y'
+        g = nx.disjoint_union_all(
+            a.to_wheel_graph() for a in [self, self.restrict_beads(x), self.restrict_beads(y)]
+        )
 
-        # Join nodes which share a bead label
+        # Join by an edge all pairs of nodes which share a bead label
         label_groups = {}
         for n, label in nx.get_node_attributes(g, 'anklet').items():
             if label not in label_groups:
