@@ -100,7 +100,7 @@ def disjoint_union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> Ankle
     :meth:`union`,
     :meth:`disjoint_union`
     """
-    if len(set().union(g.nodes for g in graphs)) != sum(g.number_of_nodes() for g in graphs):
+    if len(set().union(*[g.nodes for g in graphs])) != sum(g.number_of_nodes() for g in graphs):
         raise ValueError("two or more anklet graphs have node(s) in common")
     return union_all(graphs)
 
