@@ -28,6 +28,20 @@ def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]
     :meth:`union`,
     :meth:`disjoint_union_all`,
     :meth:`disjoint_union`
+
+    Examples
+    --------
+    >>> from inflated_graphs import Anklet
+    >>> g = union_all([AnkletGraph([n, n+1], [Anklet(n, n+1)]) for n in range(4)])
+    >>> g.nodes
+    {0, 1, 2, 3, 4}
+    >>> g.hyperedges
+    ((A(0, 1), 1), (A(1, 2), 1), (A(2, 3), 1), (A(3, 4), 1))
+
+    The union of *zero* anklet graphs is the empty anklet graph:
+
+    >>> print(union_all([]))
+    AnkletGraph with 0 nodes and 0 hyperedges
     """
     graph_union = AnkletGraph[T]()
     for g in graphs:
