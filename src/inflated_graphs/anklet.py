@@ -392,6 +392,10 @@ class Anklet[T](tuple[T, ...]):
         bool
             Whether `x` and `y` are non-crossing subsets of beads in the anklet.
 
+        See Also
+        --------
+        :meth:`Anklet.separable`
+
         Examples
         --------
         >>> a = Anklet.from_iterable(range(6))
@@ -445,6 +449,40 @@ class Anklet[T](tuple[T, ...]):
         return nx.is_planar(g)
 
     def separable(self, x: Collection[T]) -> bool:
+        """Return whether the subset of the anklet's beads which appear in `x` are contiguous.
+
+        Picturing the beads of the anklet organized on the boundary of a disk in the prescribed
+        cyclic order, the set `x` is *separable* in the anklet if a single chord can separate
+        beads in `x` from those not in `x`.
+
+        Parameters
+        ----------
+        x : Collection[T]
+            A set of beads. Not all beads of `x` nead be beads in the anklet.
+
+        Returns
+        -------
+        bool
+            Whether the anklet is separable, as described above.
+
+        See Also
+        --------
+        :meth:`Anklet.noncrossing`
+
+        Examples
+        --------
+        >>> a = Anklet.from_iterable(range(5))
+        >>> a.separable({1, 2, 3})
+        True
+        >>> a.separable({0, 4})
+        True
+        >>> a.separable({1, 3, 4})
+        False
+        >>> a.separable({})
+        True
+        >>> a.separable(range(5))
+        True
+        """
         # Scan through the beads keeping track of how many times a bead in 'x' is adjacent
         # to a bead not in 'x'. The set 'x' is separable if and only if this number is zero or two.
         # (Because of cyclicity, the number of 'switches' is always even.)
