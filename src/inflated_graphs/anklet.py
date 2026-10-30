@@ -495,6 +495,36 @@ class Anklet[T](tuple[T, ...]):
         return True
 
     def cut(self, x: Collection[T]) -> tuple[tuple[T, ...], tuple[T, ...]]:
+        """Cut the anklet with respect to a separable set `x` into two subsequences.
+
+        Parameters
+        ----------
+        x : Collection[T]
+            A set of beads. Not all beads in `x` need be beads in the anklet.
+
+        Returns
+        -------
+        x_subseq, not_x_subseq : tuple[T, ...]
+            Two sequences, the first only containing beads in `x` and the second only containing
+            beads not in `x`, such their concatenation is a representative of the anklet.
+
+        Raises
+        ------
+        ValueError
+            If `x` is not separable in the anklet.
+
+        Examples
+        --------
+        >>> a = Anklet.from_iterable(range(8))
+        >>> a.cut({2, 3, 4})
+        ((2, 3, 4), (5, 6, 7, 0, 1))
+        >>> a.cut({0, 1, 6, 7, 11})
+        ((6, 7, 0, 1), (2, 3, 4, 5))
+        >>> a.cut([])
+        ((), (0, 1, 2, 3, 4, 5, 6, 7))
+        >>> a.cut(range(8))
+        ((0, 1, 2, 3, 4, 5, 6, 7), ())
+        """
         if not self.separable(x):
             raise ValueError(f"x = {x!r} is not separable")
 
