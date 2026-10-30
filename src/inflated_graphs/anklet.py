@@ -443,3 +443,16 @@ class Anklet[T](tuple[T, ...]):
                 g.add_edge(u, v)
 
         return nx.is_planar(g)
+
+    def separable(self, x: Collection[T]) -> bool:
+        # Scan through the beads keeping track of how many times a bead in 'x' is adjacent
+        # to a bead not in 'x'. The set 'x' is separable if and only if this number is zero or two.
+        # (Because of cyclicity, the number of 'switches' is always even.)
+        tally = 0
+        for i, b_i in enumerate(self):
+            if (b_i in x and self[i-1] not in x) or (b_i not in x and self[i-1] in x):
+                tally += 1
+                if tally > 2:
+                    return False
+        return True
+
