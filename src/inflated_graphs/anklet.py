@@ -456,3 +456,24 @@ class Anklet[T](tuple[T, ...]):
                     return False
         return True
 
+    def cut(self, x: Collection[T]) -> tuple[tuple[T, ...], tuple[T, ...]]:
+        if not self.separable(x):
+            raise ValueError(f"x = {x!r} is not separable")
+
+        if all(b in x for b in self):
+            return tuple(self), tuple()
+
+        if all(b not in x for b in self):
+            return tuple(), tuple(self)
+
+        # Find the two cut points (using y = 'not x'):
+        # 'i_xy' is the index of the unique y-bead which is (cyclically) preceded by an x-bead
+        # 'i_yx' is the index of the unique x-bead which is (cyclically) preceded by a y-bead
+        i_xy = [b not in x and self[i-1] in x for i, b in enumerate(self)].index(True)
+        i_yx = [b in x and self[i-1] not in x for i, b in enumerate(self)].index(True)
+
+        # Construct the subsequences ("wrapping around" if necessary)
+        return (
+            self[i_yx:i_xy] if i_yx < i_xy else self[i_yx:] + self[:i_xy],
+            self[i_xy:i_yx] if i_xy < i_yx else self[i_xy:] + self[:i_yx]
+        )
