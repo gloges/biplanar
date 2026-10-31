@@ -4,7 +4,7 @@ from collections.abc import Callable, Hashable, Iterator, Mapping
 from typing import Any, Self
 import networkx as nx
 from .anklet_graph import AnkletGraph
-from .anklet_graph_unions import disjoint_union as anklet_graph_disjoint_union
+from .union import disjoint_union
 
 
 class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
@@ -220,7 +220,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         if balloon_a == balloon_b:
             raise ValueError(f'the positions {pos_a} and {pos_b} point to the same balloon')
 
-        self[balloon_a][index_a] = anklet_graph_disjoint_union(
+        self[balloon_a][index_a] = disjoint_union(
             self[balloon_a][index_a],
             self[balloon_b][index_b]
         )
