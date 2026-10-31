@@ -4,7 +4,7 @@ from collections.abc import Hashable
 from itertools import product
 from .anklet import Anklet
 from .anklet_graph import AnkletGraph
-from .anklet_graph_unions import disjoint_union
+from .union import disjoint_union
 
 
 def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
