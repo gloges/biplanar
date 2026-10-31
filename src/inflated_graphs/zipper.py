@@ -48,6 +48,20 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
     }
 
 
+def splice_at[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
+    common_beads = set(a) & set(b)
+    if len(common_beads) != 1:
+        raise ValueError(f"the two anklets do not have exactly one bead in common: {common_beads}")
+    common_bead = common_beads.pop()
+    a_cut = a.cut(common_bead)
+    b_cut = b.cut(common_bead)
+    return {
+        Anklet(*a_seq, common_bead, *b_seq)
+        for a_seq in (a_cut, a_cut[::-1])
+        for b_seq in (b_cut, b_cut[::-1])
+    }
+
+
 def zipper_disjoint[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
     """Return the anklet graphs which result from zipping together two connected anklet graphs.
 
