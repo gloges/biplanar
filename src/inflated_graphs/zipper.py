@@ -8,10 +8,10 @@ from .union import disjoint_union
 
 
 def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
-    """Splice together two anklets on distinct beads in all possible ways.
+    """Splice together two anklets on distinct beads.
 
     Splicing together `a` and `b` amounts to cutting the anklets apart into tuples
-    which are then joined end-to-end with a choice of relative orientation into a larger anklet.
+    which are then joined end-to-end with a choice of relative orientation into an anklet.
 
     Parameters
     ----------
@@ -28,6 +28,10 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
     ValueError
         If `a` and `b` have beads in common.
 
+    See Also
+    --------
+    :meth:`splice_at`
+
     Examples
     --------
     >>> splice(Anklet(0), Anklet(1))
@@ -38,9 +42,13 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
     {A(0, 1, 2, 3), A(0, 1, 3, 2)}
     >>> splice(Anklet(0), Anklet(1, 2, 3))
     {A(0, 1, 2, 3), A(0, 2, 3, 1), A(0, 3, 1, 2)}
+    >>> splice(Anklet(0, 1, 2), Anklet(2, 3, 4))
+    Traceback (most recent call last):
+    ...
+    ValueError: the two anklets have the beads {2} in common
     """
     if set(a) & set(b):
-        raise ValueError(f"a and b have the beads {set(a) & set(b)} in common")
+        raise ValueError(f"the two anklets have the beads {set(a) & set(b)} in common")
     return {
         Anklet.from_iterable(rep_a + rep_b)
         for rep_a in a.representatives()
