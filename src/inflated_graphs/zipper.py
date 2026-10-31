@@ -49,6 +49,47 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
 
 
 def splice_at[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
+    """Splice together two anklets with a common bead.
+
+    First, both `a` and `b` are cut open at their common bead to yield two bead sequences
+    *without* the common bead: see :meth:`Anklet.cut`. These are then joined end-to-end
+    with a choice of relative orientation and with the common bead inserted into one of the gaps.
+    At most four anklets are formed in this way, and if `a` and `b` have `m` and `n` beads,
+    respectively, then the resulting anklets have `m + n - 1` beads.
+
+    Parameters
+    ----------
+    a, b : Anklet[T]
+        Two anklets sharing exactly one bead.
+
+    Returns
+    -------
+    set[Anklet[T]]
+        The set of at most four anklets resulting from splicing together `a` and `b`
+        at their common node, as described above.
+
+    Raises
+    ------
+    ValueError
+        If `a` and `b` do not have exactly one bead in common.
+
+    See Also
+    --------
+    :meth:`splice`
+
+    Examples
+    --------
+    >>> splice_at(Anklet(0, 1, 2), Anklet(0, 3, 4))
+    {A(2, 1, 0, 3, 4), A(2, 1, 0, 4, 3), A(1, 2, 0, 3, 4), A(1, 2, 0, 4, 3)}
+    >>> splice_at(Anklet(0, 1, 2), Anklet(0, 3))
+    {A(2, 1, 0, 3), A(1, 2, 0, 3)}
+    >>> splice_at(Anklet(0, 1), Anklet(0, 2))
+    {A(1, 0, 2)}
+    >>> splice_at(Anklet(0, 1, 2), Anklet(1, 2, 3))
+    Traceback (most recent call last):
+    ...
+    ValueError: the two anklets do not have exactly one bead in common: {1, 2}
+    """
     common_beads = set(a) & set(b)
     if len(common_beads) != 1:
         raise ValueError(f"the two anklets do not have exactly one bead in common: {common_beads}")
