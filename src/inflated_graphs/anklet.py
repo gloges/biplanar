@@ -494,6 +494,7 @@ class Anklet[T](tuple[T, ...]):
         """
         if bead not in self:
             raise ValueError(f"{bead!r} is not a bead in the anklet {self}")
+        # Take double cover then remove prefix / suffix up to the two instances of `bead`
         double_cover = 2 * list(self)
         while double_cover[0] != bead:
             double_cover.pop(0)
