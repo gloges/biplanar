@@ -443,3 +443,13 @@ class Anklet[T](tuple[T, ...]):
                 g.add_edge(u, v)
 
         return nx.is_planar(g)
+
+    def cut(self, bead: T) -> tuple[T, ...]:
+        if bead not in self:
+            raise ValueError(f"{bead!r} is not a bead in the anklet {self}")
+        double_cover = 2 * list(self)
+        while double_cover[0] != bead:
+            double_cover.pop(0)
+        while double_cover[-1] != bead:
+            double_cover.pop()
+        return tuple(double_cover[1:-1])
