@@ -48,6 +48,24 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
     }
 
 
+def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet[T]]]:
+    common_beads = set(a) & set(b)
+    if len(common_beads) != 1:
+        raise ValueError(f"the two anklets do not have exactly one bead in common: {common_beads}")
+    common_bead = common_beads.pop()
+
+    anklet_pairs = set()
+    for rep_a, rep_b in product(a.representatives(), b.representatives()):
+        seq = rep_a + rep_b
+        i1 = seq.index(common_bead)
+        i2 = seq.index(common_bead, i1 + 1)
+        anklet_1 = Anklet.from_iterable(seq[i1:i2])
+        anklet_2 = Anklet.from_iterable(seq[i2:] + seq[:i1])
+        if (anklet_1, anklet_2) not in anklet_pairs and (anklet_2, anklet_1) not in anklet_pairs:
+            anklet_pairs.add((anklet_1, anklet_2))
+    return anklet_pairs
+
+
 def zipper_disjoint[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
     """Return the anklet graphs which result from zipping together two connected anklet graphs.
 
