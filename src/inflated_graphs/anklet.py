@@ -99,7 +99,8 @@ class Anklet[T](tuple[T, ...]):
         See Also
         --------
         :meth:`Anklet.without_beads`,
-        :meth:`Anklet.restrict_beads`
+        :meth:`Anklet.restrict_beads`,
+        :meth:`Anklet.cut`
 
         Examples
         --------
@@ -443,3 +444,60 @@ class Anklet[T](tuple[T, ...]):
                 g.add_edge(u, v)
 
         return nx.is_planar(g)
+
+    def cut(self, bead: T) -> tuple[T, ...]:
+        """Cut open the anklet into a linear sequence of beads by removing one bead.
+
+        The orientation of the resulting sequence of beads is determined by the defining tuple
+        of the anklet, but is not inherent to the anklet cutting process.
+
+        Parameters
+        ----------
+        bead : T
+            A bead in the anklet.
+
+        Returns
+        -------
+        tuple[T]
+            The cut anklet.
+            Prepending or appending `bead` to this tuple gives a representative tuple of the anklet.
+
+        Raises
+        ------
+        ValueError
+            If `bead` is not a bead in the anklet.
+
+        See Also
+        --------
+        :meth:`Anklet.without_bead`
+
+        Examples
+        --------
+        >>> Anklet(0, 1, 2, 3, 4, 5).cut(3)
+        (4, 5, 0, 1, 2)
+        >>> Anklet(5, 4, 3, 2, 1, 0).cut(3)
+        (2, 1, 0, 5, 4)
+        >>> Anklet(0).cut(0)
+        ()
+        >>> Anklet(0, 1, 2).cut(3)
+        Traceback (most recent call last):
+        ...
+        ValueError: 3 is not a bead in the anklet A(0, 1, 2)
+
+        Appending the cut bead gives a representative tuple:
+
+        >>> from random import sample, randint
+        >>> a = Anklet.from_iterable(sample(range(100), k=100))
+        >>> b = randint(0, 99)
+        >>> (*a.cut(b), b) in a.representatives()
+        True
+        """
+        if bead not in self:
+            raise ValueError(f"{bead!r} is not a bead in the anklet {self}")
+        # Take double cover then remove prefix / suffix up to the two instances of `bead`
+        double_cover = 2 * list(self)
+        while double_cover[0] != bead:
+            double_cover.pop(0)
+        while double_cover[-1] != bead:
+            double_cover.pop()
+        return tuple(double_cover[1:-1])
