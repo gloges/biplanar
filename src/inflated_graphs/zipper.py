@@ -49,6 +49,51 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
 
 
 def zipper_disjoint[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
+    """Return the anklet graphs which result from zipping together two connected anklet graphs.
+
+    Zipping together `g` and `h` amounts to taking their disjoint union and then picking a pair
+    of hyperedges, one from `g` and one from `h`, and replacing them by their various splicings.
+
+    If either `g` or `h` has only a single node and no hyperedges then a single 1-node hyperedge
+    is temporarily added before picking pairs of hyperedges to splice.
+
+    Parameters
+    ----------
+    g, h : AnkletGraph[T]
+        Two connected anklet graphs on disjoint sets of nodes.
+
+    Returns
+    -------
+    list[AnkletGraph[T]]
+        The anklet graphs which result from zipping together `g` and `h`.
+
+    Raises
+    ------
+    ValueError
+        If `g` and `h` have nodes in common or if either is not connected.
+
+    Examples
+    --------
+    >>> from inflated_graphs import Anklet
+    >>> g = AnkletGraph(hyperedges=[Anklet(0, 1)])
+    >>> h = AnkletGraph(hyperedges=[Anklet(2, 3)])
+    >>> for agraph in zipper_disjoint(g, h):
+    ...     print(agraph.data_string())
+    <0, 1, 2, 3 | A(0, 1, 2, 3)>
+    <0, 1, 2, 3 | A(0, 1, 3, 2)>
+    >>> g = AnkletGraph(hyperedges=[Anklet(0, 1)])
+    >>> h = AnkletGraph(hyperedges=[Anklet(2, 3), Anklet(3, 4, 5)])
+    >>> for agraph in zipper_disjoint(g, h):
+    ...     print(agraph.data_string())
+    <0, 1, 2, 3, 4, 5 | A(3, 4, 5) + A(0, 1, 2, 3)>
+    <0, 1, 2, 3, 4, 5 | A(3, 4, 5) + A(0, 1, 3, 2)>
+    <0, 1, 2, 3, 4, 5 | A(2, 3) + A(0, 1, 4, 5, 3)>
+    <0, 1, 2, 3, 4, 5 | A(2, 3) + A(0, 1, 5, 3, 4)>
+    <0, 1, 2, 3, 4, 5 | A(2, 3) + A(0, 1, 4, 3, 5)>
+    <0, 1, 2, 3, 4, 5 | A(2, 3) + A(0, 1, 5, 4, 3)>
+    <0, 1, 2, 3, 4, 5 | A(2, 3) + A(0, 1, 3, 5, 4)>
+    <0, 1, 2, 3, 4, 5 | A(2, 3) + A(0, 1, 3, 4, 5)>
+    """
     if g.nodes & h.nodes:
         raise ValueError(f"'g' and 'h' have the nodes {g.nodes & h.nodes} in common")
     if not g.is_connected():
