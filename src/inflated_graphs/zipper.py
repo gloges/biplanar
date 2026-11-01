@@ -230,13 +230,13 @@ def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[An
     hypes_g = [hype_g for hype_g, _ in g.hyperedges if common_node in hype_g]
     hypes_h = [hype_h for hype_h, _ in h.hyperedges if common_node in hype_h]
 
-    anklet_graphs = []
+    anklet_graphs = {}
     for hype_g, hype_h in product(hypes_g, hypes_h):
         for hypes_spliced in pinched_splice(hype_g, hype_h):
             anklet_graph = union(g, h)
             anklet_graph.remove_hyperedge(hype_g)
             anklet_graph.remove_hyperedge(hype_h)
             anklet_graph.add_hyperedges_from(hypes_spliced)
-            anklet_graphs.append(anklet_graph)
+            anklet_graphs[frozenset(anklet_graph.hyperedges)] = anklet_graph
 
-    return anklet_graphs
+    return list(anklet_graphs.values())
