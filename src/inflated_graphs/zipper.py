@@ -8,10 +8,11 @@ from .union import disjoint_union
 
 
 def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
-    """Splice together two anklets on distinct beads in all possible ways.
+    """Splice together two anklets on distinct beads.
 
-    Splicing together `a` and `b` amounts to cutting the anklets apart into tuples
-    which are then joined end-to-end with a choice of relative orientation into a larger anklet.
+    Splicing together `a` and `b` amounts to cutting the anklets apart into linear sequences
+    of beads whose ends are then joined up to form one larger anklet. This process involves a choice
+    of where to cut each anklet and a choice of relative orientation before being joined together.
 
     Parameters
     ----------
@@ -28,6 +29,10 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
     ValueError
         If `a` and `b` have beads in common.
 
+    See Also
+    --------
+    :meth:`pinched_splice`
+
     Examples
     --------
     >>> splice(Anklet(0), Anklet(1))
@@ -38,9 +43,13 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
     {A(0, 1, 2, 3), A(0, 1, 3, 2)}
     >>> splice(Anklet(0), Anklet(1, 2, 3))
     {A(0, 1, 2, 3), A(0, 2, 3, 1), A(0, 3, 1, 2)}
+    >>> splice(Anklet(0, 1, 2), Anklet(2, 3, 4))
+    Traceback (most recent call last):
+    ...
+    ValueError: the two anklets have the beads {2} in common
     """
     if set(a) & set(b):
-        raise ValueError(f"a and b have the beads {set(a) & set(b)} in common")
+        raise ValueError(f"the two anklets have the beads {set(a) & set(b)} in common")
     return {
         Anklet.from_iterable(rep_a + rep_b)
         for rep_a in a.representatives()
@@ -167,7 +176,7 @@ def zipper_disjoint[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[A
     <0, 1, 2, 3, 4, 5 | A(2, 3) + A(0, 1, 3, 4, 5)>
     """
     if g.nodes & h.nodes:
-        raise ValueError(f"'g' and 'h' have the nodes {g.nodes & h.nodes} in common")
+        raise ValueError(f"the two anklet graphs have the nodes {g.nodes & h.nodes} in common")
     if not g.is_connected():
         raise ValueError("'g' is not connected")
     if not h.is_connected():
