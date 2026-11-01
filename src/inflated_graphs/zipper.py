@@ -129,11 +129,14 @@ def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet
     return anklet_pairs
 
 
-def zipper_disjoint[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
-    """Return the anklet graphs which result from zipping together two connected anklet graphs.
+def zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
+    """Return the anklet graphs which result from zipping together two anklet graphs.
+
+    The anklet graphs must be connected and have no nodes in common.
 
     Zipping together `g` and `h` amounts to taking their disjoint union and then picking a pair
-    of hyperedges, one from `g` and one from `h`, and replacing them by their various splicings.
+    of hyperedges, one from `g` and one from `h`, and replacing them by their various splicings
+    (see :meth:`splice`).
 
     If either `g` or `h` has only a single node and no hyperedges then a single 1-node hyperedge
     is temporarily added before picking pairs of hyperedges to splice.
@@ -153,18 +156,22 @@ def zipper_disjoint[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[A
     ValueError
         If `g` and `h` have nodes in common or if either is not connected.
 
+    See Also
+    --------
+    :meth:`pinched_zipper`
+
     Examples
     --------
     >>> from inflated_graphs import Anklet
     >>> g = AnkletGraph(hyperedges=[Anklet(0, 1)])
     >>> h = AnkletGraph(hyperedges=[Anklet(2, 3)])
-    >>> for agraph in zipper_disjoint(g, h):
+    >>> for agraph in zipper(g, h):
     ...     print(agraph.data_string())
     <0, 1, 2, 3 | A(0, 1, 2, 3)>
     <0, 1, 2, 3 | A(0, 1, 3, 2)>
     >>> g = AnkletGraph(hyperedges=[Anklet(0, 1)])
     >>> h = AnkletGraph(hyperedges=[Anklet(2, 3), Anklet(3, 4, 5)])
-    >>> for agraph in zipper_disjoint(g, h):
+    >>> for agraph in zipper(g, h):
     ...     print(agraph.data_string())
     <0, 1, 2, 3, 4, 5 | A(3, 4, 5) + A(0, 1, 2, 3)>
     <0, 1, 2, 3, 4, 5 | A(3, 4, 5) + A(0, 1, 3, 2)>
