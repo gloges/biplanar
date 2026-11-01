@@ -4,7 +4,7 @@ from collections.abc import Hashable
 from itertools import product
 from .anklet import Anklet
 from .anklet_graph import AnkletGraph
-from .union import disjoint_union
+from .union import disjoint_union, union
 
 
 def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
@@ -210,5 +210,33 @@ def zipper_disjoint[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[A
         g.remove_hyperedge(Anklet.from_iterable(g))
     if h_added_hype:
         h.remove_hyperedge(Anklet.from_iterable(h))
+
+    return anklet_graphs
+
+
+def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
+
+    common_nodes = g.nodes & h.nodes
+    if len(common_nodes) != 1:
+        raise ValueError(
+            f"the two anklet graphs do not have exactly one node in common: {common_nodes}"
+        )
+    if not g.is_connected():
+        raise ValueError("'g' is not connected")
+    if not h.is_connected():
+        raise ValueError("'h' is not connected")
+
+    common_node = common_nodes.pop()
+    hypes_g = [hype_g for hype_g, _ in g.hyperedges if common_node in hype_g]
+    hypes_h = [hype_h for hype_h, _ in h.hyperedges if common_node in hype_h]
+
+    anklet_graphs = []
+    for hype_g, hype_h in product(hypes_g, hypes_h):
+        for hypes_spliced in pinched_splice(hype_g, hype_h):
+            anklet_graph = union(g, h)
+            anklet_graph.remove_hyperedge(hype_g)
+            anklet_graph.remove_hyperedge(hype_h)
+            anklet_graph.add_hyperedges_from(hypes_spliced)
+            anklet_graphs.append(anklet_graph)
 
     return anklet_graphs
