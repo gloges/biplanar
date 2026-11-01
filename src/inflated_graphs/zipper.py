@@ -215,7 +215,53 @@ def zipper_disjoint[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[A
 
 
 def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
+    """Return the anklet graphs which result from zipping together two anklet graphs.
 
+    The anklet graphs must be connected and have exactly one node in common.
+
+    Pinch-zipping together `g` and `h` amounts to taking their union and then picking a pair
+    of hyperedges, one from `g` and one from `h`, each containing the common node
+    and replacing them by their various pinched splicings (see :meth:`pinched_splice`).
+
+    If either `g` or `h` has only a single node and no hyperedges then a single 1-node hyperedge
+    is temporarily added before picking pairs of hyperedges to splice.
+
+    Parameters
+    ----------
+    g, h : AnkletGraph[T]
+        Two connected anklet graphs sharing exactly one node.
+
+    Returns
+    -------
+    list[AnkletGraph[T]]
+        The anklet graphs which result from zipping together `g` and `h`.
+
+    Raises
+    ------
+    ValueError
+        If `g` and `h` do not have exactly one node in common.
+
+    See Also
+    --------
+    :meth:`zipper`
+
+    Examples
+    --------
+    >>> from inflated_graphs import Anklet
+    >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(0, 2): 2})
+    >>> h = AnkletGraph(hyperedges=[Anklet(0, 3), Anklet(3, 4)])
+    >>> for ag in pinched_zipper(g, h):
+    ...     print(ag.data_string())
+    <0, 1, 2, 3, 4 | A(0, 1) + 2 × A(0, 2) + A(0, 3) + A(3, 4)>
+    <0, 1, 2, 3, 4 | A(0) + 2 × A(0, 2) + A(3, 4) + A(0, 1, 3)>
+    <0, 1, 2, 3, 4 | A(0) + A(0, 1) + A(0, 2) + A(3, 4) + A(0, 2, 3)>
+    >>> g = AnkletGraph(nodes=[0])
+    >>> h = AnkletGraph(hyperedges=[Anklet(0, 1, 2)])
+    >>> for ag in pinched_zipper(g, h):
+    ...     print(ag.data_string())
+    <0, 1, 2 | A(0) + A(0, 1, 2)>
+    <0, 1, 2 | A(0, 1) + A(0, 2)>
+    """
     common_nodes = g.nodes & h.nodes
     if len(common_nodes) != 1:
         raise ValueError(
