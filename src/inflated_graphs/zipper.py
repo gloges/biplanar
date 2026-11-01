@@ -49,6 +49,60 @@ def splice[T](a: Anklet[T], b: Anklet[T]) -> set[Anklet[T]]:
 
 
 def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet[T]]]:
+    """Splice together two anklets with one bead in common into a pair of anklets.
+
+    Pairs of anklets are formed by the following process:
+    - Consider the two anklets as cyclic graphs and take their union. Since they have one bead
+    in common this produces a "figure-eight" graph.
+    - Cut open each of the anklet cycles at an edge, resulting in a starlike graph with exactly
+    four dangling "half-edges".
+    - Join up the "half-edges" in pairs so that each is with a new partner. The produces again
+    a "figure-eight" graph.
+    - Split apart the figure-eight graph at the hub node into two anklets with one bead in common.
+
+    The above steps involve choices for where to make the cuts and how to glue the loose ends
+    back together. If `a` and `b` have `m` and `n` beads, respectively, then at most `2(m + n)`
+    pairs of anklets are returned.
+
+    Parameters
+    ----------
+    a, b : Anklet[T]
+        Two anklets sharing exactly one bead.
+
+    Returns
+    -------
+    set[tuple[Anklet[T], Anklet[T]]]
+        All pairs of anklets which result from splicing together `a` and `b`, as described above.
+
+    Raises
+    ------
+    ValueError
+        If `a` and `b` do not have exactly one bead in common.
+
+    See Also
+    --------
+    :meth:`splice`
+
+    Examples
+    --------
+    >>> pinched_splice(Anklet(0, 1), Anklet(0))
+    {(A(0, 1), A(0))}
+    >>> pinched_splice(Anklet(0, 1, 2), Anklet(0))
+    {(A(0, 1), A(0, 2)), (A(0, 1, 2), A(0))}
+    >>> pinched_splice(Anklet(0, 1), Anklet(0, 2))
+    {(A(0, 1), A(0, 2)), (A(0, 1, 2), A(0))}
+    >>> for a_pair in sorted(pinched_splice(Anklet(0, 1), Anklet(0, 2, 3))):
+    ...     print(a_pair)
+    (A(0, 1), A(0, 2, 3))
+    (A(0, 1, 2), A(0, 3))
+    (A(0, 1, 3), A(0, 2))
+    (A(0, 1, 3, 2), A(0))
+    (A(0, 1, 2, 3), A(0))
+    >>> pinched_splice(Anklet(0, 1, 2), Anklet(1, 2, 3))
+    Traceback (most recent call last):
+    ...
+    ValueError: the two anklets do not have exactly one bead in common: {1, 2}
+    """
     common_beads = set(a) & set(b)
     if len(common_beads) != 1:
         raise ValueError(f"the two anklets do not have exactly one bead in common: {common_beads}")
