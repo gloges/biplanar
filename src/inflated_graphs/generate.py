@@ -194,13 +194,13 @@ def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
             common_nodes = ag_new.nodes & g.nodes
             if not common_nodes:
                 # Add 'ag_new' to any pre-existing balloon or start a new one
-                for i in range(len(g) + 1):
+                for i in range(len(g)):
                     g_new = g.copy()
-                    if i < len(g):
-                        g_new[i].append(ag_new.copy())
-                    else:
-                        g_new.append([ag_new.copy()])
+                    g_new[i].append(ag_new.copy())
                     queue.append(g_new)
+                g_new = g.copy()
+                g_new.append([ag_new.copy()])
+                queue.append(g_new)
             elif len(common_nodes) == 1:
                 # Identify the balloon of 'g' which has the node in common with ag_new
                 common_node = list(common_nodes)[0]
