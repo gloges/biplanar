@@ -105,21 +105,6 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     def attributes(self, value: Mapping[str, Any]) -> None:
         self._attr = dict(value)
 
-    @property
-    def nodes(self) -> set[T]:
-        """The set of nodes."""
-        return set().union(*[ag.nodes for balloon in self for ag in balloon])
-
-    def balloon_nodes(self) -> list[set[T]]:
-        """The sets of nodes in each balloon."""
-        return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
-
-    def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
-        """Yield (balloon_index, index, anklet_graph) tuples."""
-        for i, balloon in enumerate(self):
-            for j, ag in enumerate(balloon):
-                yield i, j, ag
-
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
 
@@ -165,6 +150,51 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ])
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Balloons, anklet graphs and nodes
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def number_of_balloons(self) -> int:
+        """Return the number of balloons (equivalent to `len(g)`)."""
+        return len(self)
+
+    def number_of_anklet_graphs(self, i: int | None = None) -> int:
+        """Return the number of anklet graphs.
+
+        If `i` is an integer then returns the number of anklet graphs
+        in the `i`ᵗʰ balloon (*i.e.* `len(self[i])`). Otherwise, returns
+        the total number of anklet graphs across all balloons.
+
+        Parameters
+        ----------
+        i : int or None, optional (default=None)
+            The balloon index.
+
+        Returns
+        -------
+        int
+            If `i` is an integer, the number of anklet graphs in balloon `i`.
+            Otherwise, the total number of anklet graphs.
+        """
+        if isinstance(i, int):
+            return len(self[i])
+        return sum(len(balloon) for balloon in self)
+
+    def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
+        """Yield (balloon_index, index, anklet_graph) tuples."""
+        for i, balloon in enumerate(self):
+            for j, ag in enumerate(balloon):
+                yield i, j, ag
+
+    @property
+    def nodes(self) -> set[T]:
+        """The set of nodes."""
+        return set().union(*[ag.nodes for balloon in self for ag in balloon])
+
+    def balloon_nodes(self, i: int) -> set[T]:
+        """The set of nodes in the `i`ᵗʰ balloon."""
+        return set().union(*[ag.nodes for ag in self[i]])
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Graph operations
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
@@ -172,6 +202,32 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """Reduce each anklet graph: see :meth:`AnkletGraph.reduce`."""
         for _, _, ag in self.iter_anklet_graphs():
             ag.reduce()
+
+    def prune_subsingleton(self) -> None:
+        """Selectively remove anklet graphs and balloons.
+
+        Removes (i) empty anklet graphs, (ii) 1-node anklet graphs whose node appears in another
+        anklet graph of the *same* balloon and (iii) empty balloons.
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | A(0, 1, 2)>, <2 | >, <3 | >], [<4 | >, < | >, <4 | >], [< | >]", int
+        ... )
+        >>> g.prune_subsingleton()
+        >>> g.data_string()
+        '[<0, 1, 2 | A(0, 1, 2)>, <3 | >], [<4 | >]'
+        """
+        for i, j, ag in reversed(list(self.iter_anklet_graphs())):
+            if not ag.nodes or (
+                ag.number_of_nodes() == 1
+                and any(ag.nodes <= ag2.nodes for j2, ag2 in enumerate(self[i]) if j != j2)
+            ):
+                self[i].pop(j)
+
+        for i, balloon in reversed(list(enumerate(self))):
+            if not balloon:
+                self.pop(i)
 
     def _combine(self, pos_a: tuple[int, int], pos_b: tuple[int, int]) -> None:
         """Combine two anklet graphs.
@@ -214,19 +270,19 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> g.data_string()
         '[<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]'
         """
-        balloon_a, index_a = pos_a
-        balloon_b, index_b = pos_b
+        i_a, j_a = pos_a
+        i_b, j_b = pos_b
 
-        if balloon_a == balloon_b:
+        if i_a == i_b:
             raise ValueError(f'the positions {pos_a} and {pos_b} point to the same balloon')
 
-        self[balloon_a][index_a] = disjoint_union(
-            self[balloon_a][index_a],
-            self[balloon_b][index_b]
+        self[i_a][j_a] = disjoint_union(
+            self[i_a][j_a],
+            self[i_b][j_b]
         )
-        self[balloon_b].pop(index_b)
-        self[balloon_a].extend(self[balloon_b])
-        self.pop(balloon_b)
+        self[i_b].pop(j_b)
+        self[i_a].extend(self[i_b])
+        self.pop(i_b)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence
@@ -309,8 +365,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ValueError
             If one of the three requirements above is not met (a short message explains the issue).
         """
-        balloon, index = pos
-        anklet_graph = self[balloon][index]
+        i, j = pos
+        anklet_graph = self[i][j]
 
         if not anklet_graph.nodes:
             self._reset_valid_structure()
