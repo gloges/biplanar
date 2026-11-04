@@ -105,21 +105,6 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     def attributes(self, value: Mapping[str, Any]) -> None:
         self._attr = dict(value)
 
-    @property
-    def nodes(self) -> set[T]:
-        """The set of nodes."""
-        return set().union(*[ag.nodes for balloon in self for ag in balloon])
-
-    def balloon_nodes(self) -> list[set[T]]:
-        """The sets of nodes in each balloon."""
-        return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
-
-    def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
-        """Yield (balloon_index, index, anklet_graph) tuples."""
-        for i, balloon in enumerate(self):
-            for j, ag in enumerate(balloon):
-                yield i, j, ag
-
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
 
@@ -163,6 +148,25 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             '[' + ", ".join([ag.data_string() for ag in balloon]) + ']'
             for balloon in self
         ])
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Balloons, anklet graphs and nodes
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    @property
+    def nodes(self) -> set[T]:
+        """The set of nodes."""
+        return set().union(*[ag.nodes for balloon in self for ag in balloon])
+
+    def balloon_nodes(self) -> list[set[T]]:
+        """The sets of nodes in each balloon."""
+        return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
+
+    def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
+        """Yield (balloon_index, index, anklet_graph) tuples."""
+        for i, balloon in enumerate(self):
+            for j, ag in enumerate(balloon):
+                yield i, j, ag
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Graph operations
