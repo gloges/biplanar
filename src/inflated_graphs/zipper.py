@@ -8,20 +8,25 @@ from .union import union
 
 
 def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet[T]]]:
-    """Splice together two anklets with one bead in common into a pair of anklets.
+    """Splice together two anklets with exactly one bead in common.
+
+    Each anklet must have at least two beads.
 
     Pairs of anklets are formed by the following process:
-    - Consider the two anklets as cyclic graphs and take their union. Since they have one bead
-    in common this produces a "figure-eight" graph.
-    - Cut open each of the anklet cycles at an edge, resulting in a starlike graph with exactly
-    four dangling "half-edges".
-    - Join up the "half-edges" in pairs so that each is with a new partner. The produces again
-    a "figure-eight" graph.
-    - Split apart the figure-eight graph at the hub node into two anklets with one bead in common.
+    - For both `a` and `b` pick a bead *other* than the bead they have in common.
+    - Viewing the anklet `a` as a labeled polygon, cut in a straight line from its chosen bead
+    to the common bead; the polygon falls into two pieces, each with both the chosen
+    and common beads.
+    - Similarly for `b`.
+    - Join up the polygon pieces in pairs, one from `a` with one from `b`, such that the raw cut
+    edges meet with the common bead vertices together.
+    - Reinterpret the newly formed labeled polygons as anklets.
 
-    The above steps involve choices for where to make the cuts and how to glue the loose ends
-    back together. If `a` and `b` have `m` and `n` beads, respectively, then at most `2(m + n)`
-    pairs of anklets are returned.
+    The above steps produce pairs of anklets which have exactly three beads in common (the bead
+    common to `a` and `b` and the two chosen beads). There are several choices involved: where
+    to make the cuts and how to glue the pieces back together.
+    If `a` and `b` have `m ≥ 3` and `n ≥ 3` beads, respectively, then this splicing process produces
+    `2(m - 1)(n - 1)` pairs of anklets. For `m = 2` this number is halved and similarly for `n = 2`.
 
     Parameters
     ----------
@@ -36,31 +41,36 @@ def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet
     Raises
     ------
     ValueError
-        If `a` and `b` do not have exactly one bead in common.
+        If `a` and `b` do not have exactly one bead in common or if either has only one bead.
 
     See Also
     --------
-    :meth:`splice`
+    :meth:`pinched_zipper`
 
     Examples
-    --------
-    >>> pinched_splice(Anklet(0, 1), Anklet(0))
-    {(A(0, 1), A(0))}
-    >>> pinched_splice(Anklet(0, 1, 2), Anklet(0))
-    {(A(0, 1), A(0, 2)), (A(0, 1, 2), A(0))}
+    -------- 
     >>> pinched_splice(Anklet(0, 1), Anklet(0, 2))
-    {(A(0, 1), A(0, 2)), (A(0, 1, 2), A(0))}
-    >>> for a_pair in sorted(pinched_splice(Anklet(0, 1), Anklet(0, 2, 3))):
+    {(A(0, 1, 2), A(0, 2, 1))}
+    >>> pinched_splice(Anklet(0, 1), Anklet(0, 2, 3))
+    {(A(0, 1, 3), A(0, 2, 3, 1)), (A(0, 1, 2, 3), A(0, 2, 1))}
+    >>> for a_pair in sorted(pinched_splice(Anklet(0, 1, 2), Anklet(0, 3, 4))):
     ...     print(a_pair)
-    (A(0, 1), A(0, 2, 3))
-    (A(0, 1, 2), A(0, 3))
-    (A(0, 1, 3), A(0, 2))
-    (A(0, 1, 3, 2), A(0))
-    (A(0, 1, 2, 3), A(0))
+    (A(0, 1, 4), A(0, 3, 4, 1, 2))
+    (A(0, 1, 3, 4), A(0, 3, 1, 2))
+    (A(0, 1, 2, 4), A(0, 3, 4, 2))
+    (A(0, 1, 3), A(0, 4, 3, 1, 2))
+    (A(0, 1, 4, 3), A(0, 4, 1, 2))
+    (A(0, 1, 2, 3), A(0, 4, 3, 2))
+    (A(0, 1, 2, 4, 3), A(0, 4, 2))
+    (A(0, 1, 2, 3, 4), A(0, 3, 2))
     >>> pinched_splice(Anklet(0, 1, 2), Anklet(1, 2, 3))
     Traceback (most recent call last):
     ...
     ValueError: the two anklets do not have exactly one bead in common: {1, 2}
+    >>> pinched_splice(Anklet(0, 1, 2), Anklet(2))
+    Traceback (most recent call last):
+    ...
+    ValueError: b = A(2) has only one bead
     """
     common_beads = set(a) & set(b)
     if len(common_beads) != 1:
