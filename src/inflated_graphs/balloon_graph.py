@@ -153,6 +153,32 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     #   Balloons, anklet graphs and nodes
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
+    def number_of_balloons(self) -> int:
+        """Return the number of balloons (equivalent to `len(g)`)."""
+        return len(self)
+
+    def number_of_anklet_graphs(self, i: int | None = None) -> int:
+        """Return the number of anklet graphs.
+
+        If `i` is an integer then returns the number of anklet graphs
+        in the `i`ᵗʰ balloon (*i.e.* `len(self[i])`). Otherwise, returns
+        the total number of anklet graphs across all balloons.
+
+        Parameters
+        ----------
+        i : int or None, optional (default=None)
+            The balloon index.
+
+        Returns
+        -------
+        int
+            If `i` is an integer, the number of anklet graphs in balloon `i`.
+            Otherwise, the total number of anklet graphs.
+        """
+        if isinstance(i, int):
+            return len(self[i])
+        return sum(len(balloon) for balloon in self)
+
     @property
     def nodes(self) -> set[T]:
         """The set of nodes."""
