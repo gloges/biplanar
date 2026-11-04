@@ -183,38 +183,38 @@ def balloon_graphs_on[T: Hashable](nodes: Collection[T]) -> list[BalloonGraph[T]
     queue = [BalloonGraph[T]()]
     balloon_graphs: list[BalloonGraph[T]] = []
     while queue:
-        bgraph = queue.pop(0)
+        g = queue.pop(0)
 
         # Iterate over anklet graphs with index larger than those already present
-        # that share at most one node with 'bg'
         index_start = 0
-        if bgraph:
-            index_start = max(ag.attributes['index'] for balloon in bgraph for ag in balloon) + 1
+        if g:
+            index_start = max(ag.attributes['index'] for balloon in g for ag in balloon) + 1
+
         for ag_new in anklet_graphs[index_start:]:
-            common_nodes = ag_new.nodes & bgraph.nodes
+            common_nodes = ag_new.nodes & g.nodes
             if not common_nodes:
-                # Can add 'ag_new' to any pre-existing balloons or start a new one
-                for i in range(len(bgraph)):
-                    bgraph_new = bgraph.copy()
-                    bgraph_new[i].append(ag_new.copy())
-                    queue.append(bgraph_new)
-                bgraph_new = bgraph.copy()
-                bgraph_new.append([ag_new.copy()])
-                queue.append(bgraph_new)
+                # Add 'ag_new' to any pre-existing balloon or start a new one
+                for i in range(len(g) + 1):
+                    g_new = g.copy()
+                    if i < len(g):
+                        g_new[i].append(ag_new.copy())
+                    else:
+                        g_new.append([ag_new.copy()])
+                    queue.append(g_new)
             elif len(common_nodes) == 1:
-                # Identify the balloon of bgraph which has the node in common with ag_new
+                # Identify the balloon of 'g' which has the node in common with ag_new
                 common_node = list(common_nodes)[0]
-                i = [common_node in bnodes for bnodes in bgraph.balloon_nodes()].index(True)
-                if all(ag.nodes != {common_node} for ag in bgraph[i]):
-                    bgraph_new = bgraph.copy()
-                    bgraph_new[i].append(ag_new.copy())
-                    queue.append(bgraph_new)
+                i = [common_node in g.balloon_nodes(i) for i in range(len(g))].index(True)
+                if all(ag.nodes != {common_node} for ag in g[i]):
+                    g_new = g.copy()
+                    g_new[i].append(ag_new.copy())
+                    queue.append(g_new)
 
         # Add to list of balloon graphs to return if all nodes are present
-        if bgraph.nodes == set(nodes):
-            for balloon in bgraph:
+        if g.nodes == set(nodes):
+            for balloon in g:
                 for ag in balloon:
                     ag.attributes.pop('index')
-            balloon_graphs.append(bgraph)
+            balloon_graphs.append(g)
 
     return balloon_graphs
