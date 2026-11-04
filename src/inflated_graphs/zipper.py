@@ -67,16 +67,21 @@ def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet
         raise ValueError(f"the two anklets do not have exactly one bead in common: {common_beads}")
     common_bead = common_beads.pop()
 
-    anklet_pairs = set()
+    if len(a) == 1:
+        raise ValueError(f"a = {a} has only one bead")
+    if len(b) == 1:
+        raise ValueError(f"b = {b} has only one bead")
+
+    pairs = set()
     for rep_a, rep_b in product(a.representatives(), b.representatives()):
-        seq = rep_a + rep_b
-        i1 = seq.index(common_bead)
-        i2 = seq.index(common_bead, i1 + 1)
-        anklet_1 = Anklet.from_iterable(seq[i1:i2])
-        anklet_2 = Anklet.from_iterable(seq[i2:] + seq[:i1])
-        if (anklet_1, anklet_2) not in anklet_pairs and (anklet_2, anklet_1) not in anklet_pairs:
-            anklet_pairs.add((anklet_1, anklet_2))
-    return anklet_pairs
+        if common_bead not in (rep_a[0], rep_b[0]):
+            i_a = rep_a.index(common_bead)
+            i_b = rep_b.index(common_bead)
+            anklet_1 = Anklet.from_iterable(rep_a[i_a:] + rep_a[:1] + rep_b[:i_b])
+            anklet_2 = Anklet.from_iterable(rep_b[i_b:] + rep_b[:1] + rep_a[:i_a])
+            if (anklet_1, anklet_2) not in pairs and (anklet_2, anklet_1) not in pairs:
+                pairs.add((anklet_1, anklet_2))
+    return pairs
 
 
 def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
