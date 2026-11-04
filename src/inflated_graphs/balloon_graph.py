@@ -203,6 +203,32 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         for _, _, ag in self.iter_anklet_graphs():
             ag.reduce()
 
+    def prune_subsingleton(self) -> None:
+        """Selectively remove anklet graphs and balloons.
+
+        Removes (i) empty anklet graphs, (ii) 1-node anklet graphs whose node appears in another
+        anklet graph of the *same* balloon and (iii) empty balloons.
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | A(0, 1, 2)>, <2 | >, <3 | >], [<4 | >, < | >, <4 | >], [< | >]", int
+        ... )
+        >>> g.prune_subsingleton()
+        >>> g.data_string()
+        '[<0, 1, 2 | A(0, 1, 2)>, <3 | >], [<4 | >]'
+        """
+        for i, j, ag in reversed(list(self.iter_anklet_graphs())):
+            if not ag.nodes or (
+                ag.number_of_nodes() == 1
+                and any(ag.nodes <= ag2.nodes for j2, ag2 in enumerate(self[i]) if j != j2)
+            ):
+                self[i].pop(j)
+
+        for i, balloon in reversed(list(enumerate(self))):
+            if not balloon:
+                self.pop(i)
+
     def _combine(self, pos_a: tuple[int, int], pos_b: tuple[int, int]) -> None:
         """Combine two anklet graphs.
 
