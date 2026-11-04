@@ -214,19 +214,19 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> g.data_string()
         '[<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]'
         """
-        balloon_a, index_a = pos_a
-        balloon_b, index_b = pos_b
+        i_a, j_a = pos_a
+        i_b, j_b = pos_b
 
-        if balloon_a == balloon_b:
+        if i_a == i_b:
             raise ValueError(f'the positions {pos_a} and {pos_b} point to the same balloon')
 
-        self[balloon_a][index_a] = disjoint_union(
-            self[balloon_a][index_a],
-            self[balloon_b][index_b]
+        self[i_a][j_a] = disjoint_union(
+            self[i_a][j_a],
+            self[i_b][j_b]
         )
-        self[balloon_b].pop(index_b)
-        self[balloon_a].extend(self[balloon_b])
-        self.pop(balloon_b)
+        self[i_b].pop(j_b)
+        self[i_a].extend(self[i_b])
+        self.pop(i_b)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence
@@ -309,8 +309,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ValueError
             If one of the three requirements above is not met (a short message explains the issue).
         """
-        balloon, index = pos
-        anklet_graph = self[balloon][index]
+        i, j = pos
+        anklet_graph = self[i][j]
 
         if not anklet_graph.nodes:
             self._reset_valid_structure()
