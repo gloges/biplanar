@@ -184,9 +184,9 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """The set of nodes."""
         return set().union(*[ag.nodes for balloon in self for ag in balloon])
 
-    def balloon_nodes(self) -> list[set[T]]:
-        """The sets of nodes in each balloon."""
-        return [set().union(*[ag.nodes for ag in balloon]) for balloon in self]
+    def balloon_nodes(self, i: int) -> set[T]:
+        """The set of nodes in the `i`ᵗʰ balloon."""
+        return set().union(*[ag.nodes for ag in self[i]])
 
     def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
         """Yield (balloon_index, index, anklet_graph) tuples."""
