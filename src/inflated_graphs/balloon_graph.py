@@ -6,6 +6,8 @@ import networkx as nx
 from .anklet_graph import AnkletGraph
 from .union import disjoint_union
 
+type IndexPair = tuple[int, int]  # (balloon index, anklet graph index)
+
 
 class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
@@ -179,11 +181,15 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             return len(self[i])
         return sum(len(balloon) for balloon in self)
 
-    def iter_anklet_graphs(self) -> Iterator[tuple[int, int, AnkletGraph[T]]]:
-        """Yield (balloon_index, index, anklet_graph) tuples."""
+    def iter_anklet_graphs(self) -> Iterator[tuple[IndexPair, AnkletGraph[T]]]:
+        """Yield (location, anklet_graph) pairs.
+
+        'Locations' are pairs of indices, the first gives the balloon
+        and the second the anklet graph within that balloon.
+        """
         for i, balloon in enumerate(self):
             for j, ag in enumerate(balloon):
-                yield i, j, ag
+                yield (i, j), ag
 
     @property
     def nodes(self) -> set[T]:
@@ -200,7 +206,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
     def reduce(self) -> None:
         """Reduce each anklet graph: see :meth:`AnkletGraph.reduce`."""
-        for _, _, ag in self.iter_anklet_graphs():
+        for _, ag in self.iter_anklet_graphs():
             ag.reduce()
 
     def prune_subsingleton(self) -> None:
@@ -218,7 +224,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> g.data_string()
         '[<0, 1, 2 | A(0, 1, 2)>, <3 | >], [<4 | >]'
         """
-        for i, j, ag in reversed(list(self.iter_anklet_graphs())):
+        for (i, j), ag in reversed(list(self.iter_anklet_graphs())):
             if not ag.nodes or (
                 ag.number_of_nodes() == 1
                 and any(ag.nodes <= ag2.nodes for j2, ag2 in enumerate(self[i]) if j != j2)
@@ -229,14 +235,10 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             if not balloon:
                 self.pop(i)
 
-    def combine_anklet_graphs(
-        self,
-        pos_a: tuple[int, int],
-        pos_b: tuple[int, int]
-    ) -> tuple[int, int]:
+    def combine_anklet_graphs(self, loc_a: IndexPair, loc_b: IndexPair) -> IndexPair:
         """Combine two anklet graphs.
 
-        `pos_a` and `pos_b` give the positions of anklet graphs in the balloon graph:
+        `loc_a` and `loc_b` give the locations of anklet graphs in the balloon graph:
         the first element of each gives the balloon index and second element the anklet graph index
         within that balloon.
 
@@ -245,9 +247,9 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         has a valid structure (see :meth:`BalloonGraph.check_structure`).
 
         In order, the following changes are made:
-        - The anklet graph at position `pos_a` is replaced by the *disjoint* union
-        of itself and the anklet graph at position `pos_b`.
-        - The anklet graph at position `pos_b` is removed.
+        - The anklet graph at location `loc_a` is replaced by the *disjoint* union
+        of itself and the anklet graph at location `loc_b`.
+        - The anklet graph at location `loc_b` is removed.
         - The anklet graphs of balloon `b` are moved into balloon `a`.
         - Balloon `b` is removed.
 
@@ -256,19 +258,19 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         Parameters
         ----------
-        pos_a, pos_b : tuple[int, int]
-            Index pairs giving the positions for the two anklet graphs to be combined.
+        loc_a, loc_b : IndexPair
+            Index pairs giving the location for the two anklet graphs to be combined.
 
         Returns
         -------
-        tuple[int, int]
-            The final position of the combined anklet graph after the above operations:
-            returns `pos_a` if `pos_a[0] < pos_b[0]`, otherwise returns `(pos_a[0] - 1, pos_a[1])`.
+        IndexPair
+            The final location of the combined anklet graph after the above operations:
+            returns `loc_a` if `loc_a[0] < loc_b[0]`, otherwise returns `(loc_a[0] - 1, loc_a[1])`.
 
         Raises
         ------
         ValueError
-            If the anklet graphs at positions `pos_a` and `pos_b`
+            If the anklet graphs at locations `loc_a` and `loc_b`
             are in the same balloon or share a node.
 
         Examples
@@ -284,11 +286,11 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> g.data_string()
         '[<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]'
         """
-        i_a, j_a = pos_a
-        i_b, j_b = pos_b
+        i_a, j_a = loc_a
+        i_b, j_b = loc_b
 
         if i_a == i_b:
-            raise ValueError(f'the positions {pos_a} and {pos_b} point to the same balloon')
+            raise ValueError(f'the anklet graphs at {loc_a} and {loc_b} belong to the same balloon')
 
         self[i_a][j_a] = disjoint_union(
             self[i_a][j_a],
@@ -304,23 +306,23 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     #   Incidence
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def incidence(self) -> dict[T, set[tuple[int, int]]]:
+    def incidence(self) -> dict[T, set[IndexPair]]:
         """Return the incidence data.
 
         Returns
         -------
-        dict[T, set[tuple[int, int]]]
+        dict[T, set[IndexPair]]
             Dictionary keyed by nodes. Values are the sets of index pairs giving
-            the positions of the anklet graphs containing that node.
+            the locations of the anklet graphs containing that node.
 
         See Also
         --------
         :meth:`to_incidence_graph`
         """
         inc = {n: set() for n in self.nodes}
-        for i, j, ag in self.iter_anklet_graphs():
+        for loc, ag in self.iter_anklet_graphs():
             for n in ag.nodes:
-                inc[n].add((i, j))
+                inc[n].add(loc)
         return inc
 
     def to_incidence_graph(self) -> nx.Graph:
@@ -332,7 +334,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         "Node" nodes in the returned bipartite graph are integers and have an attribute with name
         'node' storing the corresponding node from the balloon graph. "Anklet graph" nodes
-        are pairs of integers giving the position of the anklet graph in the balloon graph.
+        are pairs of integers giving the locations of the anklet graph in the balloon graph.
 
         Returns
         -------
@@ -346,12 +348,12 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         g = nx.Graph()
         node_ids = {n: i for i, n in enumerate(self.nodes)}
         g.add_nodes_from((i, {'node': n}) for n, i in node_ids.items())
-        g.add_nodes_from((i, j) for i, j, _ in self.iter_anklet_graphs())
+        g.add_nodes_from(loc for loc, _ in self.iter_anklet_graphs())
 
         # Add edges between "anklet graph" nodes and "node" nodes when one contains the other
-        for i, j, ag in self.iter_anklet_graphs():
+        for loc, ag in self.iter_anklet_graphs():
             for n in ag:
-                g.add_edge((i, j), node_ids[n])
+                g.add_edge(loc, node_ids[n])
 
         return g
 
@@ -369,7 +371,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """Force a full validation on the next call of :meth:`BalloonGraph.check_structure`."""
         self._valid_structure = None
 
-    def _check_anklet_graph_structure(self, pos: tuple[int, int]) -> None:
+    def _check_anklet_graph_structure(self, loc: IndexPair) -> None:
         """Validate the structure of an anklet graph.
 
         Checks if the anklet graph (i) is non-empty, (ii) is connected and (iii) is planar.
@@ -381,20 +383,20 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ValueError
             If one of the three requirements above is not met (a short message explains the issue).
         """
-        i, j = pos
+        i, j = loc
         anklet_graph = self[i][j]
 
         if not anklet_graph.nodes:
             self._reset_valid_structure()
-            raise ValueError(f"the anklet graph at position {pos} is empty")
+            raise ValueError(f"the anklet graph at {loc} is empty")
 
         if not anklet_graph.is_connected():
             self._reset_valid_structure()
-            raise ValueError(f"the anklet graph at position {pos} is not connected")
+            raise ValueError(f"the anklet graph at {loc} is not connected")
 
         if not anklet_graph.is_planar():
             self._reset_valid_structure()
-            raise ValueError(f"the anklet graph at position {pos} is not planar")
+            raise ValueError(f"the anklet graph at {loc} is not planar")
 
     def _check_node_monogamy(self) -> None:
         """Validates that each node appears in only one balloon.
@@ -407,7 +409,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             If a node appears in two (or more) anklet graphs belonging to different balloons.
         """
         node_balloons = {}
-        for i, _, ag in self.iter_anklet_graphs():
+        for (i, _), ag in self.iter_anklet_graphs():
             for n in ag:
                 if n not in node_balloons:
                     node_balloons[n] = i
@@ -446,22 +448,22 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> g.check_structure()
         Traceback (most recent call last):
         ...
-        ValueError: the anklet graph at position (0, 0) is not planar
+        ValueError: the anklet graph at (0, 0) is not planar
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2 | 2 × A(0, 1, 2)>, < | >], [<3 | >]", int
         ... )
         >>> g.check_structure()
         Traceback (most recent call last):
         ...
-        ValueError: the anklet graph at position (0, 1) is empty
+        ValueError: the anklet graph at (0, 1) is empty
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2 | 2 × A(0, 1, 2)>, <2 | >], [<3 | >]", int
         ... )
         >>> g.check_structure()
         Traceback (most recent call last):
         ...
-        ValueError: the anklet graph at position (0, 1) has only one node
-        which also appears in the anklet graph at position (0, 0)
+        ValueError: the anklet graph at (0, 1) has only one node
+        which also appears in the anklet graph at (0, 0)
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2 | 2 × A(0, 1, 2)>, <2, 3 | A(2, 3)>], [<3 | >]", int
         ... )
@@ -475,22 +477,20 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             # there is no need to check again
             return
 
-        for i, balloon in enumerate(self):
-            for j in range(len(balloon)):
-                self._check_anklet_graph_structure((i, j))
+        for loc, _ in self.iter_anklet_graphs():
+            self._check_anklet_graph_structure(loc)
 
         self._check_node_monogamy()
 
-        for i, balloon in enumerate(self):
-            for j, ag in enumerate(balloon):
-                if len(ag.nodes) == 1:
-                    for j2, ag2 in enumerate(balloon):
-                        if j != j2 and ag.nodes & ag2.nodes:
-                            self._reset_valid_structure()
-                            raise ValueError(
-                                f"the anklet graph at position ({i}, {j}) has only one node\n"
-                                f"which also appears in the anklet graph at position ({i}, {j2})"
-                            )
+        for (i, j), ag in self.iter_anklet_graphs():
+            if len(ag.nodes) == 1:
+                for j2, ag2 in enumerate(self[i]):
+                    if j != j2 and ag.nodes & ag2.nodes:
+                        self._reset_valid_structure()
+                        raise ValueError(
+                            f"the anklet graph at ({i}, {j}) has only one node\n"
+                            f"which also appears in the anklet graph at ({i}, {j2})"
+                        )
 
         inc_graph = self.to_incidence_graph()
 
