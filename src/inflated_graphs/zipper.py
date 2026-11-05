@@ -7,7 +7,7 @@ from .anklet_graph import AnkletGraph
 from .union import union
 
 
-def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet[T]]]:
+def splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet[T]]]:
     """Splice together two anklets with exactly one bead in common.
 
     Each anklet must have at least two beads.
@@ -45,15 +45,15 @@ def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet
 
     See Also
     --------
-    :meth:`pinched_zipper`
+    :meth:`zipper`
 
     Examples
     -------- 
-    >>> pinched_splice(Anklet(0, 1), Anklet(0, 2))
+    >>> splice(Anklet(0, 1), Anklet(0, 2))
     {(A(0, 1, 2), A(0, 2, 1))}
-    >>> pinched_splice(Anklet(0, 1), Anklet(0, 2, 3))
+    >>> splice(Anklet(0, 1), Anklet(0, 2, 3))
     {(A(0, 1, 3), A(0, 2, 3, 1)), (A(0, 1, 2, 3), A(0, 2, 1))}
-    >>> for a_pair in sorted(pinched_splice(Anklet(0, 1, 2), Anklet(0, 3, 4))):
+    >>> for a_pair in sorted(splice(Anklet(0, 1, 2), Anklet(0, 3, 4))):
     ...     print(a_pair)
     (A(0, 1, 4), A(0, 3, 4, 1, 2))
     (A(0, 1, 3, 4), A(0, 3, 1, 2))
@@ -63,11 +63,11 @@ def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet
     (A(0, 1, 2, 3), A(0, 4, 3, 2))
     (A(0, 1, 2, 4, 3), A(0, 4, 2))
     (A(0, 1, 2, 3, 4), A(0, 3, 2))
-    >>> pinched_splice(Anklet(0, 1, 2), Anklet(1, 2, 3))
+    >>> splice(Anklet(0, 1, 2), Anklet(1, 2, 3))
     Traceback (most recent call last):
     ...
     ValueError: the two anklets do not have exactly one bead in common: {1, 2}
-    >>> pinched_splice(Anklet(0, 1, 2), Anklet(2))
+    >>> splice(Anklet(0, 1, 2), Anklet(2))
     Traceback (most recent call last):
     ...
     ValueError: b = A(2) has only one bead
@@ -94,7 +94,7 @@ def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet
     return pairs
 
 
-def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
+def zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
     """Return the anklet graphs which result from zipping together two anklet graphs.
 
     The anklet graphs `g` and `h` must have exactly one node in common: call it `n₀`.
@@ -103,7 +103,7 @@ def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[An
 
     Pinch-zipping together `g` and `h` amounts to taking their union and then picking a pair
     of hyperedges, one from `g` and one from `h`, containing `n` and replacing them by their
-    pinched splicings (see :meth:`pinched_splice`).
+    splicings (see :meth:`splice`).
 
     Parameters
     ----------
@@ -124,20 +124,20 @@ def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[An
 
     See Also
     --------
-    :meth:`pinched_splice`
+    :meth:`splice`
 
     Examples
     --------
     >>> from inflated_graphs import Anklet
     >>> g = AnkletGraph(hyperedges=[Anklet(0, 1), Anklet(0, 2)])
     >>> h = AnkletGraph(hyperedges=[Anklet(0, 3), Anklet(3, 4)])
-    >>> for ag in pinched_zipper(g, h):
+    >>> for ag in zipper(g, h):
     ...     print(ag.data_string())
     <0, 1, 2, 3, 4 | A(0, 2) + A(3, 4) + 2 × A(0, 1, 3)>
     <0, 1, 2, 3, 4 | A(0, 1) + A(3, 4) + 2 × A(0, 2, 3)>
     >>> g = AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(1, 2, 3)])
     >>> h = AnkletGraph(hyperedges=[Anklet(0, 4, 5), Anklet(4, 5, 6)])
-    >>> for ag in pinched_zipper(g, h):
+    >>> for ag in zipper(g, h):
     ...     print(ag.data_string())
     <0, 1, 2, 3, 4, 5, 6 | A(0, 1, 4) + A(1, 2, 3) + A(4, 5, 6) + A(0, 2, 1, 4, 5)>
     <0, 1, 2, 3, 4, 5, 6 | A(1, 2, 3) + A(4, 5, 6) + A(0, 1, 2, 4) + A(0, 2, 4, 5)>
@@ -169,7 +169,7 @@ def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[An
 
     anklet_graphs = []
     for hype_g, hype_h in product(hypes_g, hypes_h):
-        for hypes_spliced in pinched_splice(hype_g, hype_h):
+        for hypes_spliced in splice(hype_g, hype_h):
             anklet_graph = union(g, h)
             anklet_graph.remove_hyperedge(hype_g)
             anklet_graph.remove_hyperedge(hype_h)
