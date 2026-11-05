@@ -613,7 +613,7 @@ class AnkletGraph[T: Hashable]:
         """The hyperedges and their multiplicities."""
         return tuple((hype, k) for hype, k in self._edge.items())
 
-    def _all_hyperedges(self) -> list[Anklet[T]]:
+    def all_hyperedges(self) -> list[Anklet[T]]:
         """Return a list of the hyperedges with multiplicity.
 
         Returns
@@ -624,7 +624,7 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 2, Anklet(1, 2, 3): 3})
-        >>> g._all_hyperedges()
+        >>> g.all_hyperedges()
         [A(0, 1), A(0, 1), A(1, 2, 3), A(1, 2, 3), A(1, 2, 3)]
         """
         return [hype for hypes in [k * [hype] for hype, k in self._edge.items()] for hype in hypes]
@@ -1058,7 +1058,7 @@ class AnkletGraph[T: Hashable]:
 
         # Turn each hyperedge into a (labeled) wheel graph and take their disjoint union
         if self._edge:
-            g = nx.disjoint_union_all([hype.to_wheel_graph() for hype in self._all_hyperedges()])
+            g = nx.disjoint_union_all([hype.to_wheel_graph() for hype in self.all_hyperedges()])
         else:
             g = nx.Graph()
 
@@ -1262,8 +1262,8 @@ class AnkletGraph[T: Hashable]:
             return False
 
         # Collect lists of all non-trivial hyperedges, with multiplicity
-        hypes_s = [hype for hype in self._all_hyperedges() if len(hype) > 1]
-        hypes_o = [hype for hype in other._all_hyperedges() if len(hype) > 1]
+        hypes_s = [hype for hype in self.all_hyperedges() if len(hype) > 1]
+        hypes_o = [hype for hype in other.all_hyperedges() if len(hype) > 1]
 
         # Build a graph where the nodes are all pairs of indices (i, j)
         # for which hypes_s[i] is a subanklet of hypes_o[j] (see Anklet.__le__)
