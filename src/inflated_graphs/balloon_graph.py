@@ -229,7 +229,11 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             if not balloon:
                 self.pop(i)
 
-    def _combine(self, pos_a: tuple[int, int], pos_b: tuple[int, int]) -> None:
+    def combine_anklet_graphs(
+        self,
+        pos_a: tuple[int, int],
+        pos_b: tuple[int, int]
+    ) -> tuple[int, int]:
         """Combine two anklet graphs.
 
         The two anklet graphs at positions `pos_a` and `pos_b` must be in different balloons
@@ -283,6 +287,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         self[i_b].pop(j_b)
         self[i_a].extend(self[i_b])
         self.pop(i_b)
+
+        return (i_a, j_a) if i_a < i_b else (i_a - 1, j_a)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence
