@@ -17,6 +17,16 @@ class Anklet[T](tuple[T, ...]):
 
     Examples
     --------
+    The beads of an anklet must be distinct:
+
+    >>> Anklet(0, 1, 2, 1)
+    Traceback (most recent call last):
+    ...
+    ValueError: the beads (0, 1, 2, 1) are not distinct
+
+    Anklets with different defining tuples are equal *if and only if*
+    one can be obtained from the other by cyclic rotation and reversal:
+
     >>> Anklet(0, 1, 2, 3) == Anklet(1, 2, 3, 0)
     True
     >>> Anklet(0, 1, 2, 3) == Anklet(2, 3, 0, 1)
@@ -25,10 +35,25 @@ class Anklet[T](tuple[T, ...]):
     True
     >>> Anklet(0, 1, 2, 3) == Anklet(0, 1, 3, 2)
     False
-    >>> Anklet(0, 1, 2, 1)
-    Traceback (most recent call last):
-    ...
-    ValueError: the beads (0, 1, 2, 1) are not distinct
+
+    The partial order:
+
+    >>> Anklet() <= Anklet(1) <= Anklet(1, 2, 5) <= Anklet(3, 5, 1, 2) <= Anklet(0, 1, 2, 3, 4, 5)
+    True
+    >>> Anklet() <= Anklet(0, 2) <= Anklet(0, 2, 3) <= Anklet(0, 4, 3, 2) <= Anklet(0, 1, 2, 3, 4)
+    True
+    >>> Anklet(0, 1, 3, 2) <= Anklet(0, 1, 2, 3, 4)
+    False
+    >>> Anklet(2) <= Anklet(0, 1, 3)
+    False
+
+    Note that comparing against a tuple reverts to `tuple.__le__`
+    using the defining tuple of the anklet:
+
+    >>> Anklet(0, 1, 2) <= (1, 2, 3, 4)  # !!
+    True
+    >>> (0, 2, 1) <= Anklet(0, 1, 2)  # !!
+    False
     """
 
     def __new__(cls, *beads: T) -> Self:
