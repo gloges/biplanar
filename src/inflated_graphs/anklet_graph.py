@@ -627,7 +627,7 @@ class AnkletGraph[T: Hashable]:
         >>> g.all_hyperedges()
         [A(0, 1), A(0, 1), A(1, 2, 3), A(1, 2, 3), A(1, 2, 3)]
         """
-        return [hype for hypes in [k * [hype] for hype, k in self._edge.items()] for hype in hypes]
+        return [hype for hype, k in self._edge.items() for _ in range(k)]
 
     def number_of_hyperedges(self) -> int:
         """Return the number of hyperedges (counted with multiplicity).
