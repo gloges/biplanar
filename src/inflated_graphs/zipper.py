@@ -147,36 +147,27 @@ def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[An
         raise ValueError(
             f"the two anklet graphs do not have exactly one node in common: {common_nodes}"
         )
-    if not g.is_connected():
-        raise ValueError("'g' is not connected")
-    if not h.is_connected():
-        raise ValueError("'h' is not connected")
-
-    # If either g or h has just a single node then we will need at least one hyperedge "A(n)" below
-    g_added_hype = g.number_of_hyperedges() == 0
-    h_added_hype = h.number_of_hyperedges() == 0
-    if g_added_hype:
-        g.add_hyperedge(Anklet.from_iterable(g))
-    if h_added_hype:
-        h.add_hyperedge(Anklet.from_iterable(h))
-
     common_node = common_nodes.pop()
+
     hypes_g = [hype_g for hype_g, _ in g.hyperedges if common_node in hype_g]
     hypes_h = [hype_h for hype_h, _ in h.hyperedges if common_node in hype_h]
 
-    anklet_graphs = {}
+    if Anklet(common_node) in hypes_g:
+        raise ValueError(f"'g' has the hyperedge {Anklet(common_node)}")
+    if Anklet(common_node) in hypes_h:
+        raise ValueError(f"'h' has the hyperedge {Anklet(common_node)}")
+    if not hypes_g:
+        raise ValueError(f"'g' has no hyperedges containing {common_node}")
+    if not hypes_h:
+        raise ValueError(f"'h' has no hyperedges containing {common_node}")
+
+    anklet_graphs = []
     for hype_g, hype_h in product(hypes_g, hypes_h):
         for hypes_spliced in pinched_splice(hype_g, hype_h):
             anklet_graph = union(g, h)
             anklet_graph.remove_hyperedge(hype_g)
             anklet_graph.remove_hyperedge(hype_h)
             anklet_graph.add_hyperedges_from(hypes_spliced)
-            anklet_graphs[frozenset(anklet_graph.hyperedges)] = anklet_graph
+            anklet_graphs.append(anklet_graph)
 
-    # Remove the added 1-node hyperedge
-    if g_added_hype:
-        g.remove_hyperedge(Anklet.from_iterable(g))
-    if h_added_hype:
-        h.remove_hyperedge(Anklet.from_iterable(h))
-
-    return list(anklet_graphs.values())
+    return anklet_graphs
