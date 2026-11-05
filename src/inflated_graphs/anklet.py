@@ -10,13 +10,32 @@ import networkx as nx
 class Anklet[T](tuple[T, ...]):
     """An **anklet** is a combinatorial bracelet with all beads distinct.
 
-    Anklets can be thought of as tuples with a weaker notion of equality, where two tuples
-    are "equal" if one can be obtained from the other by cyclic rotation and reversal.
-    Equivalently, an anklet with `n` beads can be viewed as an *equivalence class* of tuples given
+    Anklets are tuples with a weaker notion of equality, where two anklets are *equal*
+    if one can be obtained from the other by cyclic rotation and reversal. 
+    Equivalently, an anklet with `n` beads is an *equivalence class* of tuples given
     by the orbit of its defining `n`-tuple under the group action of `Dihₙ`.
+
+    An anklet with `n` beads can be thought of as a labeled `n`-cycle graph or an `n`-gon
+    with labeled vertices.
+
+    ### Partial order
+
+    There is a natural partial order on anklets where `a ≤ b` *if and only if*
+    `a` can be obtained from `b` by removing beads. With this partial order,
+    the set of anklets is a *partially ordered set* with the empty anklet for its least element.
 
     Examples
     --------
+    The beads of an anklet must be distinct:
+
+    >>> Anklet(0, 1, 2, 1)
+    Traceback (most recent call last):
+    ...
+    ValueError: the beads (0, 1, 2, 1) are not distinct
+
+    Anklets with different defining tuples are equal *if and only if*
+    one can be obtained from the other by cyclic rotation and reversal:
+
     >>> Anklet(0, 1, 2, 3) == Anklet(1, 2, 3, 0)
     True
     >>> Anklet(0, 1, 2, 3) == Anklet(2, 3, 0, 1)
@@ -25,10 +44,25 @@ class Anklet[T](tuple[T, ...]):
     True
     >>> Anklet(0, 1, 2, 3) == Anklet(0, 1, 3, 2)
     False
-    >>> Anklet(0, 1, 2, 1)
-    Traceback (most recent call last):
-    ...
-    ValueError: the beads (0, 1, 2, 1) are not distinct
+
+    The partial order:
+
+    >>> Anklet() <= Anklet(1) <= Anklet(1, 2, 5) <= Anklet(3, 5, 1, 2) <= Anklet(0, 1, 2, 3, 4, 5)
+    True
+    >>> Anklet() <= Anklet(0, 2) <= Anklet(0, 2, 3) <= Anklet(0, 4, 3, 2) <= Anklet(0, 1, 2, 3, 4)
+    True
+    >>> Anklet(0, 1, 3, 2) <= Anklet(0, 1, 2, 3, 4)
+    False
+    >>> Anklet(2) <= Anklet(0, 1, 3)
+    False
+
+    Note that comparing against a tuple reverts to `tuple.__le__`
+    using the defining tuple of the anklet:
+
+    >>> Anklet(0, 1, 2) <= (1, 2, 3, 4)  # !!
+    True
+    >>> (0, 2, 1) <= Anklet(0, 1, 2)  # !!
+    False
     """
 
     def __new__(cls, *beads: T) -> Self:
@@ -226,9 +260,6 @@ class Anklet[T](tuple[T, ...]):
         if the beads of `a` appear in the prescribed cyclic order as a subsequence of `b`.
         Equivalently, `a <= b` means that it is possible to delete beads from `b` to produce `a`.
 
-        This "sub-anklet" relation is a partial order on anklets
-        with the empty anklet of length zero as its least element.
-
         Parameters
         ----------
         other : object
@@ -239,23 +270,6 @@ class Anklet[T](tuple[T, ...]):
         NotImplementedType or bool
             `NotImplemented` if `other` is not an anklet.
             Otherwise, whether this anklet is a sub-anklet of `other`.
-
-        Examples
-        --------
-        >>> Anklet(0, 1, 2) <= Anklet(0, 3, 1, 4, 2, 5)
-        True
-        >>> Anklet(0, 1, 2, 3) <= Anklet(4, 1, 5, 3, 0, 2)
-        False
-        >>> Anklet() <= Anklet(0, 1, 2)
-        True
-
-        Note that comparing against a tuple reverts to `tuple.__le__`
-        using the defining tuple of the anklet:
-
-        >>> Anklet(0, 1, 2) <= (1, 2, 3, 4)
-        True
-        >>> (0, 2, 1) <= Anklet(0, 1, 2)
-        False
         """
         if not isinstance(other, Anklet):
             return NotImplemented
