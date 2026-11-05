@@ -236,10 +236,13 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     ) -> tuple[int, int]:
         """Combine two anklet graphs.
 
-        The two anklet graphs at positions `pos_a` and `pos_b` must be in different balloons
-        (*i.e.* the zeroth elements of `pos_a` and `pos_b` must be different) and have no nodes
-        in common. Note that the latter condition follows from the former if the balloon graph
-        has valid structure (see :meth:`BalloonGraph.check_structure`).
+        `pos_a` and `pos_b` give the positions of anklet graphs in the balloon graph:
+        the first element of each gives the balloon index and second element the anklet graph index
+        within that balloon.
+
+        The two anklet graphs must be in different balloons and have no nodes in common.
+        Note that the latter condition follows from the former if the balloon graph
+        has a valid structure (see :meth:`BalloonGraph.check_structure`).
 
         In order, the following changes are made:
         - The anklet graph at position `pos_a` is replaced by the *disjoint* union
@@ -248,13 +251,19 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         - The anklet graphs of balloon `b` are moved into balloon `a`.
         - Balloon `b` is removed.
 
-        Note that since the disjoint union produces an anklet graph which is not connected,
+        **Note**: since the disjoint union produces an anklet graph which is not connected,
         the balloon graph will *not* have a valid structure after calling this method.
 
         Parameters
         ----------
         pos_a, pos_b : tuple[int, int]
-            Positions of the two anklet graphs to be combined.
+            Index pairs giving the positions for the two anklet graphs to be combined.
+
+        Returns
+        -------
+        tuple[int, int]
+            The final position of the combined anklet graph after the above operations:
+            returns `pos_a` if `pos_a[0] < pos_b[0]`, otherwise returns `(pos_a[0] - 1, pos_a[1])`.
 
         Raises
         ------
@@ -270,7 +279,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ...     "[<5, 6 | 3 × A(5, 6)>, <6, 7 | A(6, 7)>]",
         ...     int
         ... )
-        >>> g._combine((0, 0), (2, 0))
+        >>> g.combine_anklet_graphs((0, 0), (2, 0))
+        (0, 0)
         >>> g.data_string()
         '[<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]'
         """
