@@ -60,6 +60,7 @@ class AnkletGraph[T: Hashable]:
         cls,
         data: str,
         interpreter: Callable[[str], T],
+        *,
         name: str = "",
         **attr: Any
     ) -> Self:
@@ -105,10 +106,9 @@ class AnkletGraph[T: Hashable]:
         >>> sorted(g.nodes)
         [0, 1, 3, 5]
 
-        An anklet graph is equal to the anklet graph created from its data string:
+        An anklet graph is always equal to the anklet graph created from its data string:
 
-        >>> g = AnkletGraph(range(5))
-        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
+        >>> g = AnkletGraph(range(5), {Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
         >>> g == AnkletGraph.from_data_string(g.data_string(), int)
         True
 
@@ -321,9 +321,7 @@ class AnkletGraph[T: Hashable]:
         >>> g.get_node_attributes('weight')
         {0: 5}
         """
-        if n not in self._node:
-            self._node[n] = {}
-        self._node[n].update(attr)
+        self._node.setdefault(n, {}).update(attr)
 
     def add_nodes_from(self, nodes: Iterable[T], **attr: dict[str, Any]) -> None:
         """Add multiple nodes.
@@ -356,9 +354,7 @@ class AnkletGraph[T: Hashable]:
         {1: 2, 2: 5, 3: 0}
         """
         for n in nodes:
-            if n not in self:
-                self._node[n] = {}
-            self._node[n].update(attr)
+            self.add_node(n, **attr)
             if isinstance(nodes, Mapping):
                 self._node[n].update(nodes[n])
 
@@ -456,13 +452,23 @@ class AnkletGraph[T: Hashable]:
         >>> g.erase_node(1)
         >>> g.data_string()
         '<0, 2, 3, 4 | 2 × A(0, 4) + A(2, 3, 4)>'
+
+        After erasing the node some previously distinct hyperedges may now coincide:
+
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2, 3): 1, Anklet(0, 2, 3, 1): 2})
+        >>> g.erase_node(3)
+        >>> g.data_string()
+        '<0, 1, 2 | 3 × A(0, 1, 2)>'
         """
         if n not in self.nodes:
             raise ValueError(f"the node {n} is not in the anklet graph")
+        new_edges = {}
+        for hype, k in self._edge.items():
+            hype_erased = hype.without_bead(n)
+            if hype_erased:
+                new_edges[hype_erased] = new_edges.get(hype_erased, 0) + k
         self._node.pop(n)
-        self._edge = {hype.without_bead(n): k for hype, k in self._edge.items()}
-        if Anklet() in self._edge:
-            self._edge.pop(Anklet())
+        self._edge = new_edges
 
         # Erasing a node from a reduced anklet graph may make it reducible
         self._reduced = None
@@ -607,7 +613,7 @@ class AnkletGraph[T: Hashable]:
         """The hyperedges and their multiplicities."""
         return tuple((hype, k) for hype, k in self._edge.items())
 
-    def _all_hyperedges(self) -> list[Anklet[T]]:
+    def all_hyperedges(self) -> list[Anklet[T]]:
         """Return a list of the hyperedges with multiplicity.
 
         Returns
@@ -618,13 +624,13 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 2, Anklet(1, 2, 3): 3})
-        >>> g._all_hyperedges()
+        >>> g.all_hyperedges()
         [A(0, 1), A(0, 1), A(1, 2, 3), A(1, 2, 3), A(1, 2, 3)]
         """
-        return [hype for hypes in [k * [hype] for hype, k in self._edge.items()] for hype in hypes]
+        return [hype for hype, k in self._edge.items() for _ in range(k)]
 
     def number_of_hyperedges(self) -> int:
-        """Return the number of hyperedges (counted with multiplicity).
+        """Return the number of hyperedges, counted with multiplicity.
 
         Returns
         -------
@@ -644,7 +650,7 @@ class AnkletGraph[T: Hashable]:
         return sum(self._edge.values())
 
     def number_of_unique_hyperedges(self) -> int:
-        """Return the number of unique hyperedges (i.e. counted without multiplicity).
+        """Return the number of unique hyperedges (*i.e.* counted without multiplicity).
 
         Returns
         -------
@@ -697,14 +703,16 @@ class AnkletGraph[T: Hashable]:
         >>> g.add_hyperedge(hype, 3)
         >>> g.data_string()
         '<0, 1, 2 | 5 × A(0, 1, 2)>'
+        >>> g.add_hyperedge(hype, 0)
+        Traceback (most recent call last):
+        ...
+        ValueError: k = 0 is not a positive integer
         """
         if not isinstance(k, int) or k <= 0:
-            raise ValueError(f"k={k} is not a positive integer")
+            raise ValueError(f"k = {k} is not a positive integer")
 
         self.add_nodes_from(hype)
-        if hype not in self._edge:
-            self._edge[hype] = 0
-        self._edge[hype] += k
+        self._edge[hype] = self._edge.get(hype, 0) + k
 
         # Adding a hyperedge can make a reduced anklet graph reducible
         self._reduced = None
@@ -777,7 +785,7 @@ class AnkletGraph[T: Hashable]:
         >>> g.remove_hyperedge(Anklet(0, 2), 5)
         Traceback (most recent call last):
         ...
-        ValueError: 5 > 4 is larger than the multiplicity of hyperedge A(0, 2)
+        ValueError: k = 5 is larger than the multiplicity 4 of the hyperedge A(0, 2)
         """
         if hype not in self._edge:
             raise ValueError(f"{hype} is not a hyperedge in the anklet graph")
@@ -785,7 +793,8 @@ class AnkletGraph[T: Hashable]:
             raise ValueError(f"k={k} is not a positive integer")
         if k > self._edge[hype]:
             raise ValueError(
-                f"{k} > {self._edge[hype]} is larger than the multiplicity of hyperedge {hype}"
+                f"k = {k} is larger than the multiplicity"
+                f" {self._edge[hype]} of the hyperedge {hype}"
             )
 
         self._edge[hype] -= k
@@ -1054,7 +1063,7 @@ class AnkletGraph[T: Hashable]:
 
         # Turn each hyperedge into a (labeled) wheel graph and take their disjoint union
         if self._edge:
-            g = nx.disjoint_union_all([hype.to_wheel_graph() for hype in self._all_hyperedges()])
+            g = nx.disjoint_union_all([hype.to_wheel_graph() for hype in self.all_hyperedges()])
         else:
             g = nx.Graph()
 
@@ -1097,6 +1106,8 @@ class AnkletGraph[T: Hashable]:
         True
         >>> g.add_hyperedge(Anklet(0, 1, 2))
         >>> g.is_planar()
+        False
+        >>> AnkletGraph(hyperedges=[Anklet(0, 1, 2, 3), Anklet(0, 2, 1, 3)]).is_planar()
         False
         """
         return nx.is_planar(self.to_wheel_graph())
@@ -1230,7 +1241,7 @@ class AnkletGraph[T: Hashable]:
         self._reduced = True
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Partial order
+    #   (In)equality
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def __le__(self, other: object) -> NotImplementedType | bool:
@@ -1258,8 +1269,8 @@ class AnkletGraph[T: Hashable]:
             return False
 
         # Collect lists of all non-trivial hyperedges, with multiplicity
-        hypes_s = [hype for hype in self._all_hyperedges() if len(hype) > 1]
-        hypes_o = [hype for hype in other._all_hyperedges() if len(hype) > 1]
+        hypes_s = [hype for hype in self.all_hyperedges() if len(hype) > 1]
+        hypes_o = [hype for hype in other.all_hyperedges() if len(hype) > 1]
 
         # Build a graph where the nodes are all pairs of indices (i, j)
         # for which hypes_s[i] is a subanklet of hypes_o[j] (see Anklet.__le__)
