@@ -60,6 +60,7 @@ class AnkletGraph[T: Hashable]:
         cls,
         data: str,
         interpreter: Callable[[str], T],
+        *,
         name: str = "",
         **attr: Any
     ) -> Self:
@@ -105,10 +106,9 @@ class AnkletGraph[T: Hashable]:
         >>> sorted(g.nodes)
         [0, 1, 3, 5]
 
-        An anklet graph is equal to the anklet graph created from its data string:
+        An anklet graph is always equal to the anklet graph created from its data string:
 
-        >>> g = AnkletGraph(range(5))
-        >>> g.add_hyperedges_from({Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
+        >>> g = AnkletGraph(range(5), {Anklet(0, 1, 2): 2, Anklet(2, 4): 1})
         >>> g == AnkletGraph.from_data_string(g.data_string(), int)
         True
 
@@ -630,7 +630,7 @@ class AnkletGraph[T: Hashable]:
         return [hype for hype, k in self._edge.items() for _ in range(k)]
 
     def number_of_hyperedges(self) -> int:
-        """Return the number of hyperedges (counted with multiplicity).
+        """Return the number of hyperedges, counted with multiplicity.
 
         Returns
         -------
@@ -650,7 +650,7 @@ class AnkletGraph[T: Hashable]:
         return sum(self._edge.values())
 
     def number_of_unique_hyperedges(self) -> int:
-        """Return the number of unique hyperedges (i.e. counted without multiplicity).
+        """Return the number of unique hyperedges (*i.e.* counted without multiplicity).
 
         Returns
         -------
@@ -703,9 +703,13 @@ class AnkletGraph[T: Hashable]:
         >>> g.add_hyperedge(hype, 3)
         >>> g.data_string()
         '<0, 1, 2 | 5 × A(0, 1, 2)>'
+        >>> g.add_hyperedge(hype, 0)
+        Traceback (most recent call last):
+        ...
+        ValueError: k = 0 is not a positive integer
         """
         if not isinstance(k, int) or k <= 0:
-            raise ValueError(f"k={k} is not a positive integer")
+            raise ValueError(f"k = {k} is not a positive integer")
 
         self.add_nodes_from(hype)
         self._edge[hype] = self._edge.get(hype, 0) + k
@@ -781,7 +785,7 @@ class AnkletGraph[T: Hashable]:
         >>> g.remove_hyperedge(Anklet(0, 2), 5)
         Traceback (most recent call last):
         ...
-        ValueError: 5 > 4 is larger than the multiplicity of hyperedge A(0, 2)
+        ValueError: k = 5 is larger than the multiplicity 4 of the hyperedge A(0, 2)
         """
         if hype not in self._edge:
             raise ValueError(f"{hype} is not a hyperedge in the anklet graph")
@@ -789,7 +793,8 @@ class AnkletGraph[T: Hashable]:
             raise ValueError(f"k={k} is not a positive integer")
         if k > self._edge[hype]:
             raise ValueError(
-                f"{k} > {self._edge[hype]} is larger than the multiplicity of hyperedge {hype}"
+                f"k = {k} is larger than the multiplicity"
+                f" {self._edge[hype]} of the hyperedge {hype}"
             )
 
         self._edge[hype] -= k
@@ -1102,6 +1107,8 @@ class AnkletGraph[T: Hashable]:
         >>> g.add_hyperedge(Anklet(0, 1, 2))
         >>> g.is_planar()
         False
+        >>> AnkletGraph(hyperedges=[Anklet(0, 1, 2, 3), Anklet(0, 2, 1, 3)]).is_planar()
+        False
         """
         return nx.is_planar(self.to_wheel_graph())
 
@@ -1234,7 +1241,7 @@ class AnkletGraph[T: Hashable]:
         self._reduced = True
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Partial order
+    #   (In)equality
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def __le__(self, other: object) -> NotImplementedType | bool:
