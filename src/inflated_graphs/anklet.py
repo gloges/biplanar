@@ -251,9 +251,6 @@ class Anklet[T](tuple[T, ...]):
         if the beads of `a` appear in the prescribed cyclic order as a subsequence of `b`.
         Equivalently, `a <= b` means that it is possible to delete beads from `b` to produce `a`.
 
-        This "sub-anklet" relation is a partial order on anklets
-        with the empty anklet of length zero as its least element.
-
         Parameters
         ----------
         other : object
@@ -264,23 +261,6 @@ class Anklet[T](tuple[T, ...]):
         NotImplementedType or bool
             `NotImplemented` if `other` is not an anklet.
             Otherwise, whether this anklet is a sub-anklet of `other`.
-
-        Examples
-        --------
-        >>> Anklet(0, 1, 2) <= Anklet(0, 3, 1, 4, 2, 5)
-        True
-        >>> Anklet(0, 1, 2, 3) <= Anklet(4, 1, 5, 3, 0, 2)
-        False
-        >>> Anklet() <= Anklet(0, 1, 2)
-        True
-
-        Note that comparing against a tuple reverts to `tuple.__le__`
-        using the defining tuple of the anklet:
-
-        >>> Anklet(0, 1, 2) <= (1, 2, 3, 4)
-        True
-        >>> (0, 2, 1) <= Anklet(0, 1, 2)
-        False
         """
         if not isinstance(other, Anklet):
             return NotImplemented
