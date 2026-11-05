@@ -1,6 +1,7 @@
 """Balloon graphs."""
 
 from collections.abc import Callable, Hashable, Iterator, Mapping
+from itertools import combinations
 from typing import Any, Self
 import networkx as nx
 from .anklet_graph import AnkletGraph
@@ -356,6 +357,23 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
                 g.add_edge(loc, node_ids[n])
 
         return g
+
+    def anklet_graph_adjacency(self) -> dict[IndexPair, set[IndexPair]]:
+        adj = {loc: set() for loc, _ in self.iter_anklet_graphs()}
+        for (loc_1, ag_1), (loc_2, ag_2) in combinations(self.iter_anklet_graphs(), r=2):
+            if ag_1.nodes & ag_2.nodes:
+                adj[loc_1].add(loc_2)
+                adj[loc_2].add(loc_1)
+        return adj
+
+    def anklet_adjacent_pairs(self) -> set[tuple[T, T]]:
+        adjacent_pairs = set()
+        for _, ag in self.iter_anklet_graphs():
+            for u, nbrs in ag.anklet_adjacency().items():
+                for v in nbrs:
+                    if (u, v) not in adjacent_pairs and (v, u) not in adjacent_pairs:
+                        adjacent_pairs.add((u, v))
+        return adjacent_pairs
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
