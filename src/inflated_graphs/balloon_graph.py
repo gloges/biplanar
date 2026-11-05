@@ -304,7 +304,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         return (i_a, j_a) if i_a < i_b else (i_a - 1, j_a)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Incidence
+    #   Incidence / adjacency
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def incidence(self) -> dict[T, set[IndexPair]]:
@@ -318,7 +318,9 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         See Also
         --------
-        :meth:`to_incidence_graph`
+        :meth:`to_incidence_graph`,
+        :meth:`anklet_graph_adjacency`,
+        :meth:`anklet_adjacent_pairs`
         """
         inc = {n: set() for n in self.nodes}
         for loc, ag in self.iter_anklet_graphs():
@@ -344,7 +346,9 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         See Also
         --------
-        :meth:`incidence`
+        :meth:`incidence`,
+        :meth:`anklet_graph_adjacency`,
+        :meth:`anklet_adjacent_pairs`
         """
         g = nx.Graph()
         node_ids = {n: i for i, n in enumerate(self.nodes)}
