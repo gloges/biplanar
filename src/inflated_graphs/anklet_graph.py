@@ -321,9 +321,7 @@ class AnkletGraph[T: Hashable]:
         >>> g.get_node_attributes('weight')
         {0: 5}
         """
-        if n not in self._node:
-            self._node[n] = {}
-        self._node[n].update(attr)
+        self._node.setdefault(n, {}).update(attr)
 
     def add_nodes_from(self, nodes: Iterable[T], **attr: dict[str, Any]) -> None:
         """Add multiple nodes.
@@ -356,9 +354,7 @@ class AnkletGraph[T: Hashable]:
         {1: 2, 2: 5, 3: 0}
         """
         for n in nodes:
-            if n not in self:
-                self._node[n] = {}
-            self._node[n].update(attr)
+            self.add_node(n, **attr)
             if isinstance(nodes, Mapping):
                 self._node[n].update(nodes[n])
 
@@ -712,9 +708,7 @@ class AnkletGraph[T: Hashable]:
             raise ValueError(f"k={k} is not a positive integer")
 
         self.add_nodes_from(hype)
-        if hype not in self._edge:
-            self._edge[hype] = 0
-        self._edge[hype] += k
+        self._edge[hype] = self._edge.get(hype, 0) + k
 
         # Adding a hyperedge can make a reduced anklet graph reducible
         self._reduced = None

@@ -448,9 +448,7 @@ class Anklet[T](tuple[T, ...]):
         # Join by an edge all pairs of nodes which share a bead label
         label_groups = {}
         for n, label in nx.get_node_attributes(g, 'anklet').items():
-            if label not in label_groups:
-                label_groups[label] = set()
-            label_groups[label].add(n)
+            label_groups.setdefault(label, set()).add(n)
 
         for node_group in label_groups.values():
             for u, v in combinations(node_group, 2):
