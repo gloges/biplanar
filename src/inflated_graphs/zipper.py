@@ -97,50 +97,56 @@ def pinched_splice[T](a: Anklet[T], b: Anklet[T]) -> set[tuple[Anklet[T], Anklet
 def pinched_zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGraph[T]]:
     """Return the anklet graphs which result from zipping together two anklet graphs.
 
-    The anklet graphs must be connected and have exactly one node in common.
+    The anklet graphs `g` and `h` must have exactly one node in common: call it `n₀`.
+    Both `g` and `h` must have at least one hyperedge containing `n₀` but neither may have
+    the hyperedge `A(n₀)`.
 
     Pinch-zipping together `g` and `h` amounts to taking their union and then picking a pair
-    of hyperedges, one from `g` and one from `h`, each containing the common node
-    and replacing them by their various pinched splicings (see :meth:`pinched_splice`).
-
-    If either `g` or `h` has only a single node and no hyperedges then a single 1-node hyperedge
-    is temporarily added before picking pairs of hyperedges to splice.
+    of hyperedges, one from `g` and one from `h`, containing `n` and replacing them by their
+    pinched splicings (see :meth:`pinched_splice`).
 
     Parameters
     ----------
     g, h : AnkletGraph[T]
-        Two connected anklet graphs sharing exactly one node.
+        Two anklet graphs sharing exactly one node.
 
     Returns
     -------
     list[AnkletGraph[T]]
-        The anklet graphs which result from zipping together `g` and `h`.
+        The anklet graphs which result from zipping together `g` and `h` as described above.
 
     Raises
     ------
     ValueError
-        If `g` and `h` do not have exactly one node in common.
+        If `g` and `h` do not have exactly one node in common, if either contains a length-one
+        hyperedge with the common node or if either does not contain any hyperedges with
+        the common node.
 
     See Also
     --------
-    :meth:`zipper`
+    :meth:`pinched_splice`
 
     Examples
     --------
     >>> from inflated_graphs import Anklet
-    >>> g = AnkletGraph(hyperedges={Anklet(0, 1): 1, Anklet(0, 2): 2})
+    >>> g = AnkletGraph(hyperedges=[Anklet(0, 1), Anklet(0, 2)])
     >>> h = AnkletGraph(hyperedges=[Anklet(0, 3), Anklet(3, 4)])
     >>> for ag in pinched_zipper(g, h):
     ...     print(ag.data_string())
-    <0, 1, 2, 3, 4 | A(0, 1) + 2 × A(0, 2) + A(0, 3) + A(3, 4)>
-    <0, 1, 2, 3, 4 | A(0) + 2 × A(0, 2) + A(3, 4) + A(0, 1, 3)>
-    <0, 1, 2, 3, 4 | A(0) + A(0, 1) + A(0, 2) + A(3, 4) + A(0, 2, 3)>
-    >>> g = AnkletGraph(nodes=[0])
-    >>> h = AnkletGraph(hyperedges=[Anklet(0, 1, 2)])
+    <0, 1, 2, 3, 4 | A(0, 2) + A(3, 4) + 2 × A(0, 1, 3)>
+    <0, 1, 2, 3, 4 | A(0, 1) + A(3, 4) + 2 × A(0, 2, 3)>
+    >>> g = AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(1, 2, 3)])
+    >>> h = AnkletGraph(hyperedges=[Anklet(0, 4, 5), Anklet(4, 5, 6)])
     >>> for ag in pinched_zipper(g, h):
     ...     print(ag.data_string())
-    <0, 1, 2 | A(0) + A(0, 1, 2)>
-    <0, 1, 2 | A(0, 1) + A(0, 2)>
+    <0, 1, 2, 3, 4, 5, 6 | A(0, 1, 4) + A(1, 2, 3) + A(4, 5, 6) + A(0, 2, 1, 4, 5)>
+    <0, 1, 2, 3, 4, 5, 6 | A(1, 2, 3) + A(4, 5, 6) + A(0, 1, 2, 4) + A(0, 2, 4, 5)>
+    <0, 1, 2, 3, 4, 5, 6 | A(0, 2, 4) + A(1, 2, 3) + A(4, 5, 6) + A(0, 1, 2, 4, 5)>
+    <0, 1, 2, 3, 4, 5, 6 | A(1, 2, 3) + A(4, 5, 6) + A(0, 1, 4, 5) + A(0, 2, 1, 4)>
+    <0, 1, 2, 3, 4, 5, 6 | A(1, 2, 3) + A(4, 5, 6) + A(0, 1, 2, 5) + A(0, 2, 5, 4)>
+    <0, 1, 2, 3, 4, 5, 6 | A(0, 2, 5) + A(1, 2, 3) + A(4, 5, 6) + A(0, 1, 2, 5, 4)>
+    <0, 1, 2, 3, 4, 5, 6 | A(0, 1, 5) + A(1, 2, 3) + A(4, 5, 6) + A(0, 2, 1, 5, 4)>
+    <0, 1, 2, 3, 4, 5, 6 | A(1, 2, 3) + A(4, 5, 6) + A(0, 1, 5, 4) + A(0, 2, 1, 5)>
     """
     common_nodes = g.nodes & h.nodes
     if len(common_nodes) != 1:
