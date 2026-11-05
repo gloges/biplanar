@@ -456,13 +456,23 @@ class AnkletGraph[T: Hashable]:
         >>> g.erase_node(1)
         >>> g.data_string()
         '<0, 2, 3, 4 | 2 × A(0, 4) + A(2, 3, 4)>'
+
+        After erasing the node some previously distinct hyperedges may now coincide:
+
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2, 3): 1, Anklet(0, 2, 3, 1): 2})
+        >>> g.erase_node(3)
+        >>> g.data_string()
+        '<0, 1, 2 | 3 × A(0, 1, 2)>'
         """
         if n not in self.nodes:
             raise ValueError(f"the node {n} is not in the anklet graph")
+        new_edges = {}
+        for hype, k in self._edge.items():
+            hype_erased = hype.without_bead(n)
+            if hype_erased:
+                new_edges[hype_erased] = new_edges.get(hype_erased, 0) + k
         self._node.pop(n)
-        self._edge = {hype.without_bead(n): k for hype, k in self._edge.items()}
-        if Anklet() in self._edge:
-            self._edge.pop(Anklet())
+        self._edge = new_edges
 
         # Erasing a node from a reduced anklet graph may make it reducible
         self._reduced = None
