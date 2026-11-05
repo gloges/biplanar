@@ -10,10 +10,19 @@ import networkx as nx
 class Anklet[T](tuple[T, ...]):
     """An **anklet** is a combinatorial bracelet with all beads distinct.
 
-    Anklets can be thought of as tuples with a weaker notion of equality, where two tuples
-    are "equal" if one can be obtained from the other by cyclic rotation and reversal.
-    Equivalently, an anklet with `n` beads can be viewed as an *equivalence class* of tuples given
+    Anklets are tuples with a weaker notion of equality, where two anklets are *equal*
+    if one can be obtained from the other by cyclic rotation and reversal. 
+    Equivalently, an anklet with `n` beads is an *equivalence class* of tuples given
     by the orbit of its defining `n`-tuple under the group action of `Dihₙ`.
+
+    An anklet with `n` beads can be thought of as a labeled `n`-cycle graph or an `n`-gon
+    with labeled vertices.
+
+    ### Partial order
+
+    There is a natural partial order on anklets where `a ≤ b` *if and only if*
+    `a` can be obtained from `b` by removing beads. With this partial order,
+    the set of anklets is a *partially ordered set* with the empty anklet for its least element.
 
     Examples
     --------
