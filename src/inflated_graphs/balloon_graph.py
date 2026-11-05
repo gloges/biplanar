@@ -359,6 +359,32 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         return g
 
     def anklet_graph_adjacency(self) -> dict[IndexPair, set[IndexPair]]:
+        """Return the adjacency data.
+
+        Two anklet graphs are adjacent if they share a node.
+        Note that if the balloon graph has valid structure then an anklet graph
+        can only be adjacent to anklet graphs within its balloon.
+
+        Returns
+        -------
+        dict[IndexPair, set[IndexPair]]
+            Dictionary keyed by anklet graph locations.
+            Values are the sets of locations of adjacent anklet graphs.
+
+        See Also
+        --------
+        :meth:`incidence`,
+        :meth:`to_incidence_graph`,
+        :meth:`anklet_adjacent_pairs`
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1 | A(0, 1)>, <1, 2, 3 | A(1, 3) + A(2, 3)>], [<4, 5, 6 | A(4, 5, 6)>]", int
+        ... )
+        >>> g.anklet_graph_adjacency()
+        {(0, 0): {(0, 1)}, (0, 1): {(0, 0)}, (1, 0): set()}
+        """
         adj = {loc: set() for loc, _ in self.iter_anklet_graphs()}
         for (loc_1, ag_1), (loc_2, ag_2) in combinations(self.iter_anklet_graphs(), r=2):
             if ag_1.nodes & ag_2.nodes:
@@ -367,6 +393,27 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         return adj
 
     def anklet_adjacent_pairs(self) -> set[tuple[T, T]]:
+        """Collect all pairs of nodes which are adjacent in one or more hyperedge.
+
+        Returns
+        -------
+        set[tuple[T, T]]
+            All pairs of adjacent nodes.
+
+        See Also
+        --------
+        :meth:`incidence`,
+        :meth:`to_incidence_graph`,
+        :meth:`anklet_graph_adjacency`
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1 | A(0, 1)>, <1, 2, 3 | A(1, 3) + A(2, 3)>], [<4, 5, 6 | A(4, 5, 6)>]", int
+        ... )
+        >>> sorted(g.anklet_adjacent_pairs())
+        [(0, 1), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6)]
+        """
         adjacent_pairs = set()
         for _, ag in self.iter_anklet_graphs():
             for u, nbrs in ag.anklet_adjacency().items():
