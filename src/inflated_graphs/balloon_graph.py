@@ -770,7 +770,7 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
 
     # Raise an error to alert that something has gone wrong
     raise RuntimeError(
-        "this point should not be reached if 'g' and 'h' have valid structure\n"
+        "this point should not be reached if 'g' and 'h' have valid structure and the same nodes\n"
         f"  g = {g.data_string()}\n"
         f"  h = {BalloonGraph(h).data_string()}"
     )
@@ -793,7 +793,6 @@ def poset_le[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
     ------
     ValueError
         If `g` and `h` do not have the same nodes.
-
     """
     g.check_structure()
     h.check_structure()
