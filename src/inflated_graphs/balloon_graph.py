@@ -736,7 +736,8 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
 
     # At this point the connected components of g and h are the same
 
-    # # Find a pair of anklet graphs of h which share
+    # Check for a pair of anklet graphs which are distance 2 apart in the incidence graph of
+    # BalloonGraph(h) (i.e. have a node in common) and split a pair of directly adjacent nodes in g
     g_adjacent_pairs = g.anklet_adjacent_pairs()
     for (i1, ag1_h), (i2, ag2_h) in combinations(enumerate(h), r=2):
         if ag1_h.nodes & ag2_h.nodes and any(
@@ -750,6 +751,10 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
                 if _poset_le_aux(g, h_zipped):
                     return True
             return False
+
+    # Check for a pair of anklet graphs which are distance 2 apart in the incidence graph of
+    # BalloonGraph(h) (i.e. have a node in common) and whose union of nodes is a subset of the nodes
+    # of an anklet graph in g.
     for (i1, ag1_h), (i2, ag2_h) in combinations(enumerate(h), r=2):
         if ag1_h.nodes & ag2_h.nodes and any(
             ag1_h.nodes | ag2_h.nodes <= ag_g.nodes
@@ -763,7 +768,12 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
                     return True
             return False
 
-    raise RuntimeError()
+    # Raise an error to alert that something has gone wrong
+    raise RuntimeError(
+        "this point should not be reached if 'g' and 'h' have valid structure\n"
+        f"  g = {g.data_string()}\n"
+        f"  h = {BalloonGraph(h).data_string()}"
+    )
 
 
 def poset_le[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
