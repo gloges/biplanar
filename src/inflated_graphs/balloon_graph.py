@@ -619,13 +619,38 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
 # pylint: disable=too-many-return-statements,too-many-branches,too-many-locals,too-many-statements
 def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> bool:
-    """Return whether `g` is *embeddable* into `h`."""
+    """Return whether `g ≤ BalloonGraph(h)`.
 
-    # 'h' is to be interpreted as a balloon graph with a single balloon
+    Both `g` and `BalloonGraph(h)` are assumed to have valid structure
+    (see :meth:`BalloonGraph.check_structure`) and the same set of nodes.
 
-    # If 'g' and 'h' have the same incidence graphs (i.e. for every anklet graphs of 'g' there
-    # is an anklet graph of 'h' with exactly the same nodes, and vice versa) then compare
-    # their anklet graphs in pairs (i.e. using AnkletGraph.__le__). This is the "base case".
+    This function *defines* the relation `g₁ ≤ g₂` between balloon graphs
+    when `g₂` has a single balloon and is defined recursively by making minimal changes
+    to the two balloon graphs until a direct pair-wise comparison of anklet graphs is possible
+    (using :meth:`AnkletGraph.__le__`).
+    That the relation thus defined has the transitive property is non-trivial.
+
+    **DO NOT** call this method directly: use :meth:`poset_le` or :meth:`BalloonGraph.__le__`
+    instead as these check that the balloon graphs have valid structures and handle
+    balloon graphs with more than one balloon.
+
+    Parameters
+    ----------
+    g : BalloonGraph[T]
+        A balloon graph with valid structure and the same nodes as `h`.
+    h : list[AnkletGraph[T]]
+        A list of anklet graphs such that `BalloonGraph(h)` has valid structure.
+
+    Returns
+    -------
+    bool
+        Whether `g` is embeddable into `BalloonGraph(h)`.
+    """
+
+    # If g and BalloonGraph(h) have the same incidence graphs (i.e. for every anklet graph
+    # of g there is an anklet graph of h with exactly the same nodes, and vice versa)
+    # then compare their anklet graphs in pairs (i.e. using AnkletGraph.__le__).
+    # This is the "base case".
     if g.number_of_anklet_graphs() == len(h):
         # Same number of anklet graphs: look for an exact pairing based on node sets
         pairing = {}
@@ -635,14 +660,14 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
                     # An exact match! Store the corresponding index
                     pairing[loc] = k
         if len(pairing) == len(h):
-            # All anklet graphs of 'g' have a corresponding anklet graph in 'h'
+            # All anklet graphs of g have a corresponding anklet graph in h
             result = all(g[i][j] <= h[k] for (i, j), k in pairing.items())
             return result
 
-    # The incidence graphs of 'g' and 'h' differ.
-    # In order to have 'g ≤ h' it must be the case that for every pair of nodes 'u' and 'v'
-    # at finite distance in the incidence graph of 'h' that either the distance between them
-    # is shorter in the incidence graph of 'g' or they are in separate balloons of 'g'
+    # The incidence graphs of g and BalloonGraph(h) differ.
+    # In order to have g ≤ h it must be the case that for every pair of nodes u and v at finite
+    # distance in the incidence graph of BalloonGraph(h) that either the distance between them
+    # is shorter in the incidence graph of g or they are in separate balloons of g
     inc_graph_g, ids_g = g.to_incidence_graph()
     inc_graph_h, ids_h = BalloonGraph(h).to_incidence_graph()
     distances_g = dict(nx.all_pairs_shortest_path_length(inc_graph_g))
@@ -657,17 +682,17 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
                     return False
             else:
                 # u and v are in the same connected component of g
-                # If their distance for 'g' is longer than it is for 'h' then we do not have 'g ≤ h'
+                # If their distance for g is longer than it is for h then we do not have g ≤ h
                 if distances_g[ids_g[u]][ids_g[v]] > distances_h[ids_g[u]][ids_g[v]]:
                     return False
 
-    # At this point the incidence graphs of 'g' and 'h' differ
-    # but there is no immediate issue that would prove 'not g ≤ h'.
+    # At this point the incidence graphs of g and h differ
+    # but there is no immediate issue that would prove "not g ≤ h".
     # The idea now is to make minimal changes, break into subcases, and use transitivity.
 
-    # Check for pairs of nodes which are *directly* adjacent in 'g' but are in different connected
-    # components of 'h'. If such a pair is found, say 'u' and 'v', then a minimal change is to add
-    # the anklet graph <u, v | A(u, v)> to 'h'.
+    # Check for pairs of nodes which are *directly* adjacent in g but are in different connected
+    # components of h. If such a pair is found, say u and v, then a minimal change is to add
+    # the anklet graph <u, v | A(u, v)> to h.
     for u, v in g.anklet_adjacent_pairs():
         if ids_h[v] not in distances_h[ids_h[u]]:
             # Remove the anklet graphs <u | > and <v | > if present and add <u, v | A(u, v)>
@@ -675,19 +700,19 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
             h_augmented.append(AnkletGraph(hyperedges=[Anklet(u, v)]))
             return _poset_le_aux(g, h_augmented)
 
-    # Scan through all pairs of *directly adjacent* nodes in 'h' looking for a pair (u, v)
-    # with u and v in different balloons in 'g'. Keep track of the pair with this property
-    # for which u and v appear in the fewest anklet graph of 'g'
+    # Scan through all pairs of *directly adjacent* nodes in h looking for a pair (u, v)
+    # with u and v in different balloons in g. Keep track of the pair with this property
+    # for which u and v appear in the fewest anklet graph of g
     # (this keeps the branching factor later as small as possible)
     min_branch_pair = None
     min_branching_factor = -1
     incidence_g = g.incidence()
     for u, v in BalloonGraph(h).anklet_adjacent_pairs():
-        # Identify the balloons containing u and v (relies on having "_node_monogamy")
+        # Identify the balloons containing u and v (unique assuming valid structure of g)
         i_u = list(incidence_g[u])[0][0]
         i_v = list(incidence_g[v])[0][0]
         if i_u != i_v:
-            # 'u' and 'v' appear in separate balloons of 'g': save as the min branch pair
+            # u and v appear in separate balloons of g: save as the min branch pair
             # if not yet assigned or if they appear in fewer anklet graphs than the current best
             js_u = {j for _, j in incidence_g[u]}
             js_v = {j for _, j in incidence_g[v]}
@@ -696,10 +721,10 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
                 min_branching_factor = len(js_u) * len(js_v)
 
     if min_branch_pair is not None:
-        # 'u' and 'v' are in separate balloons of 'g' but in a common anklet graph of 'h'.
-        # Branch over all ways to join the two balloons of 'g' by combining two anklet graphs
-        # containing 'u' and 'v'. These 'g_joined's are *strictly larger* than 'g' and if any
-        # one is less than or equal to 'h' then also 'g ≤ h' by transitivity.
+        # u and v are in separate balloons of g but in a common anklet graph of h.
+        # Branch over all ways to join the two balloons of g by combining two anklet graphs
+        # containing u and v. These "g_joined"s are *strictly larger* than g and if any
+        # one is less than or equal to h then also g ≤ h by transitivity.
         u, v = min_branch_pair
         for loc_u, loc_v in product(incidence_g[u], incidence_g[v]):
             g_joined = g.copy()
@@ -709,9 +734,9 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
                 return True
         return False
 
-    # At this point the connected components of 'g' and 'h' are the same
+    # At this point the connected components of g and h are the same
 
-    # # Find a pair of anklet graphs of 'h' which share
+    # # Find a pair of anklet graphs of h which share
     g_adjacent_pairs = g.anklet_adjacent_pairs()
     for (i1, ag1_h), (i2, ag2_h) in combinations(enumerate(h), r=2):
         if ag1_h.nodes & ag2_h.nodes and any(
@@ -751,7 +776,7 @@ def poset_le[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
 
     balloon_groups_g = [[] for _ in h]
     for i_g, balloon_g in enumerate(g):
-        # Since 'h' has valid structure at most one h-balloon contains all the nodes of 'balloon_g'
+        # Since h has valid structure at most one h-balloon contains all the nodes of balloon_g
         is_subset = [g.balloon_nodes(i_g) <= h.balloon_nodes(i_h) for i_h in range(len(h))]
         if not any(is_subset):
             return False
