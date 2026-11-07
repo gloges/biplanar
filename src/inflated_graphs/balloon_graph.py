@@ -330,7 +330,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
                 inc[n].add(loc)
         return inc
 
-    def to_incidence_graph(self) -> nx.Graph:
+    def to_incidence_graph(self) -> tuple[nx.Graph, dict[T, int]]:
         """Return the simple graph reflecting node / anklet graph incidences in the balloon graph.
 
         The returned graph has the *nodes* and *anklet graphs* of the balloon graph for nodes
@@ -345,6 +345,9 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         -------
         networkx.Graph
             A simple, bipartite graph on the nodes and anklet graphs of the balloon graph.
+        dict[T, int]
+            A dictionary keyed by the nodes of the balloon graph and with values the corresponding
+            integer nodes of the returned bipartite incidence graph.
 
         See Also
         --------
@@ -362,7 +365,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             for n in ag:
                 g.add_edge(loc, node_ids[n])
 
-        return g
+        return g, node_ids
 
     def anklet_graph_adjacency(self) -> dict[IndexPair, set[IndexPair]]:
         """Return the adjacency data.
@@ -563,7 +566,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
                             f"which also appears in the anklet graph at ({i}, {j2})"
                         )
 
-        inc_graph = self.to_incidence_graph()
+        inc_graph, _ = self.to_incidence_graph()
 
         if not nx.is_forest(inc_graph):
             cycle_data = [
