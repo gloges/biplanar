@@ -628,7 +628,18 @@ def poset_le[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
     if g.nodes != h.nodes:
         return False
 
-    raise NotImplementedError()
+    balloon_groups_g = [[] for _ in h]
+    for i_g, balloon_g in enumerate(g):
+        # Since 'h' has valid structure at most one h-balloon contains all the nodes of 'balloon_g'
+        is_subset = [g.balloon_nodes(i_g) <= h.balloon_nodes(i_h) for i_h in range(len(h))]
+        if not any(is_subset):
+            return False
+        balloon_groups_g[is_subset.index(True)].append(balloon_g)
+
+    return all(
+        _poset_le_aux(BalloonGraph(*balloon_group), h[i])
+        for i, balloon_group in enumerate(balloon_groups_g)
+    )
 
 
 def poset_eq[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
