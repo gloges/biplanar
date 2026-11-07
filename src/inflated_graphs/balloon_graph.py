@@ -1,7 +1,9 @@
 """Balloon graphs."""
 
+from __future__ import annotations
 from collections.abc import Callable, Hashable, Iterator, Mapping
 from itertools import combinations
+from types import NotImplementedType
 from typing import Any, Self
 import networkx as nx
 from .anklet_graph import AnkletGraph
@@ -579,6 +581,35 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         # The structure is valid:
         # save the hash to avoid checking the structure again if it doesn't change
         self._valid_structure = self._get_structure_hash()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   (In)equality
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BalloonGraph):
+            return NotImplemented
+        return poset_le(self, other)
+
+    def __ge__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BalloonGraph):
+            return NotImplemented
+        return poset_le(other, self)
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BalloonGraph):
+            return NotImplemented
+        return poset_le(self, other) and not poset_le(other, self)
+
+    def __gt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BalloonGraph):
+            return NotImplemented
+        return poset_le(other, self) and not poset_le(self, other)
+
+    def __eq__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BalloonGraph):
+            return NotImplemented
+        return poset_eq(self, other)
 
 
 def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> bool:
