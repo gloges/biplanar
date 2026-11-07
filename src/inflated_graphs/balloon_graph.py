@@ -767,12 +767,29 @@ def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> b
 
 
 def poset_le[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
-    """Return whether `g` is *embeddable* into `h`."""
+    """Return whether `g` is *embeddable* into `h`.
+
+    Parameters
+    ----------
+    g, h : BalloonGraph[T]
+        Two balloon graphs on the same set of nodes.
+
+    Returns
+    -------
+    bool
+        Whether `g ≤ h`.
+
+    Raises
+    ------
+    ValueError
+        If `g` and `h` do not have the same nodes.
+
+    """
     g.check_structure()
     h.check_structure()
 
     if g.nodes != h.nodes:
-        return False
+        raise ValueError(f"the nodes of g {g.nodes} and the nodes of h {h.nodes} are not the same")
 
     balloon_groups_g = [[] for _ in h]
     for i_g, balloon_g in enumerate(g):
@@ -789,5 +806,16 @@ def poset_le[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
 
 
 def poset_eq[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
-    """Return whether `g` and `h` are *bi-embeddable*."""
+    """Return whether `g` and `h` are *bi-embeddable*.
+
+    Parameters
+    ----------
+    g, h : BalloonGraph[T]
+        Two balloon graphs on the same set of nodes.
+
+    Returns
+    -------
+    bool
+        Whether both `poset_le(g, h)` and `poset_le(h, g)`.
+    """
     return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
