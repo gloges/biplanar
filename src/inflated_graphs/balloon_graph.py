@@ -579,3 +579,24 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         # The structure is valid:
         # save the hash to avoid checking the structure again if it doesn't change
         self._valid_structure = self._get_structure_hash()
+
+
+def _poset_le_aux[T: Hashable](g: BalloonGraph[T], h: list[AnkletGraph[T]]) -> bool:
+    """Return whether `g` is *embeddable* into `h`."""
+    raise NotImplementedError()
+
+
+def poset_le[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
+    """Return whether `g` is *embeddable* into `h`."""
+    g.check_structure()
+    h.check_structure()
+
+    if g.nodes != h.nodes:
+        return False
+
+    raise NotImplementedError()
+
+
+def poset_eq[T: Hashable](g: BalloonGraph[T], h: BalloonGraph[T]) -> bool:
+    """Return whether `g` and `h` are *bi-embeddable*."""
+    return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
