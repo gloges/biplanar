@@ -101,7 +101,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
     @property
     def attributes(self) -> dict[str, Any]:
-        """The attributes of the anklet graph.
+        """The attributes of the balloon graph.
 
         Changes to the returned dictionary modify this balloon graphs's attributes.
         Assigning a mapping replaces the dictionary with a shallow copy of that mapping.
