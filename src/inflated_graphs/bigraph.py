@@ -55,3 +55,30 @@ class BiGraph[T: Hashable]:
     def attributes(self, value: Mapping[str, Any]) -> None:
         self._attr = dict(value)
 
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Structure
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def check_structure(self) -> None:
+        """Validate the structure of the balloon graph.
+
+        Checks that...
+        - both balloon graphs have the same nodes,
+        - all nodes have been assigned a color, and
+        - both balloon graphs have valid structure (see :meth:`BalloonGraph.check_structure`).
+
+        Returns quietly if the structure is valid.
+
+        Raises
+        ------
+        ValueError  
+            If any of the above conditions are not met (a short message explains the issue).
+        """
+        if self._top.nodes != self._bot.nodes:
+            raise ValueError("the two graphs do not have the same nodes")
+
+        if not self._top.nodes <= self._node_color.keys():
+            raise ValueError("not all nodes have been assigned a color")
+
+        self._top.check_structure()
+        self._bot.check_structure()
