@@ -115,7 +115,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
 
-        Balloon graph attributes and each anklet graph is copied. If the balloon graph
+        All balloon graph attributes and anklet graph are copied. If the balloon graph
         has a name then '-copy' is appended: otherwise the copy remains unnamed.
 
         Returns
@@ -125,7 +125,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """
         return type(self)(
             *[[ag.copy() for ag in balloon] for balloon in self],
-            name=self.name + '-copy' if self.name else '',
+            name=self._name + '-copy' if self._name else '',
             **self._attr.copy()
         )
 

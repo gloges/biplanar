@@ -60,7 +60,7 @@ class BiGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def check_structure(self) -> None:
-        """Validate the structure of the balloon graph.
+        """Validate the structure of the bi-graph.
 
         Checks that...
         - both balloon graphs have the same nodes,
