@@ -343,7 +343,6 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> g.data_string()
         '[<1, 3, 4 | 2 × A(1, 3, 4)>, <0, 3 | A(0, 3)>], [<2, 5 | A(2, 5)>]'
         """
-        '[<1, 3, 4 | 2 × A(1, 3, 4)>, <0, 3 | A(0, 3)>], [<2, 5 | A(2, 5)>]'
         node_replacements = {n: node_replacements.get(n, n) for n in self.nodes}
         if len(set(node_replacements.values())) < len(node_replacements):
             raise ValueError(
