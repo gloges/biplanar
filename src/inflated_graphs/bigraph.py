@@ -75,6 +75,34 @@ class BiGraph[T: Hashable]:
         )
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Graphs and nodes
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    @property
+    def balloon_graphs(self) -> tuple[BalloonGraph[T], BalloonGraph[T]]:
+        """The pair of balloon graphs."""
+        return self._top, self._bot
+
+    @balloon_graphs.setter
+    def balloon_graphs(self, value: tuple[BalloonGraph[T], BalloonGraph[T]]) -> None:
+        self._top = value[0]
+        self._bot = value[1]
+
+    @property
+    def nodes(self) -> set[T]:
+        """The set of nodes."""
+        return self._top.nodes | self._bot.nodes
+
+    @property
+    def node_colors(self) -> dict[T, Any]:
+        """The colors assigned to the nodes."""
+        return self._node_color
+
+    @node_colors.setter
+    def node_colors(self, value: Mapping[T, Any]) -> None:
+        self._node_color = dict(value)
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
