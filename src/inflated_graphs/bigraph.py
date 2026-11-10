@@ -1,7 +1,7 @@
 """Bigraphs."""
 
 from collections.abc import Hashable, Mapping
-from typing import Any
+from typing import Any, Self
 from .balloon_graph import BalloonGraph
 
 
@@ -55,12 +55,59 @@ class BiGraph[T: Hashable]:
     def attributes(self, value: Mapping[str, Any]) -> None:
         self._attr = dict(value)
 
+    def copy(self) -> Self:
+        """Return a copy of the bi-graph.
+
+        All bi-graph attributes and balloon graph are copied. If the bi-graph
+        has a name then '-copy' is appended: otherwise the copy remains unnamed.
+
+        Returns
+        -------
+        Self
+            A copy of the bi-graph.
+        """
+        return type(self)(
+            self._top.copy(),
+            self._bot.copy(),
+            self._node_color.copy(),
+            name=self._name + '-copy' if self._name else '',
+            **self._attr.copy()
+        )
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Graphs and nodes
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    @property
+    def balloon_graphs(self) -> tuple[BalloonGraph[T], BalloonGraph[T]]:
+        """The pair of balloon graphs."""
+        return self._top, self._bot
+
+    @balloon_graphs.setter
+    def balloon_graphs(self, value: tuple[BalloonGraph[T], BalloonGraph[T]]) -> None:
+        self._top = value[0]
+        self._bot = value[1]
+
+    @property
+    def nodes(self) -> set[T]:
+        """The set of nodes."""
+        return self._top.nodes | self._bot.nodes
+
+    @property
+    def node_colors(self) -> dict[T, Any]:
+        """The colors assigned to the nodes."""
+        return self._node_color
+
+    @node_colors.setter
+    def node_colors(self, value: Mapping[T, Any]) -> None:
+        self._node_color = dict(value)
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def check_structure(self) -> None:
-        """Validate the structure of the balloon graph.
+        """Validate the structure of the bi-graph.
 
         Checks that...
         - both balloon graphs have the same nodes,
