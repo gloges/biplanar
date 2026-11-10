@@ -19,3 +19,6 @@ testpaths = ["src/inflated_graphs", "tests"]
 [tool.pylint.main]
 max-module-lines = 1400
 max-public-methods = 40
+
+[tool.pylint.similarities]
+min-similarity-lines = 10
