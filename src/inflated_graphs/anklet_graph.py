@@ -503,6 +503,43 @@ class AnkletGraph[T: Hashable]:
             except ValueError:
                 pass
 
+    def relabel_nodes(self, node_replacements: Mapping[T, T], /) -> None:
+        """Relabel nodes.
+
+        Parameters
+        ----------
+        node_replacements : Mapping[T, T]
+            Mapping from existing nodes to their replacements. Nodes not present as keys
+            are left unaltered, and keys that are not nodes of this anklet grpah are ignored.
+
+        Raises
+        ------
+        ValueError
+            If the node replacements would lead to a collision.
+
+        Examples
+        --------
+        >>> g = AnkletGraph([0, 1, 2, 3], {Anklet(0, 1, 2): 2, Anklet(1, 2, 3): 1})
+        >>> g.relabel_nodes({1: 4, 2: 1, 6: 0})
+        >>> g.data_string()
+        '<0, 1, 3, 4 | 2 × A(0, 1, 4) + A(1, 3, 4)>'
+        >>> g.relabel_nodes({3: 4, 4: 3})
+        >>> g.data_string()
+        '<0, 1, 3, 4 | 2 × A(0, 1, 3) + A(1, 3, 4)>'
+        >>> g.relabel_nodes({3: 0})
+        Traceback (most recent call last):
+        ...
+        ValueError: replacing nodes according to {0: 0, 3: 0, 1: 1, 4: 4} would lead to a collision
+        """
+        node_replacements = {n: node_replacements.get(n, n) for n in self}
+        if len(set(node_replacements.values())) < len(node_replacements):
+            raise ValueError(
+                f"replacing nodes according to {node_replacements} would lead to a collision"
+            )
+
+        self._node = {n_new: self._node[n] for n, n_new in node_replacements.items()}
+        self._edge = {hype.replace_beads(node_replacements): k for hype, k in self._edge.items()}
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Node attributes
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--

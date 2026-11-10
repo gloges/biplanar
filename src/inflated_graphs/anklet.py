@@ -1,6 +1,6 @@
 """Combinatorial anklets."""
 
-from collections.abc import Callable, Collection, Container, Iterable, Iterator
+from collections.abc import Callable, Collection, Container, Iterable, Iterator, Mapping
 from itertools import combinations
 from types import NotImplementedType
 from typing import Any, Self
@@ -112,7 +112,7 @@ class Anklet[T](tuple[T, ...]):
         return NotImplemented
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Removing beads
+    #   Removing/replacing beads
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def without_bead(self, bead_to_remove: T, /) -> Self:
@@ -133,7 +133,8 @@ class Anklet[T](tuple[T, ...]):
         See Also
         --------
         :meth:`Anklet.without_beads`,
-        :meth:`Anklet.restrict_beads`
+        :meth:`Anklet.restrict_beads`,
+        :meth:`Anklet.replace_beads`
 
         Examples
         --------
@@ -163,7 +164,8 @@ class Anklet[T](tuple[T, ...]):
         See Also
         --------
         :meth:`Anklet.without_bead`,
-        :meth:`Anklet.restrict_beads`
+        :meth:`Anklet.restrict_beads`,
+        :meth:`Anklet.replace_beads`
 
         Examples
         --------
@@ -192,7 +194,8 @@ class Anklet[T](tuple[T, ...]):
         See Also
         --------
         :meth:`Anklet.without_bead`,
-        :meth:`Anklet.without_beads`
+        :meth:`Anklet.without_beads`,
+        :meth:`Anklet.replace_beads`
 
         Examples
         --------
@@ -202,6 +205,48 @@ class Anklet[T](tuple[T, ...]):
         A(0, 4, 1)
         """
         return type(self).from_iterable(b for b in self if b in beads_to_keep)
+
+    def replace_beads(self, bead_replacements: Mapping[T, T], /) -> Self:
+        """Return a new anklet with the specified beads replaced.
+
+        Parameters
+        ----------
+        bead_replacements : Mapping[T, T]
+            Mapping from existing beads to their replacements. Beads not present as keys
+            are left unaltered, and keys that are not beads of this anklet are ignored. 
+
+        Returns
+        -------
+        Self
+            Anklet with the specified replacements applied.
+
+        Raises
+        ------
+        ValueError
+            If the resulting beads are not distinct.
+
+        See Also
+        --------
+        :meth:`Anklet.without_bead`,
+        :meth:`Anklet.without_beads`,
+        :meth:`Anklet.restrict_beads`
+
+        Examples
+        --------
+        >>> Anklet.from_iterable(range(6)).replace_beads({3: 7, 8: 0})
+        A(0, 1, 2, 7, 4, 5)
+        >>> Anklet.from_iterable(range(6)).replace_beads({1: 2, 2: 1, 3: 5, 4: 6, 5: 4})
+        A(0, 2, 1, 5, 6, 4)
+        >>> Anklet.from_iterable(range(6)).replace_beads({0: 5})
+        Traceback (most recent call last):
+        ...
+        ValueError: the beads (5, 1, 2, 3, 4, 5) are not distinct
+        >>> Anklet.from_iterable(range(6)).replace_beads({0: 7, 3: 7})
+        Traceback (most recent call last):
+        ...
+        ValueError: the beads (7, 1, 2, 7, 4, 5) are not distinct
+        """
+        return type(self).from_iterable(bead_replacements.get(b, b) for b in self)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   (In)equality
