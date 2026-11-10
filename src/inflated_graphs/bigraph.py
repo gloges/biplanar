@@ -106,6 +106,35 @@ class BiGraph[T: Hashable]:
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
+    def _check_balloon_graph_nodes(self) -> None:
+        """Validate that the two balloon graphs have the same nodes.
+
+        Returns quietly if they have the same nodes.
+
+        Raises
+        ------
+        ValueError
+            If the nodes in the two balloon graphs are different.
+        """
+        if self._top.nodes != self._bot.nodes:
+            raise ValueError("the two graphs do not have the same nodes")
+
+    def _check_node_colors(self) -> None:
+        """Validate that all nodes have been assigned a color.
+
+        Returns quietly if all nodes have a color.
+
+        Raises
+        ------
+        ValueError
+            If any node of the graph does not have a color.
+        """
+        self._node_color = {n: c for n, c in self._node_color.items() if n in self.nodes}
+        if self._node_color.keys() != self.nodes:
+            raise ValueError(
+                f"the nodes {self.nodes - self._node_color.keys()} have not been assigned a color"
+            )
+
     def check_structure(self) -> None:
         """Validate the structure of the bi-graph.
 
@@ -121,11 +150,7 @@ class BiGraph[T: Hashable]:
         ValueError  
             If any of the above conditions are not met (a short message explains the issue).
         """
-        if self._top.nodes != self._bot.nodes:
-            raise ValueError("the two graphs do not have the same nodes")
-
-        if not self._top.nodes <= self._node_color.keys():
-            raise ValueError("not all nodes have been assigned a color")
-
+        self._check_balloon_graph_nodes()
+        self._check_node_colors()
         self._top.check_structure()
         self._bot.check_structure()
