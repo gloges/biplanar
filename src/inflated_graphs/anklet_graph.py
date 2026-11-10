@@ -510,7 +510,7 @@ class AnkletGraph[T: Hashable]:
         ----------
         node_replacements : Mapping[T, T]
             Mapping from existing nodes to their replacements. Nodes not present as keys
-            are left unaltered, and keys that are not nodes of this anklet grpah are ignored.
+            are left unaltered, and keys that are not nodes of this anklet graph are ignored.
 
         Raises
         ------
