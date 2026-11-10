@@ -1,6 +1,7 @@
 """Bigraphs."""
 
-from collections.abc import Hashable, Mapping
+from collections.abc import Generator, Hashable, Mapping
+from itertools import permutations, product
 from typing import Any, Self
 from .balloon_graph import BalloonGraph
 
@@ -178,3 +179,23 @@ class BiGraph[T: Hashable]:
         self._check_node_colors()
         self._top.check_structure()
         self._bot.check_structure()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   (In)equality
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+def _value_restricted_permutations[T: Hashable](m: Mapping[T, Hashable]) -> Generator[dict[T, T]]:
+    """Yield all permutations of the keys of `m` with the restriction that if `x` is mapped to `y`,
+    then `m.get(x) == m.get(y)`.
+    """
+    keys_by_value = {}
+    for key, value in m.items():
+        keys_by_value.setdefault(value, []).append(key)
+    key_groups = list(keys_by_value.values())
+
+    for key_group_perms in product(*[permutations(group) for group in key_groups]):
+        yield {
+            x: y
+            for group, group_perm in zip(key_groups, key_group_perms)
+            for x, y in zip(group, group_perm)
+        }
