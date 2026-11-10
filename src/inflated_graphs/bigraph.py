@@ -1,6 +1,8 @@
 """Bigraphs."""
 
-from collections.abc import Hashable, Mapping
+from collections.abc import Generator, Hashable, Mapping
+from itertools import permutations, product
+from types import NotImplementedType
 from typing import Any, Self
 from .balloon_graph import BalloonGraph
 
@@ -178,3 +180,79 @@ class BiGraph[T: Hashable]:
         self._check_node_colors()
         self._top.check_structure()
         self._bot.check_structure()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   (In)equality
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_le(self, other)
+
+    def __ge__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_le(other, self)
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_le(self, other) and not poset_le(other, self)
+
+    def __gt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_le(other, self) and not poset_le(self, other)
+
+    def __eq__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_eq(self, other)
+
+
+def _value_restricted_permutations[T: Hashable](m: Mapping[T, Hashable]) -> Generator[dict[T, T]]:
+    """Yield all permutations of the keys of `m` with the restriction that if `x` is mapped to `y`,
+    then `m.get(x) == m.get(y)`.
+    """
+    keys_by_value = {}
+    for key, value in m.items():
+        keys_by_value.setdefault(value, []).append(key)
+    key_groups = list(keys_by_value.values())
+
+    for key_group_perms in product(*[permutations(group) for group in key_groups]):
+        yield {
+            x: y
+            for group, group_perm in zip(key_groups, key_group_perms)
+            for x, y in zip(group, group_perm)
+        }
+
+
+def poset_le[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
+    """Return whether `g ≤ h`."""
+    g.check_structure()
+    h.check_structure()
+
+    if g.nodes != h.nodes:
+        raise ValueError(f"the nodes of g {g.nodes} and of h {h.nodes} are different")
+
+    if g.node_colors != h.node_colors:
+        raise ValueError(f"the node colors for g {g.node_colors} and for h {h.node_colors} differ")
+
+    for node_permutation in _value_restricted_permutations(g.node_colors):
+        g_permuted = g.copy()
+        g_permuted.balloon_graphs[0].relabel_nodes(node_permutation)
+        g_permuted.balloon_graphs[1].relabel_nodes(node_permutation)
+
+        bg_g_0, bg_g_1 = g_permuted.balloon_graphs
+        bg_h_0, bg_h_1 = h.balloon_graphs
+
+        if (bg_g_0 <= bg_h_0 and bg_g_1 <= bg_h_1) or (bg_g_1 <= bg_h_0 and bg_g_0 <= bg_h_1):
+            return True
+
+    return False
+
+
+def poset_eq[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
+    """Return whether both `g ≤ h` and `h ≤ g`."""
+    return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
