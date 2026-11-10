@@ -102,6 +102,30 @@ class BiGraph[T: Hashable]:
     def node_colors(self, value: Mapping[T, Any]) -> None:
         self._node_color = dict(value)
 
+    def relabel_nodes(self, node_replacements: Mapping[T, T], /) -> None:
+        """Relabel nodes in the two balloon graphs simultaneously.
+
+        Parameters
+        ----------
+        node_replacements : Mapping[T, T]
+            Mapping from existing nodes to their replacements. Nodes not present as keys
+            are left unaltered, and keys that are not nodes of this bi-graph are ignored.
+
+        Raises
+        ------
+        ValueError
+            If the two balloon graphs do not have the same nodes
+            or if the node replacements would lead to a collision.
+        """
+        self._check_balloon_graph_nodes()
+        self._top.relabel_nodes(node_replacements)
+        self._bot.relabel_nodes(node_replacements)
+        self._node_color = {
+            node_replacements.get(n, n): c
+            for n, c in self._node_color.items()
+            if n in self.nodes
+        }
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
