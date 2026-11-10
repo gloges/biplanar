@@ -307,6 +307,51 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         return (i_a, j_a) if i_a < i_b else (i_a - 1, j_a)
 
+    def relabel_nodes(self, node_replacements: Mapping[T, T], /) -> None:
+        """Relabel nodes.
+
+        Parameters
+        ----------
+        node_replacements : Mapping[T, T]
+            Mapping from existing nodes to their replacements. Nodes not present as keys
+            are left unaltered, and keys that are not nodes of this anklet grpah are ignored.
+
+        Raises
+        ------
+        ValueError
+            If the node replacements would lead to a collision.
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | 2 × A(0, 1, 2)>, <2, 3 | A(2, 3)>], [<4, 5 | A(4, 5)>]", int
+        ... )
+        >>> g.relabel_nodes({2: 3, 3: 2, 7: 8})
+        >>> g.data_string()
+        '[<0, 1, 3 | 2 × A(0, 1, 3)>, <2, 3 | A(2, 3)>], [<4, 5 | A(4, 5)>]'
+        >>> g.relabel_nodes({0: 4, 4: 2, 2: 0})
+        >>> g.data_string()
+        '[<1, 3, 4 | 2 × A(1, 3, 4)>, <0, 3 | A(0, 3)>], [<2, 5 | A(2, 5)>]'
+
+        If the replacement would lead to a collision then no changes are made:
+
+        >>> g.relabel_nodes({3: 5})
+        Traceback (most recent call last):
+        ValueError: replacing nodes according to
+        {0: 0, 1: 1, 2: 2, 3: 5, 4: 4, 5: 5}
+        would lead to a collision
+        >>> g.data_string()
+        '[<1, 3, 4 | 2 × A(1, 3, 4)>, <0, 3 | A(0, 3)>], [<2, 5 | A(2, 5)>]'
+        """
+        '[<1, 3, 4 | 2 × A(1, 3, 4)>, <0, 3 | A(0, 3)>], [<2, 5 | A(2, 5)>]'
+        node_replacements = {n: node_replacements.get(n, n) for n in self.nodes}
+        if len(set(node_replacements.values())) < len(node_replacements):
+            raise ValueError(
+                f"replacing nodes according to\n{node_replacements}\nwould lead to a collision"
+            )
+        for _, ag in self.iter_anklet_graphs():
+            ag.relabel_nodes(node_replacements)
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence / adjacency
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
