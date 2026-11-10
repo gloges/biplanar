@@ -199,3 +199,28 @@ def _value_restricted_permutations[T: Hashable](m: Mapping[T, Hashable]) -> Gene
             for group, group_perm in zip(key_groups, key_group_perms)
             for x, y in zip(group, group_perm)
         }
+
+
+def poset_le[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
+    """Return whether `g ≤ h`."""
+    g.check_structure()
+    h.check_structure()
+
+    if g.nodes != h.nodes:
+        raise ValueError(f"the nodes of g {g.nodes} and of h {h.nodes} are different")
+
+    if g.node_colors != h.node_colors:
+        raise ValueError(f"the node colors for g {g.node_colors} and for h {h.node_colors} differ")
+
+    for node_permutation in _value_restricted_permutations(g.node_colors):
+        g_permuted = g.copy()
+        g_permuted.balloon_graphs[0].relabel_nodes(node_permutation)
+        g_permuted.balloon_graphs[1].relabel_nodes(node_permutation)
+
+        bg_g_0, bg_g_1 = g_permuted.balloon_graphs
+        bg_h_0, bg_h_1 = h.balloon_graphs
+
+        if (bg_g_0 <= bg_h_0 and bg_g_1 <= bg_h_1) or (bg_g_1 <= bg_h_0 and bg_g_0 <= bg_h_1):
+            return True
+
+    return False
