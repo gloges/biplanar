@@ -2,6 +2,7 @@
 
 from collections.abc import Generator, Hashable, Mapping
 from itertools import permutations, product
+from types import NotImplementedType
 from typing import Any, Self
 from .balloon_graph import BalloonGraph
 
@@ -184,6 +185,32 @@ class BiGraph[T: Hashable]:
     #   (In)equality
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_le(self, other)
+
+    def __ge__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_le(other, self)
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_le(self, other) and not poset_le(other, self)
+
+    def __gt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_le(other, self) and not poset_le(self, other)
+
+    def __eq__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, BiGraph):
+            return NotImplemented
+        return poset_eq(self, other)
+
+
 def _value_restricted_permutations[T: Hashable](m: Mapping[T, Hashable]) -> Generator[dict[T, T]]:
     """Yield all permutations of the keys of `m` with the restriction that if `x` is mapped to `y`,
     then `m.get(x) == m.get(y)`.
@@ -224,3 +251,8 @@ def poset_le[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
             return True
 
     return False
+
+
+def poset_eq[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
+    """Return whether both `g ≤ h` and `h ≤ g`."""
+    return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
