@@ -1,7 +1,7 @@
 """Bigraphs."""
 
 from collections.abc import Hashable, Mapping
-from typing import Any
+from typing import Any, Self
 from .balloon_graph import BalloonGraph
 
 
@@ -54,6 +54,25 @@ class BiGraph[T: Hashable]:
     @attributes.setter
     def attributes(self, value: Mapping[str, Any]) -> None:
         self._attr = dict(value)
+
+    def copy(self) -> Self:
+        """Return a copy of the bi-graph.
+
+        All bi-graph attributes and balloon graph are copied. If the bi-graph
+        has a name then '-copy' is appended: otherwise the copy remains unnamed.
+
+        Returns
+        -------
+        Self
+            A copy of the bi-graph.
+        """
+        return type(self)(
+            self._top.copy(),
+            self._bot.copy(),
+            self._node_color.copy(),
+            name=self._name + '-copy' if self._name else '',
+            **self._attr.copy()
+        )
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
