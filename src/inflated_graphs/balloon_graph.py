@@ -151,10 +151,36 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> BalloonGraph([ag1, ag2], [ag3]).data_string()
         '[<0, 1, 2 | A(0, 1) + 2 × A(0, 1, 2)>, <3, 4, 5 | 3 × A(3, 4)>], [<6, 7, 8 | A(6, 7, 8)>]'
         """
-        return ", ".join([
-            '[' + ", ".join([ag.data_string() for ag in balloon]) + ']'
-            for balloon in self
-        ])
+        # Pick an order for the anklet graphs within each balloon
+        anklet_graph_orders = []
+        for balloon in self:
+            sort_data = [
+                (
+                    -ag.number_of_nodes(),  # More nodes first
+                    -ag.number_of_unique_hyperedges(),  # More unique hyperedges first
+                    -ag.number_of_hyperedges(),  # More total hyperedges first
+                    -len(ag.data_string()),
+                    ag.data_string()
+                )
+                for ag in balloon
+            ]
+            anklet_graph_orders.append(sorted(range(len(sort_data)), key=sort_data.__getitem__))
+        balloon_data_strings = [
+            '[' + ", ".join([self[i][j].data_string() for j in order]) + ']'
+            for i, order in enumerate(anklet_graph_orders)
+        ]
+
+        # Pick an order for the balloon data strings
+        balloon_order = sorted(
+            range(len(self)),
+            key=lambda i: (
+                -self.number_of_anklet_graphs(i),  # More anklet graphs first
+                -len(balloon_data_strings[i]),
+                balloon_data_strings[i]
+            )
+        )
+
+        return ", ".join([balloon_data_strings[i] for i in balloon_order])
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Balloons, anklet graphs and nodes
