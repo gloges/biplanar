@@ -12,24 +12,12 @@ class BiGraph[T: Hashable]:
 
     _name: str
     _attr: dict[str, Any]
-    _top: BalloonGraph[T]
-    _bot: BalloonGraph[T]
-    _node_color: dict[T, Any]
+    _balloon_graph: tuple[BalloonGraph[T], BalloonGraph[T]]
 
-    def __init__(
-        self,
-        g: BalloonGraph[T],
-        h: BalloonGraph[T],
-        node_colors: dict[T, Any],
-        *,
-        name: str = "",
-        **attr: Any
-    ):
+    def __init__(self, g: BalloonGraph[T], h: BalloonGraph[T], *, name: str = "", **attr: Any):
         self._name = name
         self._attr = attr
-        self._top = g
-        self._bot = h
-        self._node_color = node_colors
+        self._balloon_graph = g, h
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -69,9 +57,8 @@ class BiGraph[T: Hashable]:
             A copy of the bi-graph.
         """
         return type(self)(
-            self._top.copy(),
-            self._bot.copy(),
-            self._node_color.copy(),
+            self._balloon_graph[0].copy(),
+            self._balloon_graph[1].copy(),
             name=self._name + '-copy' if self._name else '',
             **self._attr.copy()
         )
@@ -83,26 +70,16 @@ class BiGraph[T: Hashable]:
     @property
     def balloon_graphs(self) -> tuple[BalloonGraph[T], BalloonGraph[T]]:
         """The pair of balloon graphs."""
-        return self._top, self._bot
+        return self._balloon_graph
 
     @balloon_graphs.setter
     def balloon_graphs(self, value: tuple[BalloonGraph[T], BalloonGraph[T]]) -> None:
-        self._top = value[0]
-        self._bot = value[1]
+        self._balloon_graph = value
 
     @property
     def nodes(self) -> set[T]:
         """The set of nodes."""
-        return self._top.nodes | self._bot.nodes
-
-    @property
-    def node_colors(self) -> dict[T, Any]:
-        """The colors assigned to the nodes."""
-        return self._node_color
-
-    @node_colors.setter
-    def node_colors(self, value: Mapping[T, Any]) -> None:
-        self._node_color = dict(value)
+        return self._balloon_graph[0].nodes | self._balloon_graph[1].nodes
 
     def relabel_nodes(self, node_replacements: Mapping[T, T], /) -> None:
         """Relabel nodes in the two balloon graphs simultaneously.
@@ -120,13 +97,8 @@ class BiGraph[T: Hashable]:
             or if the node replacements would lead to a collision.
         """
         self._check_balloon_graph_nodes()
-        self._top.relabel_nodes(node_replacements)
-        self._bot.relabel_nodes(node_replacements)
-        self._node_color = {
-            node_replacements.get(n, n): c
-            for n, c in self._node_color.items()
-            if n in self.nodes
-        }
+        self._balloon_graph[0].relabel_nodes(node_replacements)
+        self._balloon_graph[1].relabel_nodes(node_replacements)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
@@ -142,44 +114,25 @@ class BiGraph[T: Hashable]:
         ValueError
             If the nodes in the two balloon graphs are different.
         """
-        if self._top.nodes != self._bot.nodes:
+        if self._balloon_graph[0].nodes != self._balloon_graph[1].nodes:
             raise ValueError("the two graphs do not have the same nodes")
-
-    def _check_node_colors(self) -> None:
-        """Validate that all nodes have been assigned a color.
-
-        Returns quietly if all nodes have a color.
-
-        Raises
-        ------
-        ValueError
-            If any node of the graph does not have a color.
-        """
-        self._node_color = {n: c for n, c in self._node_color.items() if n in self.nodes}
-        if self._node_color.keys() != self.nodes:
-            raise ValueError(
-                f"the nodes {self.nodes - self._node_color.keys()} have not been assigned a color"
-            )
 
     def check_structure(self) -> None:
         """Validate the structure of the bi-graph.
 
-        Checks that...
-        - both balloon graphs have the same nodes,
-        - all nodes have been assigned a color, and
-        - both balloon graphs have valid structure (see :meth:`BalloonGraph.check_structure`).
+        Checks that the balloon graphs have the same nodes
+        and that both have valid structure (see :meth:`BalloonGraph.check_structure`).
 
         Returns quietly if the structure is valid.
 
         Raises
         ------
         ValueError  
-            If any of the above conditions are not met (a short message explains the issue).
+            If either of the above conditions is not met (a short message explains the issue).
         """
         self._check_balloon_graph_nodes()
-        self._check_node_colors()
-        self._top.check_structure()
-        self._bot.check_structure()
+        self._balloon_graph[0].check_structure()
+        self._balloon_graph[1].check_structure()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   (In)equality
