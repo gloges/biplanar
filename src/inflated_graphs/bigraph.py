@@ -1,8 +1,7 @@
 """Bigraphs."""
 
-from collections.abc import Generator, Hashable, Mapping
+from collections.abc import Collection, Hashable, Mapping, Sequence
 from itertools import permutations, product
-from types import NotImplementedType
 from typing import Any, Self
 from .balloon_graph import BalloonGraph
 
@@ -12,24 +11,12 @@ class BiGraph[T: Hashable]:
 
     _name: str
     _attr: dict[str, Any]
-    _top: BalloonGraph[T]
-    _bot: BalloonGraph[T]
-    _node_color: dict[T, Any]
+    _balloon_graph: tuple[BalloonGraph[T], BalloonGraph[T]]
 
-    def __init__(
-        self,
-        g: BalloonGraph[T],
-        h: BalloonGraph[T],
-        node_colors: dict[T, Any],
-        *,
-        name: str = "",
-        **attr: Any
-    ):
+    def __init__(self, g: BalloonGraph[T], h: BalloonGraph[T], *, name: str = "", **attr: Any):
         self._name = name
         self._attr = attr
-        self._top = g
-        self._bot = h
-        self._node_color = node_colors
+        self._balloon_graph = g, h
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -69,9 +56,8 @@ class BiGraph[T: Hashable]:
             A copy of the bi-graph.
         """
         return type(self)(
-            self._top.copy(),
-            self._bot.copy(),
-            self._node_color.copy(),
+            self._balloon_graph[0].copy(),
+            self._balloon_graph[1].copy(),
             name=self._name + '-copy' if self._name else '',
             **self._attr.copy()
         )
@@ -83,26 +69,16 @@ class BiGraph[T: Hashable]:
     @property
     def balloon_graphs(self) -> tuple[BalloonGraph[T], BalloonGraph[T]]:
         """The pair of balloon graphs."""
-        return self._top, self._bot
+        return self._balloon_graph
 
     @balloon_graphs.setter
     def balloon_graphs(self, value: tuple[BalloonGraph[T], BalloonGraph[T]]) -> None:
-        self._top = value[0]
-        self._bot = value[1]
+        self._balloon_graph = value
 
     @property
     def nodes(self) -> set[T]:
         """The set of nodes."""
-        return self._top.nodes | self._bot.nodes
-
-    @property
-    def node_colors(self) -> dict[T, Any]:
-        """The colors assigned to the nodes."""
-        return self._node_color
-
-    @node_colors.setter
-    def node_colors(self, value: Mapping[T, Any]) -> None:
-        self._node_color = dict(value)
+        return self._balloon_graph[0].nodes | self._balloon_graph[1].nodes
 
     def relabel_nodes(self, node_replacements: Mapping[T, T], /) -> None:
         """Relabel nodes in the two balloon graphs simultaneously.
@@ -120,13 +96,8 @@ class BiGraph[T: Hashable]:
             or if the node replacements would lead to a collision.
         """
         self._check_balloon_graph_nodes()
-        self._top.relabel_nodes(node_replacements)
-        self._bot.relabel_nodes(node_replacements)
-        self._node_color = {
-            node_replacements.get(n, n): c
-            for n, c in self._node_color.items()
-            if n in self.nodes
-        }
+        self._balloon_graph[0].relabel_nodes(node_replacements)
+        self._balloon_graph[1].relabel_nodes(node_replacements)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
@@ -142,93 +113,37 @@ class BiGraph[T: Hashable]:
         ValueError
             If the nodes in the two balloon graphs are different.
         """
-        if self._top.nodes != self._bot.nodes:
+        if self._balloon_graph[0].nodes != self._balloon_graph[1].nodes:
             raise ValueError("the two graphs do not have the same nodes")
-
-    def _check_node_colors(self) -> None:
-        """Validate that all nodes have been assigned a color.
-
-        Returns quietly if all nodes have a color.
-
-        Raises
-        ------
-        ValueError
-            If any node of the graph does not have a color.
-        """
-        self._node_color = {n: c for n, c in self._node_color.items() if n in self.nodes}
-        if self._node_color.keys() != self.nodes:
-            raise ValueError(
-                f"the nodes {self.nodes - self._node_color.keys()} have not been assigned a color"
-            )
 
     def check_structure(self) -> None:
         """Validate the structure of the bi-graph.
 
-        Checks that...
-        - both balloon graphs have the same nodes,
-        - all nodes have been assigned a color, and
-        - both balloon graphs have valid structure (see :meth:`BalloonGraph.check_structure`).
+        Checks that the balloon graphs have the same nodes
+        and that both have valid structure (see :meth:`BalloonGraph.check_structure`).
 
         Returns quietly if the structure is valid.
 
         Raises
         ------
         ValueError  
-            If any of the above conditions are not met (a short message explains the issue).
+            If either of the above conditions is not met (a short message explains the issue).
         """
         self._check_balloon_graph_nodes()
-        self._check_node_colors()
-        self._top.check_structure()
-        self._bot.check_structure()
-
-    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   (In)equality
-    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-
-    def __le__(self, other: object) -> NotImplementedType | bool:
-        if not isinstance(other, BiGraph):
-            return NotImplemented
-        return poset_le(self, other)
-
-    def __ge__(self, other: object) -> NotImplementedType | bool:
-        if not isinstance(other, BiGraph):
-            return NotImplemented
-        return poset_le(other, self)
-
-    def __lt__(self, other: object) -> NotImplementedType | bool:
-        if not isinstance(other, BiGraph):
-            return NotImplemented
-        return poset_le(self, other) and not poset_le(other, self)
-
-    def __gt__(self, other: object) -> NotImplementedType | bool:
-        if not isinstance(other, BiGraph):
-            return NotImplemented
-        return poset_le(other, self) and not poset_le(self, other)
-
-    def __eq__(self, other: object) -> NotImplementedType | bool:
-        if not isinstance(other, BiGraph):
-            return NotImplemented
-        return poset_eq(self, other)
+        self._balloon_graph[0].check_structure()
+        self._balloon_graph[1].check_structure()
 
 
-def _value_restricted_permutations[T: Hashable](m: Mapping[T, Hashable]) -> Generator[dict[T, T]]:
-    """Yield all permutations of the keys of `m` with the restriction that if `x` is mapped to `y`,
-    then `m.get(x) == m.get(y)`.
-    """
-    keys_by_value = {}
-    for key, value in m.items():
-        keys_by_value.setdefault(value, []).append(key)
-    key_groups = list(keys_by_value.values())
-
-    for key_group_perms in product(*[permutations(group) for group in key_groups]):
-        yield {
-            x: y
-            for group, group_perm in zip(key_groups, key_group_perms)
-            for x, y in zip(group, group_perm)
-        }
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
+#   (In)equality
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
 
 
-def poset_le[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
+def poset_le[T: Hashable](
+    g: BiGraph[T],
+    h: BiGraph[T],
+    node_groups: Sequence[Collection[T]]
+) -> bool:
     """Return whether `g ≤ h`."""
     g.check_structure()
     h.check_structure()
@@ -236,10 +151,24 @@ def poset_le[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
     if g.nodes != h.nodes:
         raise ValueError(f"the nodes of g {g.nodes} and of h {h.nodes} are different")
 
-    if g.node_colors != h.node_colors:
-        raise ValueError(f"the node colors for g {g.node_colors} and for h {h.node_colors} differ")
+    node_group_union = set().union(*[set(group) for group in node_groups])
 
-    for node_permutation in _value_restricted_permutations(g.node_colors):
+    if sum(len(group) for group in node_groups) != len(node_group_union):
+        raise ValueError(f"the sets in {node_groups!r} are not disjoint")
+
+    if node_group_union != g.nodes:
+        raise ValueError(
+            f"nodes in node_groups {node_groups}\ndo not exactly match the graphs' nodes {g.nodes}"
+        )
+
+    # for node_permutation in _disjoint_permutations(node_groups):
+    for node_group_permutations in product(*[permutations(group) for group in node_groups]):
+        node_permutation = {
+            u: v
+            for group, group_perm in zip(node_groups, node_group_permutations)
+            for u, v in zip(group, group_perm)
+        }
+
         g_permuted = g.copy()
         g_permuted.balloon_graphs[0].relabel_nodes(node_permutation)
         g_permuted.balloon_graphs[1].relabel_nodes(node_permutation)
@@ -253,6 +182,11 @@ def poset_le[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
     return False
 
 
-def poset_eq[T: Hashable](g: BiGraph[T], h: BiGraph[T]) -> bool:
+def poset_eq[T: Hashable](
+    g: BiGraph[T],
+    h: BiGraph[T],
+    node_groups: Sequence[Collection[T]]
+) -> bool:
     """Return whether both `g ≤ h` and `h ≤ g`."""
-    return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
+    # pylint: disable=W1114:arguments-out-of-order
+    return poset_le(g, h, node_groups) and poset_le(h, g, node_groups)
