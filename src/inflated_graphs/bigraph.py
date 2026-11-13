@@ -161,7 +161,6 @@ def poset_le[T: Hashable](
             f"nodes in node_groups {node_groups}\ndo not exactly match the graphs' nodes {g.nodes}"
         )
 
-    # for node_permutation in _disjoint_permutations(node_groups):
     for node_group_permutations in product(*[permutations(group) for group in node_groups]):
         node_permutation = {
             u: v
