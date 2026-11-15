@@ -500,3 +500,11 @@ class Anklet[T](tuple[T, ...]):
                 g.add_edge(u, v)
 
         return nx.is_planar(g)
+
+    def cut(self, *beads_to_cut: T) -> list[tuple[T, ...]]:
+        indices = [i for i, b in enumerate(self) if b in beads_to_cut]
+        if not indices:
+            raise ValueError(f"{self} does not contain any of the beads in {beads_to_cut}")
+        indices.append(indices[0] + len(self))
+        double_cover = 2 * tuple(self)
+        return [double_cover[i+1:j] for i, j in zip(indices[:-1], indices[1:])]
