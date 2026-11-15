@@ -500,3 +500,41 @@ class Anklet[T](tuple[T, ...]):
                 g.add_edge(u, v)
 
         return nx.is_planar(g)
+
+    def cut(self, *beads_to_cut: T) -> list[tuple[T, ...]]:
+        """Cut the anklet at the given beads into a number of subsequences.
+
+        The relative order and orientation of the sequences is preserved.
+
+        Parameters
+        ----------
+        beads_to_cut : Collection[T]
+            Set of beads at which to cut the anklet.
+
+        Returns
+        -------
+        list[tuple[T, ...]]
+            The sequences of beads between the cuts.
+
+        Raises
+        ------
+        ValueError
+            If the anklet does not contain any of the beads from `beads_to_cut`.
+
+        Examples
+        --------
+        >>> Anklet.from_iterable(range(8)).cut(2)
+        [(3, 4, 5, 6, 7, 0, 1)]
+        >>> Anklet.from_iterable(range(8)).cut(2, 5)
+        [(3, 4), (6, 7, 0, 1)]
+        >>> Anklet.from_iterable(range(8)).cut(1, 6, 4, 'a')
+        [(2, 3), (5,), (7, 0)]
+        >>> Anklet.from_iterable(range(8)).cut(0, 1, 4, 5)
+        [(), (2, 3), (), (6, 7)]
+        """
+        indices = [i for i, b in enumerate(self) if b in beads_to_cut]
+        if not indices:
+            raise ValueError(f"{self} does not contain any of the beads in {beads_to_cut}")
+        indices.append(indices[0] + len(self))
+        double_cover = 2 * tuple(self)
+        return [double_cover[i+1:j] for i, j in zip(indices[:-1], indices[1:])]
