@@ -538,3 +538,17 @@ class Anklet[T](tuple[T, ...]):
         indices.append(indices[0] + len(self))
         double_cover = 2 * tuple(self)
         return [double_cover[i+1:j] for i, j in zip(indices[:-1], indices[1:])]
+
+    def pinch(self, b: T, c: T, /) -> tuple[Self, Self]:
+        if b not in self:
+            raise ValueError(f"{b!r} is not a bead in the anklet {self}")
+        if c not in self:
+            raise ValueError(f"{c!r} is not a bead in the anklet {self}")
+        if b == c:
+            raise ValueError(f"b = c = {b!r} are not distinct beads")
+
+        i, j = sorted([self.index(b), self.index(c)])
+        return (
+            type(self).from_iterable(self[i:j]).replace_beads({c: b}),
+            type(self).from_iterable(self[j:] + self[:i]).replace_beads({c: b})
+        )
