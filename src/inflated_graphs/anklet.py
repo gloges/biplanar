@@ -538,3 +538,47 @@ class Anklet[T](tuple[T, ...]):
         indices.append(indices[0] + len(self))
         double_cover = 2 * tuple(self)
         return [double_cover[i+1:j] for i, j in zip(indices[:-1], indices[1:])]
+
+    def pinch(self, b: T, c: T, /) -> tuple[Self, Self]:
+        """Pinch off the anklet into two smaller anklets.
+
+        Bringing together and merging the two nodes `b` and `c` turns the anklet
+        into a figure eight. Returns the two fundamental cycles of this figure eight,
+        which share exactly one bead, as anklets.
+
+        Parameters
+        ----------
+        b, c : T
+            Two beads in the anklet.
+
+        Returns
+        -------
+        tuple[Self, Self]
+            Two anklets with only the bead `b` in common.
+
+        Raises
+        ------
+        ValueError
+            If either `b` or `c` is not a bead in the anklet or if `b == c`.
+
+        Examples
+        --------
+        >>> Anklet.from_iterable(range(8)).pinch(2, 5)
+        (A(2, 3, 4), A(2, 6, 7, 0, 1))
+        >>> Anklet.from_iterable(range(8)).pinch(5, 2)
+        (A(5, 3, 4), A(5, 6, 7, 0, 1))
+        >>> Anklet.from_iterable(range(8)).pinch(5, 6)
+        (A(5), A(5, 7, 0, 1, 2, 3, 4))
+        """
+        if b not in self:
+            raise ValueError(f"{b!r} is not a bead in the anklet {self}")
+        if c not in self:
+            raise ValueError(f"{c!r} is not a bead in the anklet {self}")
+        if b == c:
+            raise ValueError(f"b = c = {b!r} are not distinct beads")
+
+        i, j = sorted([self.index(b), self.index(c)])
+        return (
+            type(self).from_iterable(self[i:j]).replace_beads({c: b}),
+            type(self).from_iterable(self[j:] + self[:i]).replace_beads({c: b})
+        )
