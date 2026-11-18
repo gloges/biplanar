@@ -1,7 +1,8 @@
 """Anklet graphs."""
 
+from __future__ import annotations
 from collections.abc import Callable, Collection, Hashable, Iterable, Iterator, Mapping
-from itertools import combinations
+from itertools import combinations, permutations, product
 from types import NotImplementedType
 from typing import Any, Self, Literal
 import networkx as nx
@@ -1282,6 +1283,56 @@ class AnkletGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def planar_merge(self, u: T, v: T, /) -> list[list[AnkletGraph[T]]]:
+        """Merge two nodes in a planar anklet graph.
+
+        Parameters
+        ----------
+        u, v : T
+            Two nodes in the anklet graph.
+
+        Returns
+        -------
+        list[list[AnkletGraph[T]]]
+            Configurations of anklet graphs resulting from different ways for `u` and `v`
+            to be brought together in a planar embedding.
+            Each configuration consists of a number of anklet graphs, each containing
+            the node `u` and with no other nodes in common.
+
+        Raises
+        ------
+        ValueError
+            If either `u` or `v` is not a node in the anklet graph,
+            if `u == v`, or if the anklet graph is not planar.
+
+        Examples
+        --------
+        >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2})
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0 | >, <0, 2 | A(0, 2)>, <0 | >
+        >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2, 3): 2})
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0 | >, <0, 2, 3 | 2 × A(0, 2, 3)>, <0 | >
+        >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2, 3): 2, Anklet(2, 4): 1})
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0 | >, <0, 2, 3, 4 | A(2, 4) + 2 × A(0, 2, 3)>, <0 | >
+        >>> ag = AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(0, 1, 3)])
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0 | >, <0, 3 | A(0, 3)>, <0, 2 | A(0, 2)>
+        <0 | >, <0, 2, 3 | A(0, 2) + A(0, 3)>, <0 | >
+        >>> ag = AnkletGraph(hyperedges=[Anklet(0, 1), Anklet(0, 2), Anklet(0, 3)])
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0, 3 | A(0, 3)>, <0, 2 | A(0, 2)>
+        <0 | >, <0, 2, 3 | A(0, 2) + A(0, 3)>
+        >>> ag = AnkletGraph(hyperedges=[Anklet(0, 2), Anklet(0, 3), Anklet(1, 2)])
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0, 2, 3 | A(0, 2) + A(0, 3)>
+        """
         if u not in self:
             raise ValueError(f"{u!r} is not a node in the anklet graph")
         if v not in self:
