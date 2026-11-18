@@ -1,7 +1,8 @@
 """Anklet graphs."""
 
+from __future__ import annotations
 from collections.abc import Callable, Collection, Hashable, Iterable, Iterator, Mapping
-from itertools import combinations
+from itertools import combinations, permutations, product
 from types import NotImplementedType
 from typing import Any, Self, Literal
 import networkx as nx
@@ -1276,6 +1277,156 @@ class AnkletGraph[T: Hashable]:
 
         # Record that the graph has been reduced
         self._reduced = True
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Merging and inflating
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def planar_merge(self, u: T, v: T, /) -> list[list[AnkletGraph[T]]]:
+        """Merge two nodes in a planar anklet graph.
+
+        Parameters
+        ----------
+        u, v : T
+            Two nodes in the anklet graph.
+
+        Returns
+        -------
+        list[list[AnkletGraph[T]]]
+            Configurations of anklet graphs resulting from different ways for `u` and `v`
+            to be brought together in a planar embedding.
+            Each configuration consists of a number of anklet graphs, each containing
+            the node `u` and with no other nodes in common.
+
+        Raises
+        ------
+        ValueError
+            If either `u` or `v` is not a node in the anklet graph,
+            if `u == v`, or if the anklet graph is not planar.
+
+        Examples
+        --------
+        >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2})
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0 | >, <0, 2 | A(0, 2)>, <0 | >
+        >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2, 3): 2})
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0 | >, <0, 2, 3 | 2 × A(0, 2, 3)>, <0 | >
+        >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2, 3): 2, Anklet(2, 4): 1})
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0 | >, <0, 2, 3, 4 | A(2, 4) + 2 × A(0, 2, 3)>, <0 | >
+        >>> ag = AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(0, 1, 3)])
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0 | >, <0, 3 | A(0, 3)>, <0, 2 | A(0, 2)>
+        <0 | >, <0, 2, 3 | A(0, 2) + A(0, 3)>, <0 | >
+        >>> ag = AnkletGraph(hyperedges=[Anklet(0, 1), Anklet(0, 2), Anklet(0, 3)])
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0, 3 | A(0, 3)>, <0, 2 | A(0, 2)>
+        <0 | >, <0, 2, 3 | A(0, 2) + A(0, 3)>
+        >>> ag = AnkletGraph(hyperedges=[Anklet(0, 2), Anklet(0, 3), Anklet(1, 2)])
+        >>> for ag_list in ag.planar_merge(0, 1):
+        ...     print(", ".join(ag.data_string() for ag in ag_list))
+        <0, 2, 3 | A(0, 2) + A(0, 3)>
+        """
+        if u not in self:
+            raise ValueError(f"{u!r} is not a node in the anklet graph")
+        if v not in self:
+            raise ValueError(f"{v!r} is not a node in the anklet graph")
+        if u == v:
+            raise ValueError(f"u = v = {u!r} are not distinct")
+        if not self.is_planar():
+            raise ValueError(f"{self} is not planar")
+
+        # Pinch off hyperedges which contain both u and v.
+        # This produces pairs of anklets, something like [(a0, a1), (a2, a3), (a4, a5)]
+        hypes_pinched = [
+            hype.pinch(u, v) for hype in self.all_hyperedges() if u in hype and v in hype
+        ]
+
+        if not hypes_pinched:
+            # No hyperedges contain both u and v: just replace v by u everywhere.
+            # Only return the resulting anklet graph if it is planar.
+            ag_new = AnkletGraph(
+                hyperedges=[hype.replace_beads({v: u}) for hype in self.all_hyperedges()]
+            )
+            ag_new.reduce()
+            return [[ag_new]] if ag_new.is_planar() else []
+
+        def construct_spine(pairs: list[tuple[Anklet[T], Anklet[T]]]) -> list[AnkletGraph]:
+            # Take a list of k pairs [(a0, a1), (a2, a3), (a4, a5), ..., (a[2k-2], a[2k-1])]
+            # and return a list of k+1 anklet graphs with hyperedges
+            # (a0), (a1 and a2), (a3 and a4), ..., (a[2k-3] and a[2k-2]), (a[2k-1])
+            anklet_graphs = [AnkletGraph(hyperedges=[pairs[0][0]])]
+            for i, pair_i in enumerate(pairs[1:], start=1):
+                anklet_graphs.append(AnkletGraph(hyperedges=[pairs[i-1][1], pair_i[0]]))
+            anklet_graphs.append(AnkletGraph(hyperedges=[pairs[-1][1]]))
+            for ag in anklet_graphs:
+                ag.reduce()
+            return anklet_graphs
+
+        # Permute and reverse the pairs of anklets in all possible ways,
+        #   e.g. like [(a3, a2), (a4, a5), (a1, a0)] or [(a0, a1), (a4, a5), (a3, a2)]
+        # Then rebracket these in pairs,
+        #   e.g. like [(a3), (a2, a4), (a5, a1), (a0)] or [(a0), (a1, a4), (a5, a3), (a2)]
+        # These groupings then seed anklet graphs "spines" to which the other hyperedges
+        # will be added below. These anklet graphs must have only the node u in common.
+        # The order of the anklet graphs in a "spine" is inconsequential,
+        # so use sorted data strings as keys to remove duplicates.
+        anklet_graph_lists = []
+        for pair_perm, flips in product(
+            permutations(hypes_pinched),
+            product([True, False], repeat=len(hypes_pinched))
+        ):
+            anklet_graphs = construct_spine([
+                (pair[1], pair[0]) if flip else (pair[0], pair[1])
+                for pair, flip in zip(pair_perm, flips)
+            ])
+            if all(ag1.nodes & ag2.nodes == {u} for ag1, ag2 in combinations(anklet_graphs, r=2)):
+                anklet_graph_lists.append(anklet_graphs)
+
+        def remove_equiv(graph_lists: list[list[AnkletGraph]]) -> list[list[AnkletGraph]]:
+            keyed = {
+                tuple(sorted([ag.data_string() for ag in anklet_graphs])): anklet_graphs
+                for anklet_graphs in graph_lists
+            }
+            return list(keyed.values())
+
+        anklet_graph_lists = remove_equiv(anklet_graph_lists)
+
+        def add_hype(hype: Anklet, anklet_graphs: list[AnkletGraph]) -> list[list[AnkletGraph]]:
+            # Add the hyperedge to one of the anklet graphs
+            # If the hyperedge shares a non-u node with one of the anklet graphs then it must be
+            # added to that one. If if share no non-u nodes with any of the anklet graphs
+            # then adds to each in turn. If it shares a non-u node with more than one
+            # of the anklet graphs, return an empty list.
+            results = []
+            indices = [i for i, ag in enumerate(anklet_graphs) if set(hype) & ag.nodes - {u}]
+            if not indices:
+                for i in range(len(anklet_graphs)):
+                    graph_list_new = [ag.copy() for ag in anklet_graphs]
+                    graph_list_new[i].add_hyperedge(hype)
+                    results.append(graph_list_new)
+            elif len(indices) == 1:
+                anklet_graphs[indices[0]].add_hyperedge(hype)
+                results.append(anklet_graphs)
+            return results
+
+        # Add the other hyperedges to the configurations one by one.
+        for hype in self.all_hyperedges():
+            if u not in hype or v not in hype:
+                hype = hype.replace_beads({v: u})
+                anklet_graph_lists = remove_equiv([
+                    ag_list
+                    for graph_list in anklet_graph_lists
+                    for ag_list in add_hype(hype, graph_list)
+                ])
+
+        return anklet_graph_lists
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   (In)equality
