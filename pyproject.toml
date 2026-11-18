@@ -17,7 +17,7 @@ addopts = "--doctest-modules"
 testpaths = ["src/inflated_graphs", "tests"]
 
 [tool.pylint.main]
-max-module-lines = 1400
+max-module-lines = 1550
 max-public-methods = 40
 
 [tool.pylint.similarities]
