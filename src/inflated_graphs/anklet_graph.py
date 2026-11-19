@@ -1452,6 +1452,39 @@ class AnkletGraph[T: Hashable]:
         ------
         ValueError
             If `n` is not a node in the anklet graph or if the anklet graph is not planar.
+
+        Examples
+        --------
+        >>> g = AnkletGraph(hyperedges=[Anklet(0, 1, 2)])
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        <1, 2 | A(1, 2)>
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2})
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        <1, 2 | A(1, 2)>, <2 | A(2)>, <1 | A(1)>
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2, Anklet(0, 3): 1})
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        <1, 2 | A(1, 2)>, <2, 3 | A(2, 3)>, <1 | A(1)>
+        <1, 3 | A(1, 3)>, <1, 2 | A(1, 2)>, <2 | A(2)>
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2, Anklet(1, 3): 1})
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        <1, 2, 3 | A(1, 2) + A(1, 3)>, <2 | A(2)>, <1 | A(1)>
+        <1, 2 | A(1, 2)>, <2 | A(2)>, <1, 3 | A(1) + A(1, 3)>
+        >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2, Anklet(1, 3): 1, Anklet(3, 4): 1})
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        <1, 2, 3, 4 | A(1, 2) + A(1, 3) + A(3, 4)>, <2 | A(2)>, <1 | A(1)>
+        <1, 2 | A(1, 2)>, <2 | A(2)>, <1, 3, 4 | A(1) + A(1, 3) + A(3, 4)>
+        >>> g = AnkletGraph(
+        ...     hyperedges=[Anklet(0, 1, 2, 3, 4), Anklet(0, 2, 5), Anklet(2, 6), Anklet(3, 6)]
+        ... )
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        <2, 3, 4, 6 | A(2, 6) + A(3, 6) + A(2, 3, 4)>, <1, 2, 5 | A(1, 2, 5)>
+        <1, 2 | A(1, 2)>, <2, 3, 4, 5, 6 | A(2, 6) + A(3, 6) + A(2, 3, 4, 5)>
         """
         if n not in self:
             raise ValueError(f"{n!r} is not a node in the anklet graph")
