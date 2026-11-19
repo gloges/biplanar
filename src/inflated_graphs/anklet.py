@@ -655,3 +655,58 @@ def decompose_bracelet[T: Hashable](beads: Sequence[T]) -> set[Anklet[T]]:
                 break
     return anklets
 
+
+def planar_inflate[T: Hashable](anklets: Collection[Anklet[T]], b: T) -> list[set[Anklet[T]]]:
+    """Join a set of anklets at a common node.
+
+    The anklets are cut apart at the bead `b` and the resulting sequences joined end-to-end
+    into a bracelet in all possible ways which avoid introducing crossings.
+    Returns the decompositions of these bracelets into anklets via :meth:`decompose_bracelet`.
+
+    Parameters
+    ----------
+    anklets : Collection[Anklet[T]]
+        A collection of anklets, each of which contains the bead `b`.
+    b : T
+        A bead common to all of the anklets.
+
+    Returns
+    -------
+    list[set[Anklet[T]]]
+        Sets of anklets which result from the process described above.
+        Within each set anklets pair-wise share at most one bead.
+
+    Raises
+    ------
+    ValueError
+        If one of the anklets does not contain the bead `b`.
+
+    Examples
+    --------
+    >>> planar_inflate([Anklet(0, 1), Anklet(0, 2)], 0)
+    [{A(2, 1)}]
+    >>> planar_inflate([Anklet(0, 1, 2), Anklet(0, 1, 3)], 0)
+    [{A(1, 2), A(1, 3)}, {A(1, 3, 2), A(1)}]
+    >>> planar_inflate([Anklet(0, 1, 2), Anklet(0, 1, 3), Anklet(0, 4)], 0)
+    [{A(1, 3), A(1, 2, 4)}, {A(1, 2, 4, 3), A(1)}, {A(1, 3, 2), A(1, 4)}, {A(1, 2), A(1, 4, 3)}]
+    """
+    for a in anklets:
+        if b not in a:
+            raise ValueError(f"{b} is not a bead in {a}")
+
+    anklet_sets = {}
+    for seq_permutation, flips in product(
+        permutations([a.cut(b)[0] for a in anklets]),
+        product([True, False], repeat=len(anklets))
+    ):
+        try:
+            anklet_set = decompose_bracelet([
+                bead
+                for seq, flip in zip(seq_permutation, flips)
+                for bead in (reversed(seq) if flip else seq)
+            ])
+            anklet_sets[hash(frozenset(anklet_set))] = anklet_set
+        except ValueError:
+            # There was a crossing
+            pass
+    return list(anklet_sets.values())
