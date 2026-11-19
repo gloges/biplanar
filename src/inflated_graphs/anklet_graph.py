@@ -1429,6 +1429,30 @@ class AnkletGraph[T: Hashable]:
         return anklet_graph_lists
 
     def planar_inflate(self, n: T) -> list[list[AnkletGraph[T]]]:
+        """Inflate a node in a connected planar anklet graph.
+
+        The hyperedges containing the node `n` are first joined together with a choice of order
+        and orientations, resulting in a number of different collections of anklet graphs.
+        The remaining hyperedges are then added in all ways that keep the node / anklet graph
+        adjacency graph acyclic.
+
+        Parameters
+        ----------
+        n : T
+            A node in the anklet graph.
+
+        Returns
+        -------
+        list[list[AnkletGraph[T]]]
+            A list of anklet graph configurations created as described above.
+            For each configuration `config` the balloon graph `BalloonGraph(config)`
+            with one balloon has valid structure after calling `BalloonGraph.prune_subsingleton`.
+
+        Raises
+        ------
+        ValueError
+            If `n` is not a node in the anklet graph or if the anklet graph is not planar.
+        """
         if n not in self:
             raise ValueError(f"{n!r} is not a node in the anklet graph")
         if not self.is_connected():
