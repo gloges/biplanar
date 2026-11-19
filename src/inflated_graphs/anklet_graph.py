@@ -6,7 +6,7 @@ from itertools import combinations, permutations, product
 from types import NotImplementedType
 from typing import Any, Self, Literal
 import networkx as nx
-from .anklet import Anklet
+from .anklet import Anklet, planar_inflate
 
 
 class AnkletGraph[T: Hashable]:
@@ -1340,7 +1340,7 @@ class AnkletGraph[T: Hashable]:
         if u == v:
             raise ValueError(f"u = v = {u!r} are not distinct")
         if not self.is_planar():
-            raise ValueError(f"{self} is not planar")
+            raise ValueError(f"{self.data_string()} is not planar")
 
         # Pinch off hyperedges which contain both u and v.
         # This produces pairs of anklets, something like [(a0, a1), (a2, a3), (a4, a5)]
@@ -1427,6 +1427,50 @@ class AnkletGraph[T: Hashable]:
                 ])
 
         return anklet_graph_lists
+
+    def planar_inflate(self, n: T) -> list[list[AnkletGraph[T]]]:
+        if n not in self:
+            raise ValueError(f"{n!r} is not a node in the anklet graph")
+        if not self.is_connected():
+            raise ValueError(f"{self.data_string()} is not connected")
+        if not self.is_planar():
+            raise ValueError(f"{self.data_string()} is not planar")
+
+        # Join together the hyperedges containing n.
+        # Each configuration corresponds to a different way to order / orient
+        # the hyperedges around n and then split off independent components.
+        configurations = [
+            [AnkletGraph(hyperedges=[a]) for a in anklets]
+            for anklets in planar_inflate([hype for hype in self.all_hyperedges() if n in hype], n)
+        ]
+
+        # Add the other hyperedges to the configurations one by one.
+        for hype in self.all_hyperedges():
+            if n not in hype:
+                configurations_new = []
+                for config in configurations:
+                    for i in range(len(config)):
+                        config_new = [ag.copy() for ag in config]
+                        config_new[i].add_hyperedge(hype)
+                        # Each pair of graphs sharing at most one node is only a necessary condition
+                        if all(
+                            len(config_new[i].nodes & ag_j.nodes) <= 1
+                            for j, ag_j in enumerate(config_new)
+                            if i != j
+                        ):
+                            configurations_new.append(config_new)
+                configurations = configurations_new
+
+        # Remove any configuration with a cycle in the adjacency matrix
+        for i, config in reversed(list(enumerate(configurations))):
+            adjacency_graph = nx.Graph()
+            for j, ag in enumerate(config):
+                for node in ag:
+                    adjacency_graph.add_edge(node, f"anklet-graph-index-{j}")
+            if not nx.is_tree(adjacency_graph):
+                configurations.pop(i)
+
+        return configurations
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   (In)equality
