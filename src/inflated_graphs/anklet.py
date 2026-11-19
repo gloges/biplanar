@@ -1,7 +1,16 @@
 """Combinatorial anklets."""
 
-from collections.abc import Callable, Collection, Container, Iterable, Iterator, Mapping
-from itertools import combinations
+from collections.abc import (
+    Callable,
+    Collection,
+    Container,
+    Hashable,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence
+)
+from itertools import combinations, permutations, product
 from types import NotImplementedType
 from typing import Any, Self
 import networkx as nx
@@ -11,7 +20,7 @@ class Anklet[T](tuple[T, ...]):
     """An **anklet** is a combinatorial bracelet with all beads distinct.
 
     Anklets are tuples with a weaker notion of equality, where two anklets are *equal*
-    if one can be obtained from the other by cyclic rotation and reversal. 
+    if one can be obtained from the other by cyclic rotation and reversal.
     Equivalently, an anklet with `n` beads is an *equivalence class* of tuples given
     by the orbit of its defining `n`-tuple under the group action of `Dihₙ`.
 
@@ -213,7 +222,7 @@ class Anklet[T](tuple[T, ...]):
         ----------
         bead_replacements : Mapping[T, T]
             Mapping from existing beads to their replacements. Beads not present as keys
-            are left unaltered, and keys that are not beads of this anklet are ignored. 
+            are left unaltered, and keys that are not beads of this anklet are ignored.
 
         Returns
         -------
@@ -582,3 +591,67 @@ class Anklet[T](tuple[T, ...]):
             type(self).from_iterable(self[i:j]).replace_beads({c: b}),
             type(self).from_iterable(self[j:] + self[:i]).replace_beads({c: b})
         )
+
+
+def decompose_bracelet[T: Hashable](beads: Sequence[T]) -> set[Anklet[T]]:
+    """Create a set of anklets from a (cyclic) sequence of beads with no crossings.
+
+    Consider the sequence of beads as a combinatorial bracelet, evenly spaced around the boundary
+    of a topological disk. Select a bead that appears `k ≥ 2` times and draw the `k` instances
+    inwards to coincide at a point in the disk's interior. This produces `k` "bulbs" joined
+    at a single point: the selected bead. Each of these smaller bracelets has the selected bead
+    exactly once and, by the no-crossing conditions, no other beads in common.
+    Repeat this process, iteratively, until the original disk has been pinched off into a number
+    of bracelets each with no repeated beads (*i.e.* anklets). It is clear that the order in which
+    beads are selected to pinch off does not matter. Returns the resulting set of anklets.
+
+    Parameters
+    ----------
+    beads : Sequence[T]
+        A (cyclic) sequence of beads, possibly containing repeats.
+
+    Returns
+    -------
+    set[Anklet[T]]
+        Collection of anklets which pair-wise share at most one bead.
+
+    Raises
+    ------
+    ValueError
+        If the sequence of beads contains a crossing,
+        *i.e.* two pairs of repeated beads which are intertwined.
+
+    Examples
+    --------
+    >>> decompose_bracelet([0, 1, 2, 3, 4, 5])
+    {A(0, 1, 2, 3, 4, 5)}
+    >>> decompose_bracelet([0, 1, 2, 0, 3, 4, 5])
+    {A(0, 3, 4, 5), A(0, 1, 2)}
+    >>> decompose_bracelet([0, 1, 2, 0, 3, 0, 4, 5])
+    {A(0, 3), A(0, 4, 5), A(0, 1, 2)}
+    >>> decompose_bracelet([0, 1, 2, 0, 3, 4, 3, 5])
+    {A(0, 1, 2), A(3, 5, 0), A(3, 4)}
+    """
+    beads = list(beads)
+    if any(
+        b1 == b3 and b2 == b4 and b1 != b2
+        for b1, b2, b3, b4 in combinations(beads, 4)
+    ):
+        raise ValueError("the sequence of beads contains a crossing")
+
+    anklets = set()
+    queue = [beads]
+    while queue:
+        segment = queue.pop()
+        if len(set(segment)) == len(segment):
+            # No repeated beads! Add to the final set of anklets
+            anklets.add(Anklet.from_iterable(segment))
+            continue
+        for (i, b), (j, c) in combinations(enumerate(segment), 2):
+            if b == c:
+                # Found a repeated bead in the segment: chop in two and add the pieces to the queue
+                queue.append(segment[i:j])
+                queue.append(segment[j:] + segment[:i])
+                break
+    return anklets
+
