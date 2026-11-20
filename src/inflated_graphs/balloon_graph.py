@@ -133,7 +133,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """Return a string summarizing the balloons and anklet graphs of the balloon graph.
 
         The data strings for each anklet graph are of the form
-        `<{nodes} | {hyperedges}>` (see :meth:`AnkletGraph.data_string()`).
+        `<{nodes} | {hyperedges}>` (see :meth:`AnkletGraph.data_string`).
         These are collected into brackets by balloon and joined by commas:
         `[<{nodes_0} | {hyperedges_0}>, <{nodes_1} | {hyperedges_1}>, ...], [...], ...`.
 
