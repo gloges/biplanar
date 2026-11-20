@@ -8,7 +8,7 @@ from typing import Any, Self
 import networkx as nx
 from .anklet import Anklet
 from .anklet_graph import AnkletGraph
-from .union import disjoint_union
+from .union import disjoint_union, union
 from .zipper import zipper
 
 type IndexPair = tuple[int, int]  # (balloon index, anklet graph index)
@@ -376,6 +376,43 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             )
         for _, ag in self.iter_anklet_graphs():
             ag.relabel_nodes(node_replacements)
+
+    def merge_nodes(self, u: T, v: T, /) -> list[BalloonGraph[T]]:
+        if u not in self.nodes:
+            raise ValueError(f"{u!r} is not a node in the balloon graph")
+        if v not in self.nodes:
+            raise ValueError(f"{v!r} is not a node in the balloon graph")
+        if u == v:
+            raise ValueError(f"u = v = {u!r} are not distinct")
+
+        self.check_structure()
+
+        incidence = self.incidence()
+        i_u = list(incidence[u])[0][0]
+        i_v = list(incidence[v])[0][0]
+
+        results = []
+        if i_u != i_v:
+            for (_, j_u), (_, j_v) in product(incidence[u], incidence[v]):
+                graph_new = self.copy()
+                graph_new[i_v][j_v].relabel_nodes({v: u})
+                graph_new[i_u][j_u] = union(graph_new[i_u][j_u], graph_new[i_v][j_v])
+                graph_new[i_v].pop(j_v)
+                graph_new[i_u].extend(graph_new[i_v])
+                graph_new.pop(i_v)
+                results.append(graph_new)
+        elif incidence[u] & incidence[v]:
+            i, j = list(incidence[u] & incidence[v])[0]
+            for anklet_graphs_new in self[i][j].planar_merge(u, v):
+                graph_new = self.copy()
+                graph_new[i].pop(j)
+                for ag in graph_new[i]:
+                    ag.relabel_nodes({v: u})
+                graph_new[i].extend(anklet_graphs_new)
+                graph_new.prune_subsingleton()
+                results.append(graph_new)
+
+        return results
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence / adjacency
