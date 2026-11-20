@@ -62,6 +62,20 @@ class BiGraph[T: Hashable]:
             **self._attr.copy()
         )
 
+    def data_string(self) -> str:
+        """Return a string summarizing the two balloon graphs of the bi-graph.
+
+        The data strings of the balloon graphs (see :meth:`BalloonGraph.data_string`)
+        are combined as `"{balloon_graph_data_a}, {balloon_graph_data_b}"`.
+        Their order is taken to prioritize fewer balloons and anklet graphs first
+        and may not match the order of :meth:`BiGraph.balloon_graphs`.
+        """
+        sorted_data = sorted([
+            (bg.number_of_balloons(), bg.number_of_anklet_graphs(), bg.data_string())
+            for bg in self._balloon_graph
+        ])
+        return '{' + sorted_data[0][2] + '}, {' + sorted_data[1][2] + '}'
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Graphs and nodes
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
