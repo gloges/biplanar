@@ -26,6 +26,60 @@ class BiGraph[T: Hashable]:
             BalloonGraph.from_data_string(data_h, interpreter)
         )
 
+    @classmethod
+    def from_data_string(cls, data: str, interpreter: Callable[[str], T]) -> Self:
+        """Construct a bi-graph from a string summarizing its two balloon graphs.
+
+        The input string must contain two valid balloon graph data strings formatted as
+        `"{balloon_graph_string_0}, {balloon_graph_string_1}"`.
+
+        Parameters
+        ----------
+        data : str
+            String encoding of the bi-graph.
+        interpreter : Callable[[str], T]
+            A function that converts a node's string representation into a node of type `T`.
+
+        Returns
+        -------
+        Self
+            A bi-graph.
+
+        Raises
+        ------
+        ValueError
+            If there is a parsing error (a short message explains the issue).
+
+        Examples
+        --------
+        A typical use-case:
+
+        >>> g = BiGraph.from_data_string(
+        ...     "{[<0, 1 | A(0, 1)>, <1, 2 | A(1, 2)>]}, {[<0 | >], [<1 | >, <2 | >]}",
+        ...     int
+        ... )
+        >>> for index, bg in enumerate(g.balloon_graphs):
+        ...     print(f"balloon graph {index}:")
+        ...     for i, balloon in enumerate(bg):
+        ...        print(f"    balloon {i}:")
+        ...        for ag in balloon:
+        ...            print('       ', ag.data_string())
+        balloon graph 0:
+            balloon 0:
+                <0, 1 | A(0, 1)>
+                <1, 2 | A(1, 2)>
+        balloon graph 1:
+            balloon 0:
+                <0 | >
+            balloon 1:
+                <1 | >
+                <2 | >
+        """
+        if data[0] != '{' or data[-1] != '}' or data.count('}, {') != 1:
+            raise ValueError()
+        data_g, data_h = data[1:-1].split('}, {')
+        return cls.from_data_strings(data_g, data_h, interpreter)
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
