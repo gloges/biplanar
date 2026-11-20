@@ -1,6 +1,6 @@
 """Bigraphs."""
 
-from collections.abc import Collection, Hashable, Mapping, Sequence
+from collections.abc import Callable, Collection, Hashable, Mapping, Sequence
 from itertools import permutations, product
 from typing import Any, Self
 from .balloon_graph import BalloonGraph
@@ -17,6 +17,14 @@ class BiGraph[T: Hashable]:
         self._name = name
         self._attr = attr
         self._balloon_graph = g, h
+
+    @classmethod
+    def from_data_strings(cls, data_g: str, data_h: str, interpreter: Callable[[str], T]) -> Self:
+        """Construct a bi-graph from two balloon graph data strings."""
+        return cls(
+            BalloonGraph.from_data_string(data_g, interpreter),
+            BalloonGraph.from_data_string(data_h, interpreter)
+        )
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
