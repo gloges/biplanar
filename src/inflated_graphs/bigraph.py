@@ -1,6 +1,6 @@
 """Bigraphs."""
 
-from collections.abc import Collection, Hashable, Mapping, Sequence
+from collections.abc import Callable, Collection, Hashable, Mapping, Sequence
 from itertools import permutations, product
 from typing import Any, Self
 from .balloon_graph import BalloonGraph
@@ -17,6 +17,68 @@ class BiGraph[T: Hashable]:
         self._name = name
         self._attr = attr
         self._balloon_graph = g, h
+
+    @classmethod
+    def from_data_strings(cls, data_g: str, data_h: str, interpreter: Callable[[str], T]) -> Self:
+        """Construct a bi-graph from two balloon graph data strings."""
+        return cls(
+            BalloonGraph.from_data_string(data_g, interpreter),
+            BalloonGraph.from_data_string(data_h, interpreter)
+        )
+
+    @classmethod
+    def from_data_string(cls, data: str, interpreter: Callable[[str], T]) -> Self:
+        """Construct a bi-graph from a string summarizing its two balloon graphs.
+
+        The input string must contain two valid balloon graph data strings formatted as
+        `"{balloon_graph_string_0}, {balloon_graph_string_1}"`.
+
+        Parameters
+        ----------
+        data : str
+            String encoding of the bi-graph.
+        interpreter : Callable[[str], T]
+            A function that converts a node's string representation into a node of type `T`.
+
+        Returns
+        -------
+        Self
+            A bi-graph.
+
+        Raises
+        ------
+        ValueError
+            If there is a parsing error (a short message explains the issue).
+
+        Examples
+        --------
+        A typical use-case:
+
+        >>> g = BiGraph.from_data_string(
+        ...     "{[<0, 1 | A(0, 1)>, <1, 2 | A(1, 2)>]}, {[<0 | >], [<1 | >, <2 | >]}",
+        ...     int
+        ... )
+        >>> for index, bg in enumerate(g.balloon_graphs):
+        ...     print(f"balloon graph {index}:")
+        ...     for i, balloon in enumerate(bg):
+        ...        print(f"    balloon {i}:")
+        ...        for ag in balloon:
+        ...            print('       ', ag.data_string())
+        balloon graph 0:
+            balloon 0:
+                <0, 1 | A(0, 1)>
+                <1, 2 | A(1, 2)>
+        balloon graph 1:
+            balloon 0:
+                <0 | >
+            balloon 1:
+                <1 | >
+                <2 | >
+        """
+        if data[0] != '{' or data[-1] != '}' or data.count('}, {') != 1:
+            raise ValueError()
+        data_g, data_h = data[1:-1].split('}, {')
+        return cls.from_data_strings(data_g, data_h, interpreter)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -61,6 +123,20 @@ class BiGraph[T: Hashable]:
             name=self._name + '-copy' if self._name else '',
             **self._attr.copy()
         )
+
+    def data_string(self) -> str:
+        """Return a string summarizing the two balloon graphs of the bi-graph.
+
+        The data strings of the balloon graphs (see :meth:`BalloonGraph.data_string`)
+        are combined as `"{balloon_graph_data_a}, {balloon_graph_data_b}"`.
+        Their order is taken to prioritize fewer balloons and anklet graphs first
+        and may not match the order of :meth:`BiGraph.balloon_graphs`.
+        """
+        sorted_data = sorted([
+            (bg.number_of_balloons(), bg.number_of_anklet_graphs(), bg.data_string())
+            for bg in self._balloon_graph
+        ])
+        return '{' + sorted_data[0][2] + '}, {' + sorted_data[1][2] + '}'
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Graphs and nodes
