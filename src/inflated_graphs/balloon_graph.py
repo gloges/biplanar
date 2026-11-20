@@ -464,6 +464,29 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         return results
 
+    def inflate(self, n: T, /) -> list[BalloonGraph[T]]:
+        if n not in self.nodes:
+            raise ValueError(f"{n!r} is not a node in the balloon graph")
+
+        self.check_structure()
+
+        locs_n = self.incidence()[n]
+        i_n = list(locs_n)[0][0]
+        js_n = [j for _, j in locs_n]
+
+        results = []
+        for configs_new in product(*[self[i_n][j_n].planar_inflate(n) for j_n in js_n]):
+            graph_new = BalloonGraph(*[
+                [ag.copy() for j, ag in enumerate(balloon) if (i, j) not in locs_n]
+                for i, balloon in enumerate(self)
+            ])
+            for config_new in configs_new:
+                graph_new[i_n].extend(ag.copy() for ag in config_new)
+            graph_new.prune_subsingleton()
+            results.append(graph_new)
+
+        return results
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Incidence / adjacency
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
