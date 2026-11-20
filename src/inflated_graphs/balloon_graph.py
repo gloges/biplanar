@@ -378,6 +378,56 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             ag.relabel_nodes(node_replacements)
 
     def merge_nodes(self, u: T, v: T, /) -> list[BalloonGraph[T]]:
+        """Merge two nodes in the balloon graph.
+
+        The two nodes `u` and `v` must either be in separate balloons or appear in an anklet graph
+        together. If they are in separate balloons, then `v` is replaced by `u` everywhere,
+        the two balloons are combined and finally two anklet graphs, one originally containing `u`
+        and the other originally containing `v` are removed and replaced by their union. If they are
+        in a common anklet graph, the process is more subtle: see :meth:`AnkletGraph.planar_merge`. 
+
+        Parameters
+        ----------
+        u, v : T
+            Two nodes in the balloon graph.
+
+        Returns
+        -------
+        list[BalloonGraph[T]]
+            Balloon graphs with valid structure formed by merging `u` and `v` in the plane.
+
+        Raises
+        ------
+        ValueError
+            If either `u` or `v` is not a node in the balloon graph, if `u == v`,
+            or if any node appears in more than one balloon.
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 2 | A(0, 2)>, <0, 3, 4 | A(0, 3, 4)>], [<1, 5 | A(1, 5)>, <1, 6 | A(1, 6)>]",
+        ...     int
+        ... )
+        >>> for bg in g.merge_nodes(0, 1):
+        ...     print(bg.data_string())
+        [<0, 3, 4, 5 | A(0, 5) + A(0, 3, 4)>, <0, 2 | A(0, 2)>, <1, 6 | A(1, 6)>]
+        [<0, 3, 4, 6 | A(0, 6) + A(0, 3, 4)>, <0, 2 | A(0, 2)>, <1, 5 | A(1, 5)>]
+        [<0, 2, 5 | A(0, 2) + A(0, 5)>, <0, 3, 4 | A(0, 3, 4)>, <1, 6 | A(1, 6)>]
+        [<0, 2, 6 | A(0, 2) + A(0, 6)>, <0, 3, 4 | A(0, 3, 4)>, <1, 5 | A(1, 5)>]
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | A(0, 1, 2)>, <0, 3 | A(0, 3)>, <1, 4 | A(1, 4)>]", int
+        ... )
+        >>> for bg in g.merge_nodes(0, 1):
+        ...     print(bg.data_string())
+        [<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>, <0, 4 | A(0, 4)>]
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2, 3, 4 | A(0, 2, 1, 3) + A(1, 4)>, <1, 5 | A(1, 5)>]", int
+        ... )
+        >>> for bg in g.merge_nodes(0, 1):
+        ...     print(bg.data_string())
+        [<0, 2, 4 | A(0, 2) + A(0, 4)>, <0, 3 | A(0, 3)>, <0, 5 | A(0, 5)>]
+        [<0, 3, 4 | A(0, 3) + A(0, 4)>, <0, 2 | A(0, 2)>, <0, 5 | A(0, 5)>]
+        """
         if u not in self.nodes:
             raise ValueError(f"{u!r} is not a node in the balloon graph")
         if v not in self.nodes:
