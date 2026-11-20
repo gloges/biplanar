@@ -465,6 +465,60 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         return results
 
     def inflate(self, n: T, /) -> list[BalloonGraph[T]]:
+        """Inflate a node.
+
+        Hyperedges containing `n` are fused in all ways which result
+        in a balloon graph with valid structure.
+
+        Parameters
+        ----------
+        n : T
+            A node in the balloon graph.
+
+        Returns
+        -------
+        list[BalloonGraph[T]]
+            Balloon graphs which result from inflating the node `n`.
+
+        Raises
+        ------
+        ValueError
+            If `n` is not a node in the balloon graph
+            or if the balloon graph does not have valid structure.
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string("[<0, 1, 2, 3 | A(0, 1, 2, 3)>]", int)
+        >>> for bg in g.inflate(0):
+        ...     print(bg.data_string())
+        [<1, 2, 3 | A(1, 2, 3)>]
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3, 4)>]", int
+        ... )
+        >>> for bg in g.inflate(0):
+        ...     print(bg.data_string())
+        [<1, 2, 3, 4 | A(1, 2, 4, 3)>]
+        [<1, 2, 3, 4 | A(1, 2, 3, 4)>]
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3) + A(0, 4)>, <0, 5 | A(0, 5)>]", int
+        ... )
+        >>> for bg in g.inflate(0):
+        ...     print(bg.data_string())
+        [<1, 2, 3, 4 | A(1, 2, 3, 4)>, <5 | >]
+        [<1, 2, 3, 4 | A(1, 2, 4, 3)>, <5 | >]
+        [<1, 2, 3, 4 | A(1, 3, 2, 4)>, <5 | >]
+        >>> g = BalloonGraph.from_data_string("[<0, 1, 2, 3 | 2 × A(0, 1, 2, 3)>]", int)
+        >>> for bg in g.inflate(0):
+        ...     print(bg.data_string())
+        [<1, 2 | A(1, 2)>, <2, 3 | A(2, 3)>]
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2, 3, 4 | 2 × A(0, 1, 2, 3) + A(0, 4)>]", int
+        ... )
+        >>> for bg in g.inflate(0):
+        ...     print(bg.data_string())
+        [<1, 2 | A(1, 2)>, <2, 3 | A(2, 3)>, <3, 4 | A(3, 4)>]
+        [<1, 2 | A(1, 2)>, <1, 4 | A(1, 4)>, <2, 3 | A(2, 3)>]
+        """
         if n not in self.nodes:
             raise ValueError(f"{n!r} is not a node in the balloon graph")
 
@@ -482,6 +536,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             ])
             for config_new in configs_new:
                 graph_new[i_n].extend(ag.copy() for ag in config_new)
+            graph_new.reduce()
             graph_new.prune_subsingleton()
             results.append(graph_new)
 
