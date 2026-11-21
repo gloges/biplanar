@@ -245,6 +245,55 @@ class BiGraph[T: Hashable]:
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def merge_nodes(self, u: T, v: T, /) -> list[BiGraph[T]]:
+        """Merge two nodes in the bi-graph.
+
+        The nodes `u` and `v` are merged in both of the balloon graphs
+        using :meth:`BalloonGraph.merge_nodes`. If two such bi-graphs differ only by interchanging
+        their balloon graphs then only one is included in the returned list.
+
+        Parameters
+        ----------
+        u, v : T
+            Two nodes in the bi-graph.
+
+        Returns
+        -------
+        list[BiGraph[T]]
+            Bi-graphs formed by merging `u` and `v` in the two balloon graphs.
+
+        Raises
+        ------
+        ValueError
+            If either `u` or `v` is not in the bi-graph
+            or if the bi-graph does not have valid structure.
+
+        Examples
+        --------
+        >>> g = BiGraph.from_data_strings(
+        ...     "[<0, 1, 2, 3 | A(0, 1, 2) + A(0, 1, 3)>]",
+        ...     "[<0, 2 | A(0, 2)>], [<1, 3 | A(1, 3)>]",
+        ...     int
+        ... )
+        >>> for big in g.merge_nodes(0, 1):
+        ...     print(big.data_string())
+        {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}, {[<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>]}
+        {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}, {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}
+
+        In the following example there are two ways to merge `0` and `1` in each of the balloon
+        graphs, naively giving `2 × 2 = 4` bi-graphs, but because the pair of balloon graphs
+        is unordered there are only three distinct resulting bi-graphs:
+
+        >>> g = BiGraph.from_data_strings(
+        ...     "[<0, 1, 2, 3 | A(0, 1, 2) + A(0, 1, 3)>]",
+        ...     "[<0, 1, 2, 3 | A(0, 1, 2) + A(0, 1, 3)>]",
+        ...     int
+        ... )
+        >>> for big in g.merge_nodes(0, 1):
+        ...     print(big.data_string())
+        {[<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>]}, {[<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>]}
+        {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}, {[<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>]}
+        {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}, {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}
+        """
         self.check_structure()
 
         results = {}
