@@ -167,7 +167,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         Examples
         --------
-        >>> from inflated_graphs import Anklet
+        >>> from padded_graphs import Anklet
         >>> ag1 = AnkletGraph(range(0, 3), {Anklet(0, 1): 1, Anklet(0, 1, 2): 2})
         >>> ag2 = AnkletGraph(range(3, 6), {Anklet(3, 4): 3})
         >>> ag3 = AnkletGraph(range(6, 9), {Anklet(6, 7, 8)})
@@ -843,7 +843,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         Examples
         --------
-        >>> from inflated_graphs import Anklet
+        >>> from padded_graphs import Anklet
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2 | 3 × A(0, 1, 2)>, < | >], [<3 | >]", int
         ... )
