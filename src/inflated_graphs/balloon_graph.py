@@ -112,6 +112,25 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     def attributes(self, value: Mapping[str, Any]) -> None:
         self._attr = dict(value)
 
+    def __str__(self) -> str:
+        """Return a short summary of the balloon graph.
+
+        Returns
+        -------
+        str
+            A summary of the balloon graph, including the number of nodes,
+            anklet graphs and balloons, as well as the balloon graph's name
+            and list of balloon graph attributes if set.
+        """
+        return "".join([
+            type(self).__name__,
+            f" named {self._name}" if self._name else "",
+            " with attributes (" + ", ".join(self._attr) + ")," if self._attr else " with",
+            f" {self.number_of_balloons()} balloons,",
+            f" {self.number_of_anklet_graphs()} anklet graphs",
+            f" and {len(self.nodes)} nodes"
+        ])
+
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
 
