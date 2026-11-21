@@ -1,5 +1,6 @@
 """Bigraphs."""
 
+from __future__ import annotations
 from collections.abc import Callable, Collection, Hashable, Mapping, Sequence
 from itertools import permutations, product
 from typing import Any, Self
@@ -239,6 +240,22 @@ class BiGraph[T: Hashable]:
         self._balloon_graph[0].check_structure()
         self._balloon_graph[1].check_structure()
 
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Graph operations
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def merge_nodes(self, u: T, v: T, /) -> list[BiGraph[T]]:
+        self.check_structure()
+
+        results = {}
+        for g, h in product(
+            self._balloon_graph[0].merge_nodes(u, v),
+            self._balloon_graph[1].merge_nodes(u, v)
+        ):
+            big = BiGraph(g, h)
+            results[big.data_string()] = big
+
+        return list(results.values())
 
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
 #   (In)equality
