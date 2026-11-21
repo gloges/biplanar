@@ -341,6 +341,73 @@ class BiGraph[T: Hashable]:
             results[big.data_string()] = big
         return list(results.values())
 
+    def join_node_subsets(self, nodes_a: Collection[T], nodes_b: Collection[T]) -> list[BiGraph[T]]:
+        """Merge and inflate two sets of nodes.
+
+        `nodes_a` and `nodes_b` must be disjoint and have the same size.
+        Nodes from `nodes_a` and from `nodes_b` are paired up in all ways, then merged and inflated.
+
+        Parameters
+        ----------
+        nodes_a, nodes_b : Collection[T]
+            Two disjoint, equally-sized subsets of nodes in the bi-graph.
+
+        Returns
+        -------
+        list[BiGraph[T]]
+            Bi-graphs with none of the nodes in `nodes_a` and `nodes_b` present,
+            these having been merged and inflated in pairs.
+
+        Raises
+        ------
+        ValueError
+            If `nodes_a` and `nodes_b` are not disjoint sets containing the same number of nodes,
+            if either `nodes_a` or `nodes_b` is not a subset of the bi-graph's nodes,
+            or if the bi-graph does not have valid structure.
+
+        Examples
+        --------
+        >>> g = BiGraph.from_data_strings(
+        ...     "[<0, 1, 2, 3, 4, 5 | A(0, 1) + A(1, 2) + A(2, 3) + A(3, 4) + A(4, 5) + A(5, 0)>]",
+        ...     "[<0, 1, 3 | A(0, 1, 3)>], [<2, 4, 5 | A(2, 4, 5)>]",
+        ...     int
+        ... )
+        >>> for big in g.join_node_subsets({0}, {2}):
+        ...     print(big.data_string())
+        {[<1, 3, 4, 5 | A(1, 3, 4, 5)>]}, {[<1, 3, 4, 5 | A(3, 4) + A(4, 5) + A(1, 3, 5)>]}
+        {[<1, 3, 4, 5 | A(1, 3, 5, 4)>]}, {[<1, 3, 4, 5 | A(3, 4) + A(4, 5) + A(1, 3, 5)>]}
+        >>> for big in g.join_node_subsets({0, 1}, {2, 3}):
+        ...     print(big.data_string())
+        {[<4, 5 | A(4, 5)>]}, {[<4, 5 | A(4, 5)>]}
+        """
+        nodes_a = set(nodes_a)
+        nodes_b = set(nodes_b)
+        if len(nodes_a) != len(nodes_b):
+            raise ValueError(f"{nodes_a} and {nodes_b} do not contain the same number of nodes")
+        if nodes_a & nodes_b:
+            raise ValueError(f"{nodes_a} and {nodes_b} are not disjoint")
+        if not nodes_a <= self.nodes:
+            raise ValueError(f"{nodes_a} is not a subset of the nodes {self.nodes}")
+        if not nodes_b <= self.nodes:
+            raise ValueError(f"{nodes_b} is not a subset of the nodes {self.nodes}")
+
+        self.check_structure()
+
+        bigraphs = {self.data_string(): self}
+        for n_a in nodes_a:
+            bigraphs_new = {}
+            for big, n_b in product(bigraphs.values(), nodes_b):
+                if n_b in big.nodes:
+                    bigraphs_new.update({
+                        big.data_string(): big
+                        for big_merged in big.merge_nodes(n_a, n_b)
+                        for big in big_merged.inflate(n_a)
+                    })
+            bigraphs = bigraphs_new
+
+        return list(bigraphs.values())
+
+
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
 #   (In)equality
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
