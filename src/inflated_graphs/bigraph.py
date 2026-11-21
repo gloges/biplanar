@@ -372,11 +372,11 @@ class BiGraph[T: Hashable]:
         ...     "[<0, 1, 3 | A(0, 1, 3)>], [<2, 4, 5 | A(2, 4, 5)>]",
         ...     int
         ... )
-        >>> for big in g.merge_inflate({0}, {2}):
+        >>> for big in g.join_node_subsets({0}, {2}):
         ...     print(big.data_string())
         {[<1, 3, 4, 5 | A(1, 3, 4, 5)>]}, {[<1, 3, 4, 5 | A(3, 4) + A(4, 5) + A(1, 3, 5)>]}
         {[<1, 3, 4, 5 | A(1, 3, 5, 4)>]}, {[<1, 3, 4, 5 | A(3, 4) + A(4, 5) + A(1, 3, 5)>]}
-        >>> for big in g.merge_inflate({0, 1}, {2, 3}):
+        >>> for big in g.join_node_subsets({0, 1}, {2, 3}):
         ...     print(big.data_string())
         {[<4, 5 | A(4, 5)>]}, {[<4, 5 | A(4, 5)>]}
         """
