@@ -6,7 +6,7 @@ from itertools import combinations, permutations, product
 from types import NotImplementedType
 from typing import Any, Self, Literal
 import networkx as nx
-from .anklet import Anklet, planar_inflate
+from .anklet import Anklet, pad_bead_planar
 
 
 class AnkletGraph[T: Hashable]:
@@ -1517,7 +1517,7 @@ class AnkletGraph[T: Hashable]:
         # the hyperedges around n and then split off independent components.
         configurations = [
             [AnkletGraph(hyperedges=[a]) for a in anklets]
-            for anklets in planar_inflate([hype for hype in self.all_hyperedges() if n in hype], n)
+            for anklets in pad_bead_planar([hype for hype in self.all_hyperedges() if n in hype], n)
         ]
 
         def add_hype(hype: Anklet, config: list[AnkletGraph]) -> list[list[AnkletGraph]]:

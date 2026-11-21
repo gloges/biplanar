@@ -656,7 +656,7 @@ def decompose_bracelet[T: Hashable](beads: Sequence[T]) -> set[Anklet[T]]:
     return anklets
 
 
-def planar_inflate[T: Hashable](anklets: Collection[Anklet[T]], b: T) -> list[set[Anklet[T]]]:
+def pad_bead_planar[T: Hashable](anklets: Collection[Anklet[T]], b: T) -> list[set[Anklet[T]]]:
     """Join a set of anklets at a common node.
 
     The anklets are cut apart at the bead `b` and the resulting sequences joined end-to-end
@@ -683,11 +683,11 @@ def planar_inflate[T: Hashable](anklets: Collection[Anklet[T]], b: T) -> list[se
 
     Examples
     --------
-    >>> planar_inflate([Anklet(0, 1), Anklet(0, 2)], 0)
+    >>> pad_bead_planar([Anklet(0, 1), Anklet(0, 2)], 0)
     [{A(2, 1)}]
-    >>> planar_inflate([Anklet(0, 1, 2), Anklet(0, 1, 3)], 0)
+    >>> pad_bead_planar([Anklet(0, 1, 2), Anklet(0, 1, 3)], 0)
     [{A(1, 2), A(1, 3)}, {A(1, 3, 2), A(1)}]
-    >>> planar_inflate([Anklet(0, 1, 2), Anklet(0, 1, 3), Anklet(0, 4)], 0)
+    >>> pad_bead_planar([Anklet(0, 1, 2), Anklet(0, 1, 3), Anklet(0, 4)], 0)
     [{A(1, 3), A(1, 2, 4)}, {A(1, 2, 4, 3), A(1)}, {A(1, 3, 2), A(1, 4)}, {A(1, 2), A(1, 4, 3)}]
     """
     for a in anklets:
