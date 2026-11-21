@@ -297,13 +297,18 @@ class BiGraph[T: Hashable]:
         self.check_structure()
 
         results = {}
-        for g, h in product(
-            self._balloon_graph[0].merge_nodes(u, v),
-            self._balloon_graph[1].merge_nodes(u, v)
-        ):
+        for g, h in product(*[bg.merge_nodes(u, v) for bg in self._balloon_graph]):
             big = BiGraph(g, h)
             results[big.data_string()] = big
+        return list(results.values())
 
+    def inflate(self, n: T, /) -> list[BiGraph[T]]:
+        self.check_structure()
+
+        results = {}
+        for g, h in product(*[bg.inflate(n) for bg in self._balloon_graph]):
+            big = BiGraph(g, h)
+            results[big.data_string()] = big
         return list(results.values())
 
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
