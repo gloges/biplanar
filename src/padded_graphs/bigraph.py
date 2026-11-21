@@ -301,8 +301,8 @@ class BiGraph[T: Hashable]:
             results[big.data_string()] = big
         return list(results.values())
 
-    def inflate(self, n: T, /) -> list[BiGraph[T]]:
-        """Inflate a node in the bi-graph.
+    def pad_node(self, n: T, /) -> list[BiGraph[T]]:
+        """Pad a node.
 
         The node `n` is inflated in both of the balloon graphs using :meth:`BalloonGraph.inflate`.
 
@@ -328,7 +328,7 @@ class BiGraph[T: Hashable]:
         ...     "[<0, 2 | A(0, 2)>], [<1, 3 | A(1, 3)>]",
         ...     int
         ... )
-        >>> for big in g.inflate(0):
+        >>> for big in g.pad_node(0):
         ...     print(big.data_string())
         {[<1, 2 | A(1, 2)>, <1, 3 | A(1, 3)>]}, {[<1, 3 | A(1, 3)>], [<2 | >]}
         {[<1, 2, 3 | A(1, 2, 3)>]}, {[<1, 3 | A(1, 3)>], [<2 | >]}
@@ -401,7 +401,7 @@ class BiGraph[T: Hashable]:
                     bigraphs_new.update({
                         big.data_string(): big
                         for big_merged in big.merge_nodes(n_a, n_b)
-                        for big in big_merged.inflate(n_a)
+                        for big in big_merged.pad_node(n_a)
                     })
             bigraphs = bigraphs_new
 
