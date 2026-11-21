@@ -1485,6 +1485,22 @@ class AnkletGraph[T: Hashable]:
         ...     print(', '.join(ag.data_string() for ag in config))
         <2, 3, 4, 6 | A(2, 6) + A(3, 6) + A(2, 3, 4)>, <1, 2, 5 | A(1, 2, 5)>
         <1, 2 | A(1, 2)>, <2, 3, 4, 5, 6 | A(2, 6) + A(3, 6) + A(2, 3, 4, 5)>
+
+        >>> g = AnkletGraph.from_data_string(
+        ...     "<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3) + A(0, 4) + A(1, 2) + A(3, 4)>", int
+        ... )
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        <1, 2, 3, 4 | A(1, 2) + A(3, 4) + A(1, 2, 3, 4)>
+        <1, 2, 3, 4 | A(1, 2) + A(3, 4) + A(1, 2, 4, 3)>
+
+        If the anklet graph has only the one node,
+        then a single configuration with one empty anklet graph is returned:
+
+        >>> g = AnkletGraph(nodes=[0])
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        < | >
         """
         if n not in self:
             raise ValueError(f"{n!r} is not a node in the anklet graph")
@@ -1492,6 +1508,9 @@ class AnkletGraph[T: Hashable]:
             raise ValueError(f"{self.data_string()} is not connected")
         if not self.is_planar():
             raise ValueError(f"{self.data_string()} is not planar")
+
+        if self.nodes == {n}:
+            return [[AnkletGraph[T]()]]
 
         # Join together the hyperedges containing n.
         # Each configuration corresponds to a different way to order / orient
@@ -1501,22 +1520,28 @@ class AnkletGraph[T: Hashable]:
             for anklets in planar_inflate([hype for hype in self.all_hyperedges() if n in hype], n)
         ]
 
+        def add_hype(hype: Anklet, config: list[AnkletGraph]) -> list[list[AnkletGraph]]:
+            configs_with_hype = []
+            for i in range(len(config)):
+                config_new = [ag.copy() for ag in config]
+                config_new[i].add_hyperedge(hype)
+                # Each pair of graphs sharing at most one node is only a necessary condition
+                if config_new[i].is_planar() and all(
+                    len(config_new[i].nodes & ag_j.nodes) <= 1
+                    for j, ag_j in enumerate(config_new)
+                    if i != j
+                ):
+                    configs_with_hype.append(config_new)
+            return configs_with_hype
+
         # Add the other hyperedges to the configurations one by one.
         for hype in self.all_hyperedges():
             if n not in hype:
-                configurations_new = []
-                for config in configurations:
-                    for i in range(len(config)):
-                        config_new = [ag.copy() for ag in config]
-                        config_new[i].add_hyperedge(hype)
-                        # Each pair of graphs sharing at most one node is only a necessary condition
-                        if all(
-                            len(config_new[i].nodes & ag_j.nodes) <= 1
-                            for j, ag_j in enumerate(config_new)
-                            if i != j
-                        ):
-                            configurations_new.append(config_new)
-                configurations = configurations_new
+                configurations = [
+                    config_with_hype
+                    for config in configurations
+                    for config_with_hype in add_hype(hype, config)
+                ]
 
         # Remove any configuration with a cycle in the adjacency matrix
         for i, config in reversed(list(enumerate(configurations))):
