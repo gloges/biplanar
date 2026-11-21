@@ -201,6 +201,36 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         return ", ".join([balloon_data_strings[i] for i in balloon_order])
 
+    def print_details(self, line_prefix: str = '') -> None:
+        """Print detailed information about the balloon graph."""
+        max_length = max(len(ag.data_string()) for _, ag in self.iter_anklet_graphs())
+
+        for i, balloon in enumerate(self):
+            print(
+                line_prefix
+                + ("╭─" if i == 0 else "├─")
+                + f"┬╼ Balloon {i}:"
+                + f"  nodes = {self.balloon_nodes(i)}"
+            )
+            for j, ag in enumerate(balloon):
+                print(
+                    line_prefix
+                    + "│ " + ('├' if j < len(balloon) - 1 else '└') + "─╼  "
+                    + ag.data_string().ljust(max_length)
+                    + "  connected " + ('✓' if ag.is_connected() else '✗')
+                    + "  planar " + ('✓' if ag.is_planar() else '✗')
+                )
+            print(line_prefix + "│")
+        try:
+            self.check_structure()
+            print(line_prefix + "╰╼ Valid structure ✓")
+        except ValueError as exc:
+            lines = str(exc).split("\n")
+            print(line_prefix + f"╰╼ Invalid structure: {lines[0]}")
+            for line in lines[1:]:
+                print(line_prefix + '   ' + line)
+        print(line_prefix)
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Balloons, anklet graphs and nodes
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
@@ -832,7 +862,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             ]
             self._reset_valid_structure()
             raise ValueError(
-                "Invalid structure. the node / anklet graph incidence graph contains the cycle\n" +
+                "the incidence graph contains the cycle\n" +
                 " → ".join([*cycle_data, cycle_data[0]])
             )
 
