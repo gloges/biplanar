@@ -620,7 +620,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         i_n = list(locs_n)[0][0]
 
         results = []
-        for configs_new in product(*[self[i][j].planar_inflate(n) for i, j in locs_n]):
+        for configs_new in product(*[self[i][j].pad_node_planar(n) for i, j in locs_n]):
             graph_new = BalloonGraph(*[
                 [ag.copy() for j, ag in enumerate(balloon) if (i, j) not in locs_n]
                 for i, balloon in enumerate(self)

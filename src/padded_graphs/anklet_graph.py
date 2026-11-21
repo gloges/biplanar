@@ -1428,7 +1428,7 @@ class AnkletGraph[T: Hashable]:
 
         return anklet_graph_lists
 
-    def planar_inflate(self, n: T) -> list[list[AnkletGraph[T]]]:
+    def pad_node_planar(self, n: T) -> list[list[AnkletGraph[T]]]:
         """Inflate a node in a connected planar anklet graph.
 
         The hyperedges containing the node `n` are first joined together with a choice of order
@@ -1456,32 +1456,32 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> g = AnkletGraph(hyperedges=[Anklet(0, 1, 2)])
-        >>> for config in g.planar_inflate(0):
+        >>> for config in g.pad_node_planar(0):
         ...     print(', '.join(ag.data_string() for ag in config))
         <1, 2 | A(1, 2)>
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2})
-        >>> for config in g.planar_inflate(0):
+        >>> for config in g.pad_node_planar(0):
         ...     print(', '.join(ag.data_string() for ag in config))
         <1, 2 | A(1, 2)>, <2 | A(2)>, <1 | A(1)>
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2, Anklet(0, 3): 1})
-        >>> for config in g.planar_inflate(0):
+        >>> for config in g.pad_node_planar(0):
         ...     print(', '.join(ag.data_string() for ag in config))
         <1, 2 | A(1, 2)>, <2, 3 | A(2, 3)>, <1 | A(1)>
         <1, 3 | A(1, 3)>, <1, 2 | A(1, 2)>, <2 | A(2)>
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2, Anklet(1, 3): 1})
-        >>> for config in g.planar_inflate(0):
+        >>> for config in g.pad_node_planar(0):
         ...     print(', '.join(ag.data_string() for ag in config))
         <1, 2, 3 | A(1, 2) + A(1, 3)>, <2 | A(2)>, <1 | A(1)>
         <1, 2 | A(1, 2)>, <2 | A(2)>, <1, 3 | A(1) + A(1, 3)>
         >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2, Anklet(1, 3): 1, Anklet(3, 4): 1})
-        >>> for config in g.planar_inflate(0):
+        >>> for config in g.pad_node_planar(0):
         ...     print(', '.join(ag.data_string() for ag in config))
         <1, 2, 3, 4 | A(1, 2) + A(1, 3) + A(3, 4)>, <2 | A(2)>, <1 | A(1)>
         <1, 2 | A(1, 2)>, <2 | A(2)>, <1, 3, 4 | A(1) + A(1, 3) + A(3, 4)>
         >>> g = AnkletGraph(
         ...     hyperedges=[Anklet(0, 1, 2, 3, 4), Anklet(0, 2, 5), Anklet(2, 6), Anklet(3, 6)]
         ... )
-        >>> for config in g.planar_inflate(0):
+        >>> for config in g.pad_node_planar(0):
         ...     print(', '.join(ag.data_string() for ag in config))
         <2, 3, 4, 6 | A(2, 6) + A(3, 6) + A(2, 3, 4)>, <1, 2, 5 | A(1, 2, 5)>
         <1, 2 | A(1, 2)>, <2, 3, 4, 5, 6 | A(2, 6) + A(3, 6) + A(2, 3, 4, 5)>
@@ -1489,7 +1489,7 @@ class AnkletGraph[T: Hashable]:
         >>> g = AnkletGraph.from_data_string(
         ...     "<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3) + A(0, 4) + A(1, 2) + A(3, 4)>", int
         ... )
-        >>> for config in g.planar_inflate(0):
+        >>> for config in g.pad_node_planar(0):
         ...     print(', '.join(ag.data_string() for ag in config))
         <1, 2, 3, 4 | A(1, 2) + A(3, 4) + A(1, 2, 3, 4)>
         <1, 2, 3, 4 | A(1, 2) + A(3, 4) + A(1, 2, 4, 3)>
@@ -1498,7 +1498,7 @@ class AnkletGraph[T: Hashable]:
         then a single configuration with one empty anklet graph is returned:
 
         >>> g = AnkletGraph(nodes=[0])
-        >>> for config in g.planar_inflate(0):
+        >>> for config in g.pad_node_planar(0):
         ...     print(', '.join(ag.data_string() for ag in config))
         < | >
         """
