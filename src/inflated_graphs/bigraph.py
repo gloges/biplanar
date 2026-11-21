@@ -341,6 +341,35 @@ class BiGraph[T: Hashable]:
             results[big.data_string()] = big
         return list(results.values())
 
+    def join_node_subsets(self, nodes_a: Collection[T], nodes_b: Collection[T]) -> list[BiGraph[T]]:
+        nodes_a = set(nodes_a)
+        nodes_b = set(nodes_b)
+        if len(nodes_a) != len(nodes_b):
+            raise ValueError(f"{nodes_a} and {nodes_b} do not contain the same number of nodes")
+        if nodes_a & nodes_b:
+            raise ValueError(f"{nodes_a} and {nodes_b} are not disjoint")
+        if not nodes_a <= self.nodes:
+            raise ValueError(f"{nodes_a} is not a subset of the nodes {self.nodes}")
+        if not nodes_b <= self.nodes:
+            raise ValueError(f"{nodes_b} is not a subset of the nodes {self.nodes}")
+
+        self.check_structure()
+
+        bigraphs = {self.data_string(): self}
+        for n_a in nodes_a:
+            bigraphs_new = {}
+            for big, n_b in product(bigraphs.values(), nodes_b):
+                if n_b in big.nodes:
+                    bigraphs_new.update({
+                        big.data_string(): big
+                        for big_merged in big.merge_nodes(n_a, n_b)
+                        for big in big_merged.inflate(n_a)
+                    })
+            bigraphs = bigraphs_new
+
+        return list(bigraphs.values())
+
+
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
 #   (In)equality
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
