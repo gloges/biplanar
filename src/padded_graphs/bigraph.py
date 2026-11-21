@@ -336,7 +336,7 @@ class BiGraph[T: Hashable]:
         self.check_structure()
 
         results = {}
-        for g, h in product(*[bg.inflate(n) for bg in self._balloon_graph]):
+        for g, h in product(*[bg.pad_node(n) for bg in self._balloon_graph]):
             big = BiGraph(g, h)
             results[big.data_string()] = big
         return list(results.values())

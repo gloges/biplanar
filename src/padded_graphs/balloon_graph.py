@@ -556,8 +556,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         return results
 
-    def inflate(self, n: T, /) -> list[BalloonGraph[T]]:
-        """Inflate a node.
+    def pad_node(self, n: T, /) -> list[BalloonGraph[T]]:
+        """Pad a node.
 
         Hyperedges containing `n` are fused in all ways which result
         in a balloon graph with valid structure.
@@ -581,32 +581,32 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         Examples
         --------
         >>> g = BalloonGraph.from_data_string("[<0, 1, 2, 3 | A(0, 1, 2, 3)>]", int)
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2, 3 | A(1, 2, 3)>]
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3, 4)>]", int
         ... )
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2, 3, 4 | A(1, 2, 4, 3)>]
         [<1, 2, 3, 4 | A(1, 2, 3, 4)>]
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3) + A(0, 4)>, <0, 5 | A(0, 5)>]", int
         ... )
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2, 3, 4 | A(1, 2, 3, 4)>, <5 | >]
         [<1, 2, 3, 4 | A(1, 2, 4, 3)>, <5 | >]
         [<1, 2, 3, 4 | A(1, 3, 2, 4)>, <5 | >]
         >>> g = BalloonGraph.from_data_string("[<0, 1, 2, 3 | 2 × A(0, 1, 2, 3)>]", int)
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2 | A(1, 2)>, <2, 3 | A(2, 3)>]
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2, 3, 4 | 2 × A(0, 1, 2, 3) + A(0, 4)>]", int
         ... )
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2 | A(1, 2)>, <2, 3 | A(2, 3)>, <3, 4 | A(3, 4)>]
         [<1, 2 | A(1, 2)>, <1, 4 | A(1, 4)>, <2, 3 | A(2, 3)>]
