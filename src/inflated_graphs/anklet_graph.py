@@ -1493,6 +1493,9 @@ class AnkletGraph[T: Hashable]:
         if not self.is_planar():
             raise ValueError(f"{self.data_string()} is not planar")
 
+        if self.nodes == {n}:
+            return [[AnkletGraph[T]()]]
+
         # Join together the hyperedges containing n.
         # Each configuration corresponds to a different way to order / orient
         # the hyperedges around n and then split off independent components.
