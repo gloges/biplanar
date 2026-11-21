@@ -364,6 +364,21 @@ class BiGraph[T: Hashable]:
             If `nodes_a` and `nodes_b` are not disjoint sets containing the same number of nodes,
             if either `nodes_a` or `nodes_b` is not a subset of the bi-graph's nodes,
             or if the bi-graph does not have valid structure.
+
+        Examples
+        --------
+        >>> g = BiGraph.from_data_strings(
+        ...     "[<0, 1, 2, 3, 4, 5 | A(0, 1) + A(1, 2) + A(2, 3) + A(3, 4) + A(4, 5) + A(5, 0)>]",
+        ...     "[<0, 1, 3 | A(0, 1, 3)>], [<2, 4, 5 | A(2, 4, 5)>]",
+        ...     int
+        ... )
+        >>> for big in g.merge_inflate({0}, {2}):
+        ...     print(big.data_string())
+        {[<1, 3, 4, 5 | A(1, 3, 4, 5)>]}, {[<1, 3, 4, 5 | A(3, 4) + A(4, 5) + A(1, 3, 5)>]}
+        {[<1, 3, 4, 5 | A(1, 3, 5, 4)>]}, {[<1, 3, 4, 5 | A(3, 4) + A(4, 5) + A(1, 3, 5)>]}
+        >>> for big in g.merge_inflate({0, 1}, {2, 3}):
+        ...     print(big.data_string())
+        {[<4, 5 | A(4, 5)>]}, {[<4, 5 | A(4, 5)>]}
         """
         nodes_a = set(nodes_a)
         nodes_b = set(nodes_b)
