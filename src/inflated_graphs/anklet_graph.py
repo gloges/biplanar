@@ -1513,7 +1513,7 @@ class AnkletGraph[T: Hashable]:
                         config_new = [ag.copy() for ag in config]
                         config_new[i].add_hyperedge(hype)
                         # Each pair of graphs sharing at most one node is only a necessary condition
-                        if all(
+                        if config_new[i].is_planar() and all(
                             len(config_new[i].nodes & ag_j.nodes) <= 1
                             for j, ag_j in enumerate(config_new)
                             if i != j
