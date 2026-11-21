@@ -342,6 +342,29 @@ class BiGraph[T: Hashable]:
         return list(results.values())
 
     def join_node_subsets(self, nodes_a: Collection[T], nodes_b: Collection[T]) -> list[BiGraph[T]]:
+        """Merge and inflate two sets of nodes.
+
+        `nodes_a` and `nodes_b` must be disjoint and have the same size.
+        Nodes from `nodes_a` and from `nodes_b` are paired up in all ways, then merged and inflated.
+
+        Parameters
+        ----------
+        nodes_a, nodes_b : Collection[T]
+            Two disjoint, equally-sized subsets of nodes in the bi-graph.
+
+        Returns
+        -------
+        list[BiGraph[T]]
+            Bi-graphs with none of the nodes in `nodes_a` and `nodes_b` present,
+            these having been merged and inflated in pairs.
+
+        Raises
+        ------
+        ValueError
+            If `nodes_a` and `nodes_b` are not disjoint sets containing the same number of nodes,
+            if either `nodes_a` or `nodes_b` is not a subset of the bi-graph's nodes,
+            or if the bi-graph does not have valid structure.
+        """
         nodes_a = set(nodes_a)
         nodes_b = set(nodes_b)
         if len(nodes_a) != len(nodes_b):
