@@ -1,5 +1,6 @@
 """Bigraphs."""
 
+from __future__ import annotations
 from collections.abc import Callable, Collection, Hashable, Mapping, Sequence
 from itertools import permutations, product
 from typing import Any, Self
@@ -75,6 +76,7 @@ class BiGraph[T: Hashable]:
         │  │ └─╼  <2 | >  connected ✓  planar ✓
         │  │
         │  ╰╼ Valid structure ✓
+        │
         ╰╼ Valid structure ✓
         """
         if data[0] != '{' or data[-1] != '}' or data.count('}, {') != 1:
@@ -153,10 +155,10 @@ class BiGraph[T: Hashable]:
         """
         print("╭╼ Balloon graph A")
         self._balloon_graph[0].print_details('│  ')
-
         print('│')
         print("├╼ Balloon graph B")
         self._balloon_graph[1].print_details('│  ')
+        print('│')
 
         try:
             self.check_structure()
@@ -238,6 +240,106 @@ class BiGraph[T: Hashable]:
         self._balloon_graph[0].check_structure()
         self._balloon_graph[1].check_structure()
 
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Graph operations
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def merge_nodes(self, u: T, v: T, /) -> list[BiGraph[T]]:
+        """Merge two nodes in the bi-graph.
+
+        The nodes `u` and `v` are merged in both of the balloon graphs
+        using :meth:`BalloonGraph.merge_nodes`.
+
+        Parameters
+        ----------
+        u, v : T
+            Two nodes in the bi-graph.
+
+        Returns
+        -------
+        list[BiGraph[T]]
+            Bi-graphs formed by merging `u` and `v` in the two balloon graphs.
+
+        Raises
+        ------
+        ValueError
+            If either `u` or `v` is not in the bi-graph
+            or if the bi-graph does not have valid structure.
+
+        Examples
+        --------
+        >>> g = BiGraph.from_data_strings(
+        ...     "[<0, 1, 2, 3 | A(0, 1, 2) + A(0, 1, 3)>]",
+        ...     "[<0, 2 | A(0, 2)>], [<1, 3 | A(1, 3)>]",
+        ...     int
+        ... )
+        >>> for big in g.merge_nodes(0, 1):
+        ...     print(big.data_string())
+        {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}, {[<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>]}
+        {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}, {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}
+
+        In the following example there are two ways to merge `0` and `1` in each of the balloon
+        graphs, naively giving `2 × 2 = 4` bi-graphs, but because the pair of balloon graphs
+        is unordered there are only three distinct resulting bi-graphs:
+
+        >>> g = BiGraph.from_data_strings(
+        ...     "[<0, 1, 2, 3 | A(0, 1, 2) + A(0, 1, 3)>]",
+        ...     "[<0, 1, 2, 3 | A(0, 1, 2) + A(0, 1, 3)>]",
+        ...     int
+        ... )
+        >>> for big in g.merge_nodes(0, 1):
+        ...     print(big.data_string())
+        {[<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>]}, {[<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>]}
+        {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}, {[<0, 2 | A(0, 2)>, <0, 3 | A(0, 3)>]}
+        {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}, {[<0, 2, 3 | A(0, 2) + A(0, 3)>]}
+        """
+        self.check_structure()
+
+        results = {}
+        for g, h in product(*[bg.merge_nodes(u, v) for bg in self._balloon_graph]):
+            big = BiGraph(g, h)
+            results[big.data_string()] = big
+        return list(results.values())
+
+    def inflate(self, n: T, /) -> list[BiGraph[T]]:
+        """Inflate a node in the bi-graph.
+
+        The node `n` is inflated in both of the balloon graphs using :meth:`BalloonGraph.inflate`.
+
+        Parameters
+        ----------
+        n : T
+            A node in the bi-graph.
+
+        Returns
+        -------
+        list[BiGraph[T]]
+            Bi-graphs formed by inflating `n` in the two balloon graphs.
+
+        Raises
+        ------
+        ValueError
+            If `n` is not a node in the bi-graph or if the bi-graph does not have valid structure.
+
+        Examples
+        --------
+        >>> g = BiGraph.from_data_strings(
+        ...     "[<0, 1, 2, 3 | A(0, 1, 2) + A(0, 1, 3)>]",
+        ...     "[<0, 2 | A(0, 2)>], [<1, 3 | A(1, 3)>]",
+        ...     int
+        ... )
+        >>> for big in g.inflate(0):
+        ...     print(big.data_string())
+        {[<1, 2 | A(1, 2)>, <1, 3 | A(1, 3)>]}, {[<1, 3 | A(1, 3)>], [<2 | >]}
+        {[<1, 2, 3 | A(1, 2, 3)>]}, {[<1, 3 | A(1, 3)>], [<2 | >]}
+        """
+        self.check_structure()
+
+        results = {}
+        for g, h in product(*[bg.inflate(n) for bg in self._balloon_graph]):
+            big = BiGraph(g, h)
+            results[big.data_string()] = big
+        return list(results.values())
 
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
 #   (In)equality
