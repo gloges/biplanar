@@ -33,10 +33,8 @@ def union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> AnkletGraph[T]
     --------
     >>> from inflated_graphs import Anklet
     >>> g = union_all([AnkletGraph([n, n+1], [Anklet(n, n+1)]) for n in range(4)])
-    >>> g.nodes
-    {0, 1, 2, 3, 4}
-    >>> g.hyperedges
-    ((A(0, 1), 1), (A(1, 2), 1), (A(2, 3), 1), (A(3, 4), 1))
+    >>> g.data_string()
+    '<0, 1, 2, 3, 4 | A(0, 1) + A(1, 2) + A(2, 3) + A(3, 4)>'
 
     The union of *zero* anklet graphs is the empty anklet graph:
 
@@ -81,11 +79,8 @@ def union[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> AnkletGraph[T]:
     >>> from inflated_graphs import Anklet
     >>> g = AnkletGraph(hyperedges={Anklet(0, 1, 2): 1, Anklet(1, 2): 2})
     >>> h = AnkletGraph([1, 2, 3, 4, 5], {Anklet(1, 2): 1, Anklet(1, 3, 4): 2})
-    >>> gh = union(g, h)
-    >>> gh.nodes
-    {0, 1, 2, 3, 4, 5}
-    >>> gh.hyperedges
-    ((A(0, 1, 2), 1), (A(1, 2), 3), (A(1, 3, 4), 2))
+    >>> union(g, h).data_string()
+    '<0, 1, 2, 3, 4, 5 | 3 × A(1, 2) + A(0, 1, 2) + 2 × A(1, 3, 4)>'
     """
     return union_all([g, h])
 
@@ -123,11 +118,8 @@ def disjoint_union_all[T: Hashable](graphs: Collection[AnkletGraph[T]]) -> Ankle
     ...
     ValueError: the anklet graphs' nodes are not disjoint
     >>> graphs = [AnkletGraph([n, n+1], [Anklet(n, n+1)]) for n in range(0, 7, 2)]
-    >>> graph_union = disjoint_union_all(graphs)
-    >>> graph_union.nodes
-    {0, 1, 2, 3, 4, 5, 6, 7}
-    >>> graph_union.hyperedges
-    ((A(0, 1), 1), (A(2, 3), 1), (A(4, 5), 1), (A(6, 7), 1))
+    >>> disjoint_union_all(graphs).data_string()
+    '<0, 1, 2, 3, 4, 5, 6, 7 | A(0, 1) + A(2, 3) + A(4, 5) + A(6, 7)>'
     """
     if len(set().union(*[g.nodes for g in graphs])) != sum(g.number_of_nodes() for g in graphs):
         raise ValueError("the anklet graphs' nodes are not disjoint")

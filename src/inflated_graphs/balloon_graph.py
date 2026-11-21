@@ -57,15 +57,15 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2 | 3 × A(0, 1) + A(1, 2)>, <2, 3 | A(2, 3)>], [<4 | >]", int
         ... )
-        >>> for i, balloon in enumerate(g):
-        ...    print(f"balloon {i}:")
-        ...    for ag in balloon:
-        ...        print('   ', ag.data_string())
-        balloon 0:
-            <0, 1, 2 | 3 × A(0, 1) + A(1, 2)>
-            <2, 3 | A(2, 3)>
-        balloon 1:
-            <4 | >
+        >>> g.print_details()
+        ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3}
+        │ ├─╼  <0, 1, 2 | 3 × A(0, 1) + A(1, 2)>  connected ✓  planar ✓
+        │ └─╼  <2, 3 | A(2, 3)>                   connected ✓  planar ✓
+        │
+        ├─┬╼ Balloon 1:  nodes = {4}
+        │ └─╼  <4 | >                             connected ✓  planar ✓
+        │
+        ╰╼ Valid structure ✓
         """
         balloons = []
         if data:
@@ -112,6 +112,25 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     def attributes(self, value: Mapping[str, Any]) -> None:
         self._attr = dict(value)
 
+    def __str__(self) -> str:
+        """Return a short summary of the balloon graph.
+
+        Returns
+        -------
+        str
+            A summary of the balloon graph, including the number of nodes,
+            anklet graphs and balloons, as well as the balloon graph's name
+            and list of balloon graph attributes if set.
+        """
+        return "".join([
+            type(self).__name__,
+            f" named {self._name}" if self._name else "",
+            " with attributes (" + ", ".join(self._attr) + ")," if self._attr else " with",
+            f" {self.number_of_balloons()} balloons,",
+            f" {self.number_of_anklet_graphs()} anklet graphs",
+            f" and {len(self.nodes)} nodes"
+        ])
+
     def copy(self) -> Self:
         """Return a copy of the balloon graph.
 
@@ -141,6 +160,10 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         -------
         str
             An encoding of the balloon graph.
+
+        See Also
+        --------
+        :meth:`BalloonGraph.print_details`
 
         Examples
         --------
@@ -181,6 +204,40 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         )
 
         return ", ".join([balloon_data_strings[i] for i in balloon_order])
+
+    def print_details(self, line_prefix: str = '') -> None:
+        """Print detailed information about the balloon graph.
+
+        See Also
+        --------
+        :meth:`BalloonGraph.data_string`
+        """
+        max_length = max(len(ag.data_string()) for _, ag in self.iter_anklet_graphs())
+
+        for i, balloon in enumerate(self):
+            print(
+                line_prefix
+                + ("╭─" if i == 0 else "├─")
+                + f"┬╼ Balloon {i}:"
+                + f"  nodes = {self.balloon_nodes(i)}"
+            )
+            for j, ag in enumerate(balloon):
+                print(
+                    line_prefix
+                    + "│ " + ('├' if j < len(balloon) - 1 else '└') + "─╼  "
+                    + ag.data_string().ljust(max_length)
+                    + "  connected " + ('✓' if ag.is_connected() else '✗')
+                    + "  planar " + ('✓' if ag.is_planar() else '✗')
+                )
+            print(line_prefix + "│")
+        try:
+            self.check_structure()
+            print(line_prefix + "╰╼ Valid structure ✓")
+        except ValueError as exc:
+            lines = str(exc).split("\n")
+            print(line_prefix + f"╰╼ Invalid structure: {lines[0]}")
+            for line in lines[1:]:
+                print(line_prefix + '   ' + line)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Balloons, anklet graphs and nodes
@@ -252,8 +309,15 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ...     "[<0, 1, 2 | A(0, 1, 2)>, <2 | >, <3 | >], [<4 | >, < | >, <4 | >], [< | >]", int
         ... )
         >>> g.prune_subsingleton()
-        >>> g.data_string()
-        '[<0, 1, 2 | A(0, 1, 2)>, <3 | >], [<4 | >]'
+        >>> g.print_details()
+        ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3}
+        │ ├─╼  <0, 1, 2 | A(0, 1, 2)>  connected ✓  planar ✓
+        │ └─╼  <3 | >                  connected ✓  planar ✓
+        │
+        ├─┬╼ Balloon 1:  nodes = {4}
+        │ └─╼  <4 | >                  connected ✓  planar ✓
+        │
+        ╰╼ Valid structure ✓
         """
         for (i, j), ag in reversed(list(self.iter_anklet_graphs())):
             if not ag.nodes or (
@@ -314,8 +378,15 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ... )
         >>> g.combine_anklet_graphs((0, 0), (2, 0))
         (0, 0)
-        >>> g.data_string()
-        '[<0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>, <6, 7 | A(6, 7)>], [<2, 3, 4 | A(2, 3, 4)>]'
+        >>> g.print_details()
+        ╭─┬╼ Balloon 0:  nodes = {0, 1, 5, 6, 7}
+        │ ├─╼  <0, 1, 5, 6 | A(0, 1) + 3 × A(5, 6)>  connected ✗  planar ✓
+        │ └─╼  <6, 7 | A(6, 7)>                      connected ✓  planar ✓
+        │
+        ├─┬╼ Balloon 1:  nodes = {2, 3, 4}
+        │ └─╼  <2, 3, 4 | A(2, 3, 4)>                connected ✓  planar ✓
+        │
+        ╰╼ Invalid structure: the anklet graph at (0, 0) is not connected
         """
         i_a, j_a = loc_a
         i_b, j_b = loc_b
@@ -353,11 +424,25 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ...     "[<0, 1, 2 | 2 × A(0, 1, 2)>, <2, 3 | A(2, 3)>], [<4, 5 | A(4, 5)>]", int
         ... )
         >>> g.relabel_nodes({2: 3, 3: 2, 7: 8})
-        >>> g.data_string()
-        '[<0, 1, 3 | 2 × A(0, 1, 3)>, <2, 3 | A(2, 3)>], [<4, 5 | A(4, 5)>]'
+        >>> g.print_details()
+        ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3}
+        │ ├─╼  <0, 1, 3 | 2 × A(0, 1, 3)>  connected ✓  planar ✓
+        │ └─╼  <2, 3 | A(2, 3)>            connected ✓  planar ✓
+        │
+        ├─┬╼ Balloon 1:  nodes = {4, 5}
+        │ └─╼  <4, 5 | A(4, 5)>            connected ✓  planar ✓
+        │
+        ╰╼ Valid structure ✓
         >>> g.relabel_nodes({0: 4, 4: 2, 2: 0})
-        >>> g.data_string()
-        '[<1, 3, 4 | 2 × A(1, 3, 4)>, <0, 3 | A(0, 3)>], [<2, 5 | A(2, 5)>]'
+        >>> g.print_details()
+        ╭─┬╼ Balloon 0:  nodes = {0, 1, 3, 4}
+        │ ├─╼  <1, 3, 4 | 2 × A(1, 3, 4)>  connected ✓  planar ✓
+        │ └─╼  <0, 3 | A(0, 3)>            connected ✓  planar ✓
+        │
+        ├─┬╼ Balloon 1:  nodes = {2, 5}
+        │ └─╼  <2, 5 | A(2, 5)>            connected ✓  planar ✓
+        │
+        ╰╼ Valid structure ✓
 
         If the replacement would lead to a collision then no changes are made:
 
@@ -366,8 +451,15 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ValueError: replacing nodes according to
         {0: 0, 1: 1, 2: 2, 3: 5, 4: 4, 5: 5}
         would lead to a collision
-        >>> g.data_string()
-        '[<1, 3, 4 | 2 × A(1, 3, 4)>, <0, 3 | A(0, 3)>], [<2, 5 | A(2, 5)>]'
+        >>> g.print_details()
+        ╭─┬╼ Balloon 0:  nodes = {0, 1, 3, 4}
+        │ ├─╼  <1, 3, 4 | 2 × A(1, 3, 4)>  connected ✓  planar ✓
+        │ └─╼  <0, 3 | A(0, 3)>            connected ✓  planar ✓
+        │
+        ├─┬╼ Balloon 1:  nodes = {2, 5}
+        │ └─╼  <2, 5 | A(2, 5)>            connected ✓  planar ✓
+        │
+        ╰╼ Valid structure ✓
         """
         node_replacements = {n: node_replacements.get(n, n) for n in self.nodes}
         if len(set(node_replacements.values())) < len(node_replacements):
@@ -813,7 +905,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             ]
             self._reset_valid_structure()
             raise ValueError(
-                "Invalid structure. the node / anklet graph incidence graph contains the cycle\n" +
+                "the incidence graph contains the cycle\n" +
                 " → ".join([*cycle_data, cycle_data[0]])
             )
 
