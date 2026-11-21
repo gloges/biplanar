@@ -229,7 +229,6 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
             print(line_prefix + f"╰╼ Invalid structure: {lines[0]}")
             for line in lines[1:]:
                 print(line_prefix + '   ' + line)
-        print(line_prefix)
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Balloons, anklet graphs and nodes

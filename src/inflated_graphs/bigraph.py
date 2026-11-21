@@ -138,6 +138,24 @@ class BiGraph[T: Hashable]:
         ])
         return '{' + sorted_data[0][2] + '}, {' + sorted_data[1][2] + '}'
 
+    def print_details(self) -> None:
+        """Print detailed information about the bi-graph."""
+        print("╭╼ Balloon graph A")
+        self._balloon_graph[0].print_details('│  ')
+
+        print('│')
+        print("├╼ Balloon graph B")
+        self._balloon_graph[1].print_details('│  ')
+
+        try:
+            self.check_structure()
+            print("╰╼ Valid structure ✓")
+        except ValueError as exc:
+            lines = str(exc).split("\n")
+            print(f"╰╼ Invalid structure: {lines[0]}")
+            for line in lines[1:]:
+                print('   ' + line)
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Graphs and nodes
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
