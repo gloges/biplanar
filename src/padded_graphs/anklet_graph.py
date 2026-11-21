@@ -1282,7 +1282,7 @@ class AnkletGraph[T: Hashable]:
     #   Merging and inflating
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def planar_merge(self, u: T, v: T, /) -> list[list[AnkletGraph[T]]]:
+    def merge_nodes_planar(self, u: T, v: T, /) -> list[list[AnkletGraph[T]]]:
         """Merge two nodes in a planar anklet graph.
 
         Parameters
@@ -1307,29 +1307,29 @@ class AnkletGraph[T: Hashable]:
         Examples
         --------
         >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2): 2})
-        >>> for ag_list in ag.planar_merge(0, 1):
+        >>> for ag_list in ag.merge_nodes_planar(0, 1):
         ...     print(", ".join(ag.data_string() for ag in ag_list))
         <0 | >, <0, 2 | A(0, 2)>, <0 | >
         >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2, 3): 2})
-        >>> for ag_list in ag.planar_merge(0, 1):
+        >>> for ag_list in ag.merge_nodes_planar(0, 1):
         ...     print(", ".join(ag.data_string() for ag in ag_list))
         <0 | >, <0, 2, 3 | 2 × A(0, 2, 3)>, <0 | >
         >>> ag = AnkletGraph(hyperedges={Anklet(0, 1, 2, 3): 2, Anklet(2, 4): 1})
-        >>> for ag_list in ag.planar_merge(0, 1):
+        >>> for ag_list in ag.merge_nodes_planar(0, 1):
         ...     print(", ".join(ag.data_string() for ag in ag_list))
         <0 | >, <0, 2, 3, 4 | A(2, 4) + 2 × A(0, 2, 3)>, <0 | >
         >>> ag = AnkletGraph(hyperedges=[Anklet(0, 1, 2), Anklet(0, 1, 3)])
-        >>> for ag_list in ag.planar_merge(0, 1):
+        >>> for ag_list in ag.merge_nodes_planar(0, 1):
         ...     print(", ".join(ag.data_string() for ag in ag_list))
         <0 | >, <0, 3 | A(0, 3)>, <0, 2 | A(0, 2)>
         <0 | >, <0, 2, 3 | A(0, 2) + A(0, 3)>, <0 | >
         >>> ag = AnkletGraph(hyperedges=[Anklet(0, 1), Anklet(0, 2), Anklet(0, 3)])
-        >>> for ag_list in ag.planar_merge(0, 1):
+        >>> for ag_list in ag.merge_nodes_planar(0, 1):
         ...     print(", ".join(ag.data_string() for ag in ag_list))
         <0, 3 | A(0, 3)>, <0, 2 | A(0, 2)>
         <0 | >, <0, 2, 3 | A(0, 2) + A(0, 3)>
         >>> ag = AnkletGraph(hyperedges=[Anklet(0, 2), Anklet(0, 3), Anklet(1, 2)])
-        >>> for ag_list in ag.planar_merge(0, 1):
+        >>> for ag_list in ag.merge_nodes_planar(0, 1):
         ...     print(", ".join(ag.data_string() for ag in ag_list))
         <0, 2, 3 | A(0, 2) + A(0, 3)>
         """

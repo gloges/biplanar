@@ -545,7 +545,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
                 results.append(graph_new)
         elif incidence[u] & incidence[v]:
             i, j = list(incidence[u] & incidence[v])[0]
-            for anklet_graphs_new in self[i][j].planar_merge(u, v):
+            for anklet_graphs_new in self[i][j].merge_nodes_planar(u, v):
                 graph_new = self.copy()
                 graph_new[i].pop(j)
                 for ag in graph_new[i]:
