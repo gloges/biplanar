@@ -1485,6 +1485,22 @@ class AnkletGraph[T: Hashable]:
         ...     print(', '.join(ag.data_string() for ag in config))
         <2, 3, 4, 6 | A(2, 6) + A(3, 6) + A(2, 3, 4)>, <1, 2, 5 | A(1, 2, 5)>
         <1, 2 | A(1, 2)>, <2, 3, 4, 5, 6 | A(2, 6) + A(3, 6) + A(2, 3, 4, 5)>
+
+        >>> g = AnkletGraph.from_data_string(
+        ...     "<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3) + A(0, 4) + A(1, 2) + A(3, 4)>", int
+        ... )
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        <1, 2, 3, 4 | A(1, 2) + A(3, 4) + A(1, 2, 3, 4)>
+        <1, 2, 3, 4 | A(1, 2) + A(3, 4) + A(1, 2, 4, 3)>
+
+        If the anklet graph has only the one node,
+        then a single configuration with one empty anklet graph is returned:
+
+        >>> g = AnkletGraph(nodes=[0])
+        >>> for config in g.planar_inflate(0):
+        ...     print(', '.join(ag.data_string() for ag in config))
+        < | >
         """
         if n not in self:
             raise ValueError(f"{n!r} is not a node in the anklet graph")
