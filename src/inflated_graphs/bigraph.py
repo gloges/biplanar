@@ -58,22 +58,24 @@ class BiGraph[T: Hashable]:
         ...     "{[<0, 1 | A(0, 1)>, <1, 2 | A(1, 2)>]}, {[<0 | >], [<1 | >, <2 | >]}",
         ...     int
         ... )
-        >>> for index, bg in enumerate(g.balloon_graphs):
-        ...     print(f"balloon graph {index}:")
-        ...     for i, balloon in enumerate(bg):
-        ...        print(f"    balloon {i}:")
-        ...        for ag in balloon:
-        ...            print('       ', ag.data_string())
-        balloon graph 0:
-            balloon 0:
-                <0, 1 | A(0, 1)>
-                <1, 2 | A(1, 2)>
-        balloon graph 1:
-            balloon 0:
-                <0 | >
-            balloon 1:
-                <1 | >
-                <2 | >
+        >>> g.print_details()
+        ╭╼ Balloon graph A
+        │  ╭─┬╼ Balloon 0:  nodes = {0, 1, 2}
+        │  │ ├─╼  <0, 1 | A(0, 1)>  connected ✓  planar ✓
+        │  │ └─╼  <1, 2 | A(1, 2)>  connected ✓  planar ✓
+        │  │
+        │  ╰╼ Valid structure ✓
+        │
+        ├╼ Balloon graph B
+        │  ╭─┬╼ Balloon 0:  nodes = {0}
+        │  │ └─╼  <0 | >  connected ✓  planar ✓
+        │  │
+        │  ├─┬╼ Balloon 1:  nodes = {1, 2}
+        │  │ ├─╼  <1 | >  connected ✓  planar ✓
+        │  │ └─╼  <2 | >  connected ✓  planar ✓
+        │  │
+        │  ╰╼ Valid structure ✓
+        ╰╼ Valid structure ✓
         """
         if data[0] != '{' or data[-1] != '}' or data.count('}, {') != 1:
             raise ValueError()
@@ -131,6 +133,10 @@ class BiGraph[T: Hashable]:
         are combined as `"{balloon_graph_data_a}, {balloon_graph_data_b}"`.
         Their order is taken to prioritize fewer balloons and anklet graphs first
         and may not match the order of :meth:`BiGraph.balloon_graphs`.
+
+        See Also
+        --------
+        :meth:`BiGraph.print_details`
         """
         sorted_data = sorted([
             (bg.number_of_balloons(), bg.number_of_anklet_graphs(), bg.data_string())
@@ -139,7 +145,12 @@ class BiGraph[T: Hashable]:
         return '{' + sorted_data[0][2] + '}, {' + sorted_data[1][2] + '}'
 
     def print_details(self) -> None:
-        """Print detailed information about the bi-graph."""
+        """Print detailed information about the bi-graph.
+
+        See Also
+        --------
+        :meth:`BiGraph.data_string`
+        """
         print("╭╼ Balloon graph A")
         self._balloon_graph[0].print_details('│  ')
 
