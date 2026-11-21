@@ -75,6 +75,7 @@ class BiGraph[T: Hashable]:
         │  │ └─╼  <2 | >  connected ✓  planar ✓
         │  │
         │  ╰╼ Valid structure ✓
+        │
         ╰╼ Valid structure ✓
         """
         if data[0] != '{' or data[-1] != '}' or data.count('}, {') != 1:
@@ -153,10 +154,10 @@ class BiGraph[T: Hashable]:
         """
         print("╭╼ Balloon graph A")
         self._balloon_graph[0].print_details('│  ')
-
         print('│')
         print("├╼ Balloon graph B")
         self._balloon_graph[1].print_details('│  ')
+        print('│')
 
         try:
             self.check_structure()
