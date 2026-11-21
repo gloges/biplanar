@@ -1520,22 +1520,28 @@ class AnkletGraph[T: Hashable]:
             for anklets in planar_inflate([hype for hype in self.all_hyperedges() if n in hype], n)
         ]
 
+        def add_hype(hype: Anklet, config: list[AnkletGraph]) -> list[list[AnkletGraph]]:
+            configs_with_hype = []
+            for i in range(len(config)):
+                config_new = [ag.copy() for ag in config]
+                config_new[i].add_hyperedge(hype)
+                # Each pair of graphs sharing at most one node is only a necessary condition
+                if config_new[i].is_planar() and all(
+                    len(config_new[i].nodes & ag_j.nodes) <= 1
+                    for j, ag_j in enumerate(config_new)
+                    if i != j
+                ):
+                    configs_with_hype.append(config_new)
+            return configs_with_hype
+
         # Add the other hyperedges to the configurations one by one.
         for hype in self.all_hyperedges():
             if n not in hype:
-                configurations_new = []
-                for config in configurations:
-                    for i in range(len(config)):
-                        config_new = [ag.copy() for ag in config]
-                        config_new[i].add_hyperedge(hype)
-                        # Each pair of graphs sharing at most one node is only a necessary condition
-                        if config_new[i].is_planar() and all(
-                            len(config_new[i].nodes & ag_j.nodes) <= 1
-                            for j, ag_j in enumerate(config_new)
-                            if i != j
-                        ):
-                            configurations_new.append(config_new)
-                configurations = configurations_new
+                configurations = [
+                    config_with_hype
+                    for config in configurations
+                    for config_with_hype in add_hype(hype, config)
+                ]
 
         # Remove any configuration with a cycle in the adjacency matrix
         for i, config in reversed(list(enumerate(configurations))):
