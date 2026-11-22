@@ -6,7 +6,13 @@ from .bigraph import BiGraph
 
 
 class PathBiGraph(BiGraph[int]):
-    """A **path bi-graph** is a bi-graph with two groups nodes, referred to as *east* and *west*."""
+    """A **path bi-graph** is a bi-graph with two groups of nodes, referred to as *east* and *west*.
+
+    The non-negative integers `n_east` and `n_west` give the number of east and west nodes,
+    respectively, and the two balloon graphs of the bi-graph must have the nodes
+    `{0, 1, ..., n_east + n_west - 1}`; Those less than `n_east` are the *east* nodes and those
+    `n_east` or greater are the *west* nodes.
+    """
 
     _n_east: int
     _n_west: int
