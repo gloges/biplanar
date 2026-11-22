@@ -301,10 +301,10 @@ class BiGraph[T: Hashable]:
             results[big.data_string()] = big
         return list(results.values())
 
-    def inflate(self, n: T, /) -> list[BiGraph[T]]:
-        """Inflate a node in the bi-graph.
+    def pad_node(self, n: T, /) -> list[BiGraph[T]]:
+        """Pad a node in the bi-graph.
 
-        The node `n` is inflated in both of the balloon graphs using :meth:`BalloonGraph.inflate`.
+        The node `n` is padded in both of the balloon graphs using :meth:`BalloonGraph.pad_node`.
 
         Parameters
         ----------
@@ -314,7 +314,7 @@ class BiGraph[T: Hashable]:
         Returns
         -------
         list[BiGraph[T]]
-            Bi-graphs formed by inflating `n` in the two balloon graphs.
+            Bi-graphs formed by padding `n` in the two balloon graphs.
 
         Raises
         ------
@@ -328,7 +328,7 @@ class BiGraph[T: Hashable]:
         ...     "[<0, 2 | A(0, 2)>], [<1, 3 | A(1, 3)>]",
         ...     int
         ... )
-        >>> for big in g.inflate(0):
+        >>> for big in g.pad_node(0):
         ...     print(big.data_string())
         {[<1, 2 | A(1, 2)>, <1, 3 | A(1, 3)>]}, {[<1, 3 | A(1, 3)>], [<2 | >]}
         {[<1, 2, 3 | A(1, 2, 3)>]}, {[<1, 3 | A(1, 3)>], [<2 | >]}
@@ -336,16 +336,16 @@ class BiGraph[T: Hashable]:
         self.check_structure()
 
         results = {}
-        for g, h in product(*[bg.inflate(n) for bg in self._balloon_graph]):
+        for g, h in product(*[bg.pad_node(n) for bg in self._balloon_graph]):
             big = BiGraph(g, h)
             results[big.data_string()] = big
         return list(results.values())
 
     def join_node_subsets(self, nodes_a: Collection[T], nodes_b: Collection[T]) -> list[BiGraph[T]]:
-        """Merge and inflate two sets of nodes.
+        """Merge and pad two sets of nodes.
 
         `nodes_a` and `nodes_b` must be disjoint and have the same size.
-        Nodes from `nodes_a` and from `nodes_b` are paired up in all ways, then merged and inflated.
+        Nodes from `nodes_a` and from `nodes_b` are paired up in all ways, then merged and padded.
 
         Parameters
         ----------
@@ -356,7 +356,7 @@ class BiGraph[T: Hashable]:
         -------
         list[BiGraph[T]]
             Bi-graphs with none of the nodes in `nodes_a` and `nodes_b` present,
-            these having been merged and inflated in pairs.
+            these having been merged and padded in pairs.
 
         Raises
         ------
@@ -401,7 +401,7 @@ class BiGraph[T: Hashable]:
                     bigraphs_new.update({
                         big.data_string(): big
                         for big_merged in big.merge_nodes(n_a, n_b)
-                        for big in big_merged.inflate(n_a)
+                        for big in big_merged.pad_node(n_a)
                     })
             bigraphs = bigraphs_new
 

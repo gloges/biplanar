@@ -1,4 +1,4 @@
-"""Inflated graphs."""
+"""Padded graphs."""
 
 from .anklet import Anklet
 from .anklet_graph import AnkletGraph

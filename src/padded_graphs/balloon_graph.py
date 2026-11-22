@@ -15,7 +15,7 @@ type IndexPair = tuple[int, int]  # (balloon index, anklet graph index)
 
 
 class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
-    """A **balloon graph** represents an equivalence class of inflated graph embeddings."""
+    """A **balloon graph** represents an equivalence class of padded graph embeddings."""
 
     _name: str
     _attr: dict[str, Any]
@@ -31,7 +31,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
     def from_data_string(cls, data: str, interpreter: Callable[[str], T]) -> Self:
         """Construct a balloon graph from a string summarizing its balloons and anklet graphs.
 
-        The input string must follow the format produced by :meth:`BalloonGraph.get_data_string`.
+        The input string must adhere to the format produced by :meth:`BalloonGraph.get_data_string`.
 
         Parameters
         ----------
@@ -167,7 +167,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         Examples
         --------
-        >>> from inflated_graphs import Anklet
+        >>> from padded_graphs import Anklet
         >>> ag1 = AnkletGraph(range(0, 3), {Anklet(0, 1): 1, Anklet(0, 1, 2): 2})
         >>> ag2 = AnkletGraph(range(3, 6), {Anklet(3, 4): 3})
         >>> ag3 = AnkletGraph(range(6, 9), {Anklet(6, 7, 8)})
@@ -211,6 +211,22 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         See Also
         --------
         :meth:`BalloonGraph.data_string`
+
+        Examples
+        --------
+        >>> from padded_graphs import Anklet
+        >>> ag1 = AnkletGraph(range(0, 3), {Anklet(0, 1): 1, Anklet(0, 1, 2): 2})
+        >>> ag2 = AnkletGraph(range(3, 6), {Anklet(3, 4): 3, Anklet(4, 5): 1})
+        >>> ag3 = AnkletGraph(range(6, 9), {Anklet(6, 7, 8)})
+        >>> BalloonGraph([ag1, ag2], [ag3]).print_details()
+        ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3, 4, 5}
+        │ ├─╼  <0, 1, 2 | A(0, 1) + 2 × A(0, 1, 2)>  connected ✓  planar ✓
+        │ └─╼  <3, 4, 5 | 3 × A(3, 4) + A(4, 5)>     connected ✓  planar ✓
+        │
+        ├─┬╼ Balloon 1:  nodes = {8, 6, 7}
+        │ └─╼  <6, 7, 8 | A(6, 7, 8)>                connected ✓  planar ✓
+        │
+        ╰╼ Valid structure ✓
         """
         max_length = max(len(ag.data_string()) for _, ag in self.iter_anklet_graphs())
 
@@ -273,7 +289,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         """Yield (location, anklet_graph) pairs.
 
         'Locations' are pairs of indices, the first gives the balloon
-        and the second the anklet graph within that balloon.
+        and the second the position of the anklet graph within that balloon.
         """
         for i, balloon in enumerate(self):
             for j, ag in enumerate(balloon):
@@ -475,8 +491,9 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         The two nodes `u` and `v` must either be in separate balloons or appear in an anklet graph
         together. If they are in separate balloons, then `v` is replaced by `u` everywhere,
         the two balloons are combined and finally two anklet graphs, one originally containing `u`
-        and the other originally containing `v` are removed and replaced by their union. If they are
-        in a common anklet graph, the process is more subtle: see :meth:`AnkletGraph.planar_merge`. 
+        and the other originally containing `v` are removed and replaced by their union.
+        If they are in a common anklet graph, the process is more subtle:
+        see :meth:`AnkletGraph.merge_nodes_planar`.
 
         Parameters
         ----------
@@ -545,7 +562,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
                 results.append(graph_new)
         elif incidence[u] & incidence[v]:
             i, j = list(incidence[u] & incidence[v])[0]
-            for anklet_graphs_new in self[i][j].planar_merge(u, v):
+            for anklet_graphs_new in self[i][j].merge_nodes_planar(u, v):
                 graph_new = self.copy()
                 graph_new[i].pop(j)
                 for ag in graph_new[i]:
@@ -556,8 +573,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         return results
 
-    def inflate(self, n: T, /) -> list[BalloonGraph[T]]:
-        """Inflate a node.
+    def pad_node(self, n: T, /) -> list[BalloonGraph[T]]:
+        """Pad a node in the balloon graph.
 
         Hyperedges containing `n` are fused in all ways which result
         in a balloon graph with valid structure.
@@ -570,7 +587,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         Returns
         -------
         list[BalloonGraph[T]]
-            Balloon graphs which result from inflating the node `n`.
+            Balloon graphs which result from padding the node `n`.
 
         Raises
         ------
@@ -581,32 +598,32 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         Examples
         --------
         >>> g = BalloonGraph.from_data_string("[<0, 1, 2, 3 | A(0, 1, 2, 3)>]", int)
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2, 3 | A(1, 2, 3)>]
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3, 4)>]", int
         ... )
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2, 3, 4 | A(1, 2, 4, 3)>]
         [<1, 2, 3, 4 | A(1, 2, 3, 4)>]
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2, 3, 4 | A(0, 1) + A(0, 2) + A(0, 3) + A(0, 4)>, <0, 5 | A(0, 5)>]", int
         ... )
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2, 3, 4 | A(1, 2, 3, 4)>, <5 | >]
         [<1, 2, 3, 4 | A(1, 2, 4, 3)>, <5 | >]
         [<1, 2, 3, 4 | A(1, 3, 2, 4)>, <5 | >]
         >>> g = BalloonGraph.from_data_string("[<0, 1, 2, 3 | 2 × A(0, 1, 2, 3)>]", int)
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2 | A(1, 2)>, <2, 3 | A(2, 3)>]
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2, 3, 4 | 2 × A(0, 1, 2, 3) + A(0, 4)>]", int
         ... )
-        >>> for bg in g.inflate(0):
+        >>> for bg in g.pad_node(0):
         ...     print(bg.data_string())
         [<1, 2 | A(1, 2)>, <2, 3 | A(2, 3)>, <3, 4 | A(3, 4)>]
         [<1, 2 | A(1, 2)>, <1, 4 | A(1, 4)>, <2, 3 | A(2, 3)>]
@@ -620,7 +637,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         i_n = list(locs_n)[0][0]
 
         results = []
-        for configs_new in product(*[self[i][j].planar_inflate(n) for i, j in locs_n]):
+        for configs_new in product(*[self[i][j].pad_node_planar(n) for i, j in locs_n]):
             graph_new = BalloonGraph(*[
                 [ag.copy() for j, ag in enumerate(balloon) if (i, j) not in locs_n]
                 for i, balloon in enumerate(self)
@@ -843,7 +860,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         Examples
         --------
-        >>> from inflated_graphs import Anklet
+        >>> from padded_graphs import Anklet
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2 | 3 × A(0, 1, 2)>, < | >], [<3 | >]", int
         ... )

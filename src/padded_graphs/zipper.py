@@ -128,7 +128,7 @@ def zipper[T: Hashable](g: AnkletGraph[T], h: AnkletGraph[T]) -> list[AnkletGrap
 
     Examples
     --------
-    >>> from inflated_graphs import Anklet
+    >>> from padded_graphs import Anklet
     >>> g = AnkletGraph(hyperedges=[Anklet(0, 1), Anklet(0, 2)])
     >>> h = AnkletGraph(hyperedges=[Anklet(0, 3), Anklet(3, 4)])
     >>> for ag in zipper(g, h):

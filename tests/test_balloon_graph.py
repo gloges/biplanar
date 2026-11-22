@@ -3,7 +3,7 @@
 from itertools import product
 import networkx as nx
 import pytest
-from inflated_graphs.generate import balloon_graphs_on
+from padded_graphs.generate import balloon_graphs_on
 
 
 # n = 4 takes ~1 min
