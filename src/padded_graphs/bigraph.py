@@ -1,8 +1,8 @@
 """Bigraphs."""
 
 from __future__ import annotations
-from collections.abc import Callable, Collection, Hashable, Mapping, Sequence
-from itertools import permutations, product
+from collections.abc import Callable, Collection, Hashable, Mapping
+from itertools import product
 from typing import Any, Self
 from .balloon_graph import BalloonGraph
 
