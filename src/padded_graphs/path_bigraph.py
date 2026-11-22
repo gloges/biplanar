@@ -125,3 +125,49 @@ class PathBiGraph(BiGraph[int]):
             g_permuted.balloon_graphs[1].relabel_nodes(node_permutation)
             yield g_permuted
 
+
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
+#   (In)equality
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
+
+
+def poset_le(g: PathBiGraph, h: PathBiGraph) -> bool:
+    """Return whether `g ≤ h`.
+
+    The path bi-graph `g` is *less than or equal to* the path bi-graph `h` *if and only if*
+    there exist permutations of the east and west nodes of `g` such that each balloon graph
+    of `g` with permuted nodes is less than or equal to a different balloon graph of `h`.
+
+    Parameters
+    ----------
+    g, h : PathBiGraph
+        Two path bi-graphs to be compared.
+
+    Returns
+    -------
+    bool
+        Whether `g ≤ h`, as described above.
+
+    Raises
+    ------
+    ValueError
+        If the numbers of east and west nodes of `g` and `h` are not the same.
+    """
+    if (g.n_east, g.n_west) != (h.n_east, h.n_west):
+        raise ValueError(
+            f"nodes do not match: ({g.n_east}, {g.n_west}) != ({h.n_east}, {h.n_west})"
+        )
+    g.check_structure()
+    h.check_structure()
+
+    for g_permuted in g.node_permutations():
+        bg_g_0, bg_g_1 = g_permuted.balloon_graphs
+        bg_h_0, bg_h_1 = h.balloon_graphs
+        if (bg_g_0 <= bg_h_0 and bg_g_1 <= bg_h_1) or (bg_g_1 <= bg_h_0 and bg_g_0 <= bg_h_1):
+            return True
+    return False
+
+
+def poset_eq(g: PathBiGraph, h: PathBiGraph) -> bool:
+    """Return whether both `g ≤ h` and `h ≤ g`."""
+    return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
