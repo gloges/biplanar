@@ -1279,7 +1279,7 @@ class AnkletGraph[T: Hashable]:
         self._reduced = True
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Merging and inflating
+    #   Merging and padding
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def merge_nodes_planar(self, u: T, v: T, /) -> list[list[AnkletGraph[T]]]:
@@ -1429,7 +1429,7 @@ class AnkletGraph[T: Hashable]:
         return anklet_graph_lists
 
     def pad_node_planar(self, n: T) -> list[list[AnkletGraph[T]]]:
-        """Inflate a node in a connected planar anklet graph.
+        """Pad a node in a connected planar anklet graph.
 
         The hyperedges containing the node `n` are first joined together with a choice of order
         and orientations, resulting in a number of different collections of anklet graphs.

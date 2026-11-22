@@ -302,9 +302,9 @@ class BiGraph[T: Hashable]:
         return list(results.values())
 
     def pad_node(self, n: T, /) -> list[BiGraph[T]]:
-        """Pad a node.
+        """Pad a node in the bi-graph.
 
-        The node `n` is inflated in both of the balloon graphs using :meth:`BalloonGraph.inflate`.
+        The node `n` is padded in both of the balloon graphs using :meth:`BalloonGraph.pad_node`.
 
         Parameters
         ----------
@@ -314,7 +314,7 @@ class BiGraph[T: Hashable]:
         Returns
         -------
         list[BiGraph[T]]
-            Bi-graphs formed by inflating `n` in the two balloon graphs.
+            Bi-graphs formed by padding `n` in the two balloon graphs.
 
         Raises
         ------
@@ -342,10 +342,10 @@ class BiGraph[T: Hashable]:
         return list(results.values())
 
     def join_node_subsets(self, nodes_a: Collection[T], nodes_b: Collection[T]) -> list[BiGraph[T]]:
-        """Merge and inflate two sets of nodes.
+        """Merge and pad two sets of nodes.
 
         `nodes_a` and `nodes_b` must be disjoint and have the same size.
-        Nodes from `nodes_a` and from `nodes_b` are paired up in all ways, then merged and inflated.
+        Nodes from `nodes_a` and from `nodes_b` are paired up in all ways, then merged and padded.
 
         Parameters
         ----------
@@ -356,7 +356,7 @@ class BiGraph[T: Hashable]:
         -------
         list[BiGraph[T]]
             Bi-graphs with none of the nodes in `nodes_a` and `nodes_b` present,
-            these having been merged and inflated in pairs.
+            these having been merged and padded in pairs.
 
         Raises
         ------
