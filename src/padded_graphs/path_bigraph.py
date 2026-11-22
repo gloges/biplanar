@@ -2,6 +2,7 @@
 
 from collections.abc import Generator
 from itertools import permutations, product
+from types import NotImplementedType
 from typing import Any, Self
 from .balloon_graph import BalloonGraph
 from .bigraph import BiGraph
@@ -125,10 +126,34 @@ class PathBiGraph(BiGraph[int]):
             g_permuted.balloon_graphs[1].relabel_nodes(node_permutation)
             yield g_permuted
 
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   (In)equality
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
-#   (In)equality
-# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_le(self, other)
+
+    def __ge__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_le(other, self)
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_le(self, other) and not poset_le(other, self)
+
+    def __gt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_le(other, self) and not poset_le(self, other)
+
+    def __eq__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_eq(self, other)
 
 
 def poset_le(g: PathBiGraph, h: PathBiGraph) -> bool:
