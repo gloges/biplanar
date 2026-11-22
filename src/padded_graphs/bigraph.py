@@ -113,7 +113,7 @@ class BiGraph[T: Hashable]:
     def copy(self) -> Self:
         """Return a copy of the bi-graph.
 
-        All bi-graph attributes and balloon graph are copied. If the bi-graph
+        All bi-graph attributes and balloon graphs are copied. If the bi-graph
         has a name then '-copy' is appended: otherwise the copy remains unnamed.
 
         Returns

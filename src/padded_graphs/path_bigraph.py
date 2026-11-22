@@ -46,6 +46,26 @@ class PathBiGraph(BiGraph[int]):
         """The number of *west* nodes."""
         return self._n_west
 
+    def copy(self) -> Self:
+        """Return a copy of the path bi-graph.
+
+        All path bi-graph attributes and balloon graphs are copied. If the path bi-graph
+        has a name then '-copy' is appended: otherwise the copy remains unnamed.
+
+        Returns
+        -------
+        Self
+            A copy of the path bi-graph.
+        """
+        return type(self)(
+            self._n_east,
+            self._n_west,
+            self._balloon_graph[0].copy(),
+            self._balloon_graph[1].copy(),
+            name=self._name + '-copy' if self._name else '',
+            **self._attr.copy()
+        )
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
