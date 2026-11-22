@@ -46,6 +46,16 @@ class PathBiGraph(BiGraph[int]):
         """The number of *west* nodes."""
         return self._n_west
 
+    @property
+    def nodes_east(self) -> set[int]:
+        """The set of *east* nodes."""
+        return set(range(self._n_east))
+
+    @property
+    def nodes_west(self) -> set[int]:
+        """The set of *west* nodes."""
+        return set(range(self._n_east, self._n_east + self._n_west))
+
     def copy(self) -> Self:
         """Return a copy of the path bi-graph.
 
