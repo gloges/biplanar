@@ -1,6 +1,8 @@
 """Path bi-graphs."""
 
-from typing import Any
+from collections.abc import Generator
+from itertools import permutations, product
+from typing import Any, Self
 from .balloon_graph import BalloonGraph
 from .bigraph import BiGraph
 
@@ -102,3 +104,24 @@ class PathBiGraph(BiGraph[int]):
         """
         self._check_balloon_graph_nodes()
         super().check_structure()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Node permutation
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def node_permutations(self) -> Generator[Self]:
+        """Yield copies of the path bi-graph with east/west nodes permuted amongst themselves.
+
+        Returns `n_east! * n_west!` permuted copies, some of which may be duplicates.
+        """
+        for eastwest_perms in product(permutations(self.nodes_east), permutations(self.nodes_west)):
+            node_permutation = {
+                u: v
+                for group, group_perm in zip([self.nodes_east, self.nodes_west], eastwest_perms)
+                for u, v in zip(group, group_perm)
+            }
+            g_permuted = self.copy()
+            g_permuted.balloon_graphs[0].relabel_nodes(node_permutation)
+            g_permuted.balloon_graphs[1].relabel_nodes(node_permutation)
+            yield g_permuted
+
