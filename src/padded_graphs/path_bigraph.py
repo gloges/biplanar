@@ -1,6 +1,9 @@
 """Path bi-graphs."""
 
-from typing import Any
+from collections.abc import Generator
+from itertools import permutations, product
+from types import NotImplementedType
+from typing import Any, Self
 from .balloon_graph import BalloonGraph
 from .bigraph import BiGraph
 
@@ -46,6 +49,36 @@ class PathBiGraph(BiGraph[int]):
         """The number of *west* nodes."""
         return self._n_west
 
+    @property
+    def nodes_east(self) -> set[int]:
+        """The set of *east* nodes."""
+        return set(range(self._n_east))
+
+    @property
+    def nodes_west(self) -> set[int]:
+        """The set of *west* nodes."""
+        return set(range(self._n_east, self._n_east + self._n_west))
+
+    def copy(self) -> Self:
+        """Return a copy of the path bi-graph.
+
+        All path bi-graph attributes and balloon graphs are copied. If the path bi-graph
+        has a name then '-copy' is appended: otherwise the copy remains unnamed.
+
+        Returns
+        -------
+        Self
+            A copy of the path bi-graph.
+        """
+        return type(self)(
+            self._n_east,
+            self._n_west,
+            self._balloon_graph[0].copy(),
+            self._balloon_graph[1].copy(),
+            name=self._name + '-copy' if self._name else '',
+            **self._attr.copy()
+        )
+
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
@@ -72,3 +105,94 @@ class PathBiGraph(BiGraph[int]):
         """
         self._check_balloon_graph_nodes()
         super().check_structure()
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Node permutation
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def node_permutations(self) -> Generator[Self]:
+        """Yield copies of the path bi-graph with east/west nodes permuted amongst themselves.
+
+        Returns `n_east! * n_west!` permuted copies, some of which may be duplicates.
+        """
+        for eastwest_perms in product(permutations(self.nodes_east), permutations(self.nodes_west)):
+            node_permutation = {
+                u: v
+                for group, group_perm in zip([self.nodes_east, self.nodes_west], eastwest_perms)
+                for u, v in zip(group, group_perm)
+            }
+            g_permuted = self.copy()
+            g_permuted.balloon_graphs[0].relabel_nodes(node_permutation)
+            g_permuted.balloon_graphs[1].relabel_nodes(node_permutation)
+            yield g_permuted
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   (In)equality
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def __le__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_le(self, other)
+
+    def __ge__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_le(other, self)
+
+    def __lt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_le(self, other) and not poset_le(other, self)
+
+    def __gt__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_le(other, self) and not poset_le(self, other)
+
+    def __eq__(self, other: object) -> NotImplementedType | bool:
+        if not isinstance(other, PathBiGraph):
+            return NotImplemented
+        return poset_eq(self, other)
+
+
+def poset_le(g: PathBiGraph, h: PathBiGraph) -> bool:
+    """Return whether `g ≤ h`.
+
+    The path bi-graph `g` is *less than or equal to* the path bi-graph `h` *if and only if*
+    there exist permutations of the east and west nodes of `g` such that each balloon graph
+    of `g` with permuted nodes is less than or equal to a different balloon graph of `h`.
+
+    Parameters
+    ----------
+    g, h : PathBiGraph
+        Two path bi-graphs to be compared.
+
+    Returns
+    -------
+    bool
+        Whether `g ≤ h`, as described above.
+
+    Raises
+    ------
+    ValueError
+        If the numbers of east and west nodes of `g` and `h` are not the same.
+    """
+    if (g.n_east, g.n_west) != (h.n_east, h.n_west):
+        raise ValueError(
+            f"nodes do not match: ({g.n_east}, {g.n_west}) != ({h.n_east}, {h.n_west})"
+        )
+    g.check_structure()
+    h.check_structure()
+
+    for g_permuted in g.node_permutations():
+        bg_g_0, bg_g_1 = g_permuted.balloon_graphs
+        bg_h_0, bg_h_1 = h.balloon_graphs
+        if (bg_g_0 <= bg_h_0 and bg_g_1 <= bg_h_1) or (bg_g_1 <= bg_h_0 and bg_g_0 <= bg_h_1):
+            return True
+    return False
+
+
+def poset_eq(g: PathBiGraph, h: PathBiGraph) -> bool:
+    """Return whether both `g ≤ h` and `h ≤ g`."""
+    return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
