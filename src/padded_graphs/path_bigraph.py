@@ -33,7 +33,7 @@ class PathBiGraph(BiGraph[int]):
         self._n_east = n_east
         self._n_west = n_west
         super().__init__(g, h, name=name, **attr)
-        self._check_balloon_graph_nodes()
+        self._check_east_west_nodes()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -83,7 +83,7 @@ class PathBiGraph(BiGraph[int]):
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def _check_balloon_graph_nodes(self) -> None:
+    def _check_east_west_nodes(self) -> None:
         """Validate the nodes of the two balloon graphs."""
         node_set = set(range(self._n_east + self._n_west))
         for bg in self._balloon_graph:
@@ -103,7 +103,7 @@ class PathBiGraph(BiGraph[int]):
         ValueError
             If either of the above conditions is not met (a short message explains the issue).
         """
-        self._check_balloon_graph_nodes()
+        self._check_east_west_nodes()
         super().check_structure()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
