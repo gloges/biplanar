@@ -107,8 +107,17 @@ class PathBiGraph(BiGraph[int]):
         super().check_structure()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
-    #   Node permutation
+    #   Graph operations
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def reverse(self) -> Self:
+        """Swap east and west nodes."""
+        bgraph_0 = self._balloon_graph[0].copy()
+        bgraph_1 = self._balloon_graph[1].copy()
+        mapping = {i: self.n_east + self.n_west - i - 1 for i in range(self.n_east + self.n_west)}
+        bgraph_0.relabel_nodes(mapping)
+        bgraph_1.relabel_nodes(mapping)
+        return type(self)(self.n_west, self.n_east, bgraph_0, bgraph_1)
 
     def node_permutations(
         self,
