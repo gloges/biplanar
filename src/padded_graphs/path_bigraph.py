@@ -3,7 +3,7 @@
 from collections.abc import Generator
 from itertools import permutations, product
 from types import NotImplementedType
-from typing import Any, Self
+from typing import Any, Literal, Self
 from .balloon_graph import BalloonGraph
 from .bigraph import BiGraph
 
@@ -33,7 +33,7 @@ class PathBiGraph(BiGraph[int]):
         self._n_east = n_east
         self._n_west = n_west
         super().__init__(g, h, name=name, **attr)
-        self._check_balloon_graph_nodes()
+        self._check_east_west_nodes()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
@@ -83,7 +83,7 @@ class PathBiGraph(BiGraph[int]):
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def _check_balloon_graph_nodes(self) -> None:
+    def _check_east_west_nodes(self) -> None:
         """Validate the nodes of the two balloon graphs."""
         node_set = set(range(self._n_east + self._n_west))
         for bg in self._balloon_graph:
@@ -103,28 +103,58 @@ class PathBiGraph(BiGraph[int]):
         ValueError
             If either of the above conditions is not met (a short message explains the issue).
         """
-        self._check_balloon_graph_nodes()
+        self._check_east_west_nodes()
         super().check_structure()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Node permutation
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def node_permutations(self) -> Generator[Self]:
+    def node_permutations(
+        self,
+        *,
+        which: Literal["east", "west", "both"] = "both"
+    ) -> Generator[Self]:
         """Yield copies of the path bi-graph with east/west nodes permuted amongst themselves.
 
-        Returns `n_east! * n_west!` permuted copies, some of which may be duplicates.
+        If `which == "east"` returns `n_east!` permuted copies,
+        if `which == "west"` returns `n_west!` permuted copies, and
+        if `which == "both"` returns `n_east! * n_west!` permuted copies.
+        In each case some of the returned path bi-graphs may be duplicates.
         """
-        for eastwest_perms in product(permutations(self.nodes_east), permutations(self.nodes_west)):
+        east_perms = (
+            permutations(self.nodes_east)
+            if which in ("east", "both")
+            else [self.nodes_east]
+        )
+        west_perms = (
+            permutations(self.nodes_west)
+            if which in ("west", "both")
+            else [self.nodes_west]
+        )
+        for east_west_perms in product(east_perms, west_perms):
             node_permutation = {
                 u: v
-                for group, group_perm in zip([self.nodes_east, self.nodes_west], eastwest_perms)
+                for group, group_perm in zip([self.nodes_east, self.nodes_west], east_west_perms)
                 for u, v in zip(group, group_perm)
             }
             g_permuted = self.copy()
             g_permuted.balloon_graphs[0].relabel_nodes(node_permutation)
             g_permuted.balloon_graphs[1].relabel_nodes(node_permutation)
             yield g_permuted
+
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+    #   Closability
+    # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
+
+    def closable(self) -> bool:
+        """Determine if the path bi-graph can be closed into a cycle.
+
+        For this to a meaningful notion the number of east and west nodes must be equal.
+        """
+        if self._n_east != self._n_west:
+            raise ValueError(f"n_east = {self._n_east} != {self._n_west} = n_west")
+        return len(self.join_node_subsets(self.nodes_east, self.nodes_west)) > 0
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   (In)equality
@@ -196,3 +226,66 @@ def poset_le(g: PathBiGraph, h: PathBiGraph) -> bool:
 def poset_eq(g: PathBiGraph, h: PathBiGraph) -> bool:
     """Return whether both `g ≤ h` and `h ≤ g`."""
     return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
+
+
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
+#   Joining
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
+
+
+def join(g: PathBiGraph, h: PathBiGraph) -> list[PathBiGraph]:
+    """Join two path bi-graphs.
+
+    The west nodes of `g` are joined to the east nodes of `h` in all possible ways to form
+    path bi-graphs with `g.n_east` east nodes and `h.n_west` west nodes.
+    The number of west nodes in `g` must be the same as the number of east nodes in `h`.
+
+    Parameters
+    ----------
+    g, h : PathBiGraph
+        Two path bi-graphs with `g.n_west == h.n_east`.
+
+    Returns
+    -------
+    list[PathBiGraph]
+        Path bi-graphs with `g.n_east` east nodes and `h.n_west` west nodes.
+
+    Raises
+    ------
+    ValueError
+        If `g.n_west != h.n_east` or if either of `g` or `h` does not have valid structure.
+    """
+    if g.n_west != h.n_east:
+        raise ValueError(f"g.n_west = {g.n_west} != {h.n_east} = h.n_east")
+
+    g.check_structure()
+    h.check_structure()
+
+    g_west_mapping = {i: i + h.n_west for i in g.nodes_west}
+    h_east_mapping = {i: i + g.n_east + h.n_west + g.n_west for i in h.nodes_east}
+    h_mapping = {i: i - h.n_east + g.n_east for i in h.nodes_west}
+    h_mapping.update(h_east_mapping)
+
+    h_relabeled = h.copy()
+    h_relabeled.relabel_nodes(h_mapping)
+
+    results = {}
+    for g_permuted in g.node_permutations(which='west'):
+        g_permuted.relabel_nodes(g_west_mapping)
+        gh = BiGraph(
+            BalloonGraph(*g_permuted.balloon_graphs[0], *h_relabeled.balloon_graphs[1]),
+            BalloonGraph(*g_permuted.balloon_graphs[1], *h_relabeled.balloon_graphs[0])
+        )
+        for big in gh.join_node_subsets(g_west_mapping.values(), h_east_mapping.values()):
+            pbg = PathBiGraph(g.n_east, h.n_west, *big.balloon_graphs)
+            results[pbg.data_string()] = pbg
+
+        gh = BiGraph(
+            BalloonGraph(*g_permuted.balloon_graphs[0], *h_relabeled.balloon_graphs[0]),
+            BalloonGraph(*g_permuted.balloon_graphs[1], *h_relabeled.balloon_graphs[1])
+        )
+        for big in gh.join_node_subsets(g_west_mapping.values(), h_east_mapping.values()):
+            pbg = PathBiGraph(g.n_east, h.n_west, *big.balloon_graphs)
+            results[pbg.data_string()] = pbg
+
+    return list(results.values())
