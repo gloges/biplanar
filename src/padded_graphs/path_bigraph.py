@@ -148,6 +148,10 @@ class PathBiGraph(BiGraph[int]):
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def closable(self) -> bool:
+        """Determine if the path bi-graph can be closed into a cycle.
+
+        For this to a meaningful notion the number of east and west nodes must be equal.
+        """
         if self._n_east != self._n_west:
             raise ValueError(f"n_east = {self._n_east} != {self._n_west} = n_west")
         return len(self.join_node_subsets(self.nodes_east, self.nodes_west)) > 0
