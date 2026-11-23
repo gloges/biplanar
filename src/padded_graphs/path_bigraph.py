@@ -3,7 +3,7 @@
 from collections.abc import Generator
 from itertools import permutations, product
 from types import NotImplementedType
-from typing import Any, Self
+from typing import Any, Literal, Self
 from .balloon_graph import BalloonGraph
 from .bigraph import BiGraph
 
@@ -110,15 +110,32 @@ class PathBiGraph(BiGraph[int]):
     #   Node permutation
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def node_permutations(self) -> Generator[Self]:
+    def node_permutations(
+        self,
+        *,
+        which: Literal["east", "west", "both"] = "both"
+    ) -> Generator[Self]:
         """Yield copies of the path bi-graph with east/west nodes permuted amongst themselves.
 
-        Returns `n_east! * n_west!` permuted copies, some of which may be duplicates.
+        If `which == "east"` returns `n_east!` permuted copies,
+        if `which == "west"` returns `n_west!` permuted copies, and
+        if `which == "both"` returns `n_east! * n_west!` permuted copies.
+        In each case some of the returned path bi-graphs may be duplicates.
         """
-        for eastwest_perms in product(permutations(self.nodes_east), permutations(self.nodes_west)):
+        east_perms = (
+            permutations(self.nodes_east)
+            if which in ("east", "both")
+            else [self.nodes_east]
+        )
+        west_perms = (
+            permutations(self.nodes_west)
+            if which in ("west", "both")
+            else [self.nodes_west]
+        )
+        for east_west_perms in product(east_perms, west_perms):
             node_permutation = {
                 u: v
-                for group, group_perm in zip([self.nodes_east, self.nodes_west], eastwest_perms)
+                for group, group_perm in zip([self.nodes_east, self.nodes_west], east_west_perms)
                 for u, v in zip(group, group_perm)
             }
             g_permuted = self.copy()
