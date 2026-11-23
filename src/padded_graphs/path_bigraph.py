@@ -222,3 +222,45 @@ def poset_le(g: PathBiGraph, h: PathBiGraph) -> bool:
 def poset_eq(g: PathBiGraph, h: PathBiGraph) -> bool:
     """Return whether both `g ≤ h` and `h ≤ g`."""
     return poset_le(g, h) and poset_le(h, g)  # pylint: disable=W1114:arguments-out-of-order
+
+
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
+#   Convolutions
+# ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
+
+
+def convolve(g: PathBiGraph, h: PathBiGraph) -> list[PathBiGraph]:
+    if g.n_west != h.n_east:
+        raise ValueError(f"g.n_west = {g.n_west} != {h.n_east} = h.n_east")
+
+    g.check_structure()
+    h.check_structure()
+
+    g_west_mapping = {i: i + h.n_west for i in g.nodes_west}
+    h_east_mapping = {i: i + g.n_east + h.n_west + g.n_west for i in h.nodes_east}
+    h_mapping = {i: i - h.n_east + g.n_east for i in h.nodes_west}
+    h_mapping.update(h_east_mapping)
+
+    h_relabeled = h.copy()
+    h_relabeled.relabel_nodes(h_mapping)
+
+    results = {}
+    for g_permuted in g.node_permutations(which='west'):
+        g_permuted.relabel_nodes(g_west_mapping)
+        gh = BiGraph(
+            BalloonGraph(*g_permuted.balloon_graphs[0], *h_relabeled.balloon_graphs[1]),
+            BalloonGraph(*g_permuted.balloon_graphs[1], *h_relabeled.balloon_graphs[0])
+        )
+        for big in gh.join_node_subsets(g_west_mapping.values(), h_east_mapping.values()):
+            pbg = PathBiGraph(g.n_east, h.n_west, *big.balloon_graphs)
+            results[pbg.data_string()] = pbg
+
+        gh = BiGraph(
+            BalloonGraph(*g_permuted.balloon_graphs[0], *h_relabeled.balloon_graphs[0]),
+            BalloonGraph(*g_permuted.balloon_graphs[1], *h_relabeled.balloon_graphs[1])
+        )
+        for big in gh.join_node_subsets(g_west_mapping.values(), h_east_mapping.values()):
+            pbg = PathBiGraph(g.n_east, h.n_west, *big.balloon_graphs)
+            results[pbg.data_string()] = pbg
+
+    return list(results.values())
