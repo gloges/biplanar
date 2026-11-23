@@ -230,6 +230,27 @@ def poset_eq(g: PathBiGraph, h: PathBiGraph) -> bool:
 
 
 def convolve(g: PathBiGraph, h: PathBiGraph) -> list[PathBiGraph]:
+    """Convolve two path bi-graphs.
+
+    The number of west nodes in `g` must be the same as the number of east nodes in `h`.
+    The west nodes of `g` are joined to the east nodes of `h` in all possible ways to form
+    path bi-graphs with `g.n_east` east nodes and `h.n_west` west nodes.
+
+    Parameters
+    ----------
+    g, h : PathBiGraph
+        Two path bi-graphs with `g.n_west == h.n_east`.
+
+    Returns
+    -------
+    list[PathBiGraph]
+        Path bi-graphs with `g.n_east` east nodes and `h.n_west` west nodes.
+
+    Raises
+    ------
+    ValueError
+        If `g.n_west != h.n_east` or if either of `g` or `h` does not have valid structure.
+    """
     if g.n_west != h.n_east:
         raise ValueError(f"g.n_west = {g.n_west} != {h.n_east} = h.n_east")
 
