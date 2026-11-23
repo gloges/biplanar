@@ -225,16 +225,16 @@ def poset_eq(g: PathBiGraph, h: PathBiGraph) -> bool:
 
 
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
-#   Convolutions
+#   Joining
 # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==
 
 
-def convolve(g: PathBiGraph, h: PathBiGraph) -> list[PathBiGraph]:
-    """Convolve two path bi-graphs.
+def join(g: PathBiGraph, h: PathBiGraph) -> list[PathBiGraph]:
+    """Join two path bi-graphs.
 
-    The number of west nodes in `g` must be the same as the number of east nodes in `h`.
     The west nodes of `g` are joined to the east nodes of `h` in all possible ways to form
     path bi-graphs with `g.n_east` east nodes and `h.n_west` west nodes.
+    The number of west nodes in `g` must be the same as the number of east nodes in `h`.
 
     Parameters
     ----------
