@@ -24,15 +24,20 @@ class PathBiGraph(BiGraph[int]):
         self,
         n_east: int,
         n_west: int,
-        g: BalloonGraph[int],
-        h: BalloonGraph[int],
+        g_data: BalloonGraph[int] | str,
+        h_data: BalloonGraph[int] | str,
         *,
         name: str = '',
         **attr: Any
     ) -> None:
-        self._n_east = n_east
-        self._n_west = n_west
-        super().__init__(g, h, name=name, **attr)
+        self.n_east = n_east
+        self.n_west = n_west
+        super().__init__(
+            BalloonGraph.from_data_string(g_data, int) if isinstance(g_data, str) else g_data,
+            BalloonGraph.from_data_string(h_data, int) if isinstance(h_data, str) else h_data,
+            name=name,
+            **attr
+        )
         self._check_east_west_nodes()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
@@ -44,10 +49,22 @@ class PathBiGraph(BiGraph[int]):
         """The number of *east* nodes."""
         return self._n_east
 
+    @n_east.setter
+    def n_east(self, value: int) -> None:
+        if not isinstance(value, int) or value < 0:
+            raise ValueError("n_east must be a non-negative integer")
+        self._n_east = value
+
     @property
     def n_west(self) -> int:
         """The number of *west* nodes."""
         return self._n_west
+
+    @n_west.setter
+    def n_west(self, value: int) -> None:
+        if not isinstance(value, int) or value < 0:
+            raise ValueError("n_west must be a non-negative integer")
+        self._n_west = value
 
     @property
     def nodes_east(self) -> set[int]:
