@@ -519,10 +519,10 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ... )
         >>> for bg in g.merge_nodes(0, 1):
         ...     print(bg.data_string())
-        [<0, 3, 4, 5 | A(0, 5) + A(0, 3, 4)>, <0, 2 | A(0, 2)>, <1, 6 | A(1, 6)>]
-        [<0, 3, 4, 6 | A(0, 6) + A(0, 3, 4)>, <0, 2 | A(0, 2)>, <1, 5 | A(1, 5)>]
-        [<0, 2, 5 | A(0, 2) + A(0, 5)>, <0, 3, 4 | A(0, 3, 4)>, <1, 6 | A(1, 6)>]
-        [<0, 2, 6 | A(0, 2) + A(0, 6)>, <0, 3, 4 | A(0, 3, 4)>, <1, 5 | A(1, 5)>]
+        [<0, 3, 4, 5 | A(0, 5) + A(0, 3, 4)>, <0, 2 | A(0, 2)>, <0, 6 | A(0, 6)>]
+        [<0, 3, 4, 6 | A(0, 6) + A(0, 3, 4)>, <0, 2 | A(0, 2)>, <0, 5 | A(0, 5)>]
+        [<0, 2, 5 | A(0, 2) + A(0, 5)>, <0, 3, 4 | A(0, 3, 4)>, <0, 6 | A(0, 6)>]
+        [<0, 2, 6 | A(0, 2) + A(0, 6)>, <0, 3, 4 | A(0, 3, 4)>, <0, 5 | A(0, 5)>]
         >>> g = BalloonGraph.from_data_string(
         ...     "[<0, 1, 2 | A(0, 1, 2)>, <0, 3 | A(0, 3)>, <1, 4 | A(1, 4)>]", int
         ... )
@@ -554,7 +554,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         if i_u != i_v:
             for (_, j_u), (_, j_v) in product(incidence[u], incidence[v]):
                 graph_new = self.copy()
-                graph_new[i_v][j_v].relabel_nodes({v: u})
+                for ag in graph_new[i_v]:
+                    ag.relabel_nodes({v: u})
                 graph_new[i_u][j_u] = union(graph_new[i_u][j_u], graph_new[i_v][j_v])
                 graph_new[i_v].pop(j_v)
                 graph_new[i_u].extend(graph_new[i_v])

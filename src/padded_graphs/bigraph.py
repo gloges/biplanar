@@ -297,7 +297,7 @@ class BiGraph[T: Hashable]:
 
         results = {}
         for g, h in product(*[bg.merge_nodes(u, v) for bg in self._balloon_graph]):
-            big = BiGraph(g, h)
+            big = BiGraph(g.copy(), h.copy())
             results[big.data_string()] = big
         return list(results.values())
 
@@ -337,7 +337,7 @@ class BiGraph[T: Hashable]:
 
         results = {}
         for g, h in product(*[bg.pad_node(n) for bg in self._balloon_graph]):
-            big = BiGraph(g, h)
+            big = BiGraph(g.copy(), h.copy())
             results[big.data_string()] = big
         return list(results.values())
 
