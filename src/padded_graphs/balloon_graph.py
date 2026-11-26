@@ -913,7 +913,7 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
 
         inc_graph, _ = self.to_incidence_graph()
 
-        if not nx.is_forest(inc_graph):
+        if inc_graph.nodes and not nx.is_forest(inc_graph):
             cycle_data = [
                 f"(node {inc_graph.nodes[i]['node']})"
                 if 'node' in inc_graph.nodes[i]
