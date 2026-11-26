@@ -554,7 +554,8 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         if i_u != i_v:
             for (_, j_u), (_, j_v) in product(incidence[u], incidence[v]):
                 graph_new = self.copy()
-                graph_new[i_v][j_v].relabel_nodes({v: u})
+                for ag in graph_new[i_v]:
+                    ag.relabel_nodes({v: u})
                 graph_new[i_u][j_u] = union(graph_new[i_u][j_u], graph_new[i_v][j_v])
                 graph_new[i_v].pop(j_v)
                 graph_new[i_u].extend(graph_new[i_v])
