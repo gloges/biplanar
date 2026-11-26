@@ -1,8 +1,11 @@
 """Methods for generating simple (path) bi-graphs."""
 
-from itertools import product
+from itertools import combinations, product
+from math import comb
 import networkx as nx
-from padded_graphs import Anklet, AnkletGraph, BalloonGraph, BiGraph
+from tqdm import tqdm
+from padded_graphs import Anklet, AnkletGraph, BalloonGraph, BiGraph, PathBiGraph
+from subposet import unique_elements
 
 
 def planar_complement_planar(n_max: int, remove_complementary: bool) -> list[list[nx.Graph]]:
@@ -49,8 +52,8 @@ def simple_complete_bigraphs(n_max: int = 8) -> list[list[BiGraph[int]]]:
     """Return all simple, complete bi-graphs on at most `n_max` nodes.
 
     The returned bi-graphs are organized by number of nodes. The bi-graphs on `n` nodes are simple
-    in the sense that each balloon has at most one anklet graph and has only 2-hyperedges,
-    and they are complete in the sense that they contain all `ₙC₂` edges between pairs of nodes.
+    in the sense that each balloon has at most one anklet graph that has only 2-hyperedges,
+    and they are complete in the sense that they contain one edge between each pair of nodes.
 
     Examples
     --------
@@ -81,3 +84,31 @@ def simple_complete_bigraphs(n_max: int = 8) -> list[list[BiGraph[int]]]:
             bigraphs[-1].append(big)
 
     return bigraphs
+
+
+def simple_complete_path_bigraphs(n_east: int, n_west: int) -> list[PathBiGraph]:
+    """Return all unique simple, complete path bi-graphs with given numbers of east and west nodes.
+
+    The returned path bi-graphs are unique, *i.e.* no two compare equal. They are simple
+    in the sense that each balloon has at most one anklet graph that has only 2-hyperedges,
+    and they are complete in the sense that the contain one edge between each pairs of nodes.
+    """
+    n_total = n_east + n_west
+    graphs = simple_complete_bigraphs(n_total)[n_total]
+
+    mappings = []
+    for east_nodes in tqdm(combinations(range(n_total), n_east), total=comb(n_total, n_east)):
+        west_nodes = set(range(n_total)) - set(east_nodes)
+        mapping = {n: i for i, n in enumerate(east_nodes)}
+        mapping.update({n: i for i, n in enumerate(west_nodes, start=n_east)})
+        mappings.append(mapping)
+
+    pbgs = []
+    for mapping, g in tqdm(product(mappings, graphs), total=len(mappings) * len(graphs)):
+        bg_a = g.balloon_graphs[0].copy()
+        bg_b = g.balloon_graphs[1].copy()
+        bg_a.relabel_nodes(mapping)
+        bg_b.relabel_nodes(mapping)
+        pbgs.append(PathBiGraph(n_east, n_west, bg_a, bg_b))
+
+    return unique_elements(pbgs, progress=True)
