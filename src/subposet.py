@@ -6,6 +6,9 @@ from padded_graphs import PathBiGraph
 
 
 def remove_identical(graphs: Sequence[PathBiGraph]) -> list[PathBiGraph]:
+    """Filter out identical path bi-graphs
+    (as determined by comparing the output of :meth:`PathBiGraph.data_string`).
+    """
     return list({g.data_string(): g for g in graphs}.values())
 
 
