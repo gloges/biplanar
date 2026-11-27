@@ -32,11 +32,16 @@ def save_path_bigraphs(file_path: str, graphs: Sequence[PathBiGraph]) -> None:
             file_out.write(line + '\n')
 
 
-def load_path_bigraphs(file_path: str, n_east: int, n_west: int) -> list[PathBiGraph]:
+def load_path_bigraphs(
+    file_path: str,
+    n_left: int,
+    n_center: int,
+    n_right: int
+) -> list[PathBiGraph]:
     """Read in path bi-graphs from the given file."""
     graphs = []
     with open(file_path, 'rt', encoding='utf-8') as file_in:
         for line in file_in.readlines():
             data_g, data_h = line[1:-2].split('}, {')
-            graphs.append(PathBiGraph(n_east, n_west, data_g, data_h))
+            graphs.append(PathBiGraph(n_left, n_center, n_right, data_g, data_h))
     return graphs
