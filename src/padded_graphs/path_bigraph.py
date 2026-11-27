@@ -9,72 +9,108 @@ from .bigraph import BiGraph
 
 
 class PathBiGraph(BiGraph[int]):
-    """A **path bi-graph** is a bi-graph with two groups of nodes, referred to as *east* and *west*.
+    """A **path bi-graph** is a bi-graph with three groups of nodes,
+    referred to as *left*, *center* and *right*.
 
-    The non-negative integers `n_east` and `n_west` give the number of east and west nodes,
-    respectively, and the two balloon graphs of the bi-graph must have the nodes
-    `{0, 1, ..., n_east + n_west - 1}`; Those less than `n_east` are the *east* nodes and those
-    `n_east` or greater are the *west* nodes.
+    The non-negative integers `n_left`, `n_center` and `n_right` give the number
+    of left, center and right nodes, respectively, and the two balloon graphs
+    of the bi-graph must have the nodes `{0, 1, ..., n_left + n_center + n_right - 1}`;
+    the first `n_left` are *left*nodes, the next `n_center` are *center* nodes and the last
+    `n_right` are *right* nodes.
     """
 
-    _n_east: int
-    _n_west: int
+    _n_left: int
+    _n_center: int
+    _n_right: int
 
     def __init__(
         self,
-        n_east: int,
-        n_west: int,
+        n_nodes: tuple[int, int, int],
         g_data: BalloonGraph[int] | str,
         h_data: BalloonGraph[int] | str,
         *,
         name: str = '',
         **attr: Any
     ) -> None:
-        self.n_east = n_east
-        self.n_west = n_west
+        self.n_left = n_nodes[0]
+        self.n_center = n_nodes[1]
+        self.n_right = n_nodes[2]
         super().__init__(
             BalloonGraph.from_data_string(g_data, int) if isinstance(g_data, str) else g_data,
             BalloonGraph.from_data_string(h_data, int) if isinstance(h_data, str) else h_data,
             name=name,
             **attr
         )
-        self._check_east_west_nodes()
+        self._check_left_center_right_nodes()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   Meta
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     @property
-    def n_east(self) -> int:
-        """The number of *east* nodes."""
-        return self._n_east
+    def n_left(self) -> int:
+        """The number of *left* nodes."""
+        return self._n_left
 
-    @n_east.setter
-    def n_east(self, value: int) -> None:
+    @n_left.setter
+    def n_left(self, value: int) -> None:
         if not isinstance(value, int) or value < 0:
-            raise ValueError("n_east must be a non-negative integer")
-        self._n_east = value
+            raise ValueError("n_left must be a non-negative integer")
+        self._n_left = value
 
     @property
-    def n_west(self) -> int:
-        """The number of *west* nodes."""
-        return self._n_west
+    def n_center(self) -> int:
+        """The number of *center* nodes."""
+        return self._n_center
 
-    @n_west.setter
-    def n_west(self, value: int) -> None:
+    @n_center.setter
+    def n_center(self, value: int) -> None:
         if not isinstance(value, int) or value < 0:
-            raise ValueError("n_west must be a non-negative integer")
-        self._n_west = value
+            raise ValueError("n_center must be a non-negative integer")
+        self._n_center = value
 
     @property
-    def nodes_east(self) -> set[int]:
-        """The set of *east* nodes."""
-        return set(range(self._n_east))
+    def n_right(self) -> int:
+        """The number of *right* nodes."""
+        return self._n_right
+
+    @n_right.setter
+    def n_right(self, value: int) -> None:
+        if not isinstance(value, int) or value < 0:
+            raise ValueError("n_right must be a non-negative integer")
+        self._n_right = value
 
     @property
-    def nodes_west(self) -> set[int]:
-        """The set of *west* nodes."""
-        return set(range(self._n_east, self._n_east + self._n_west))
+    def n_nodes(self) -> tuple[int, int, int]:
+        """The number of *left*/*center*/*right* nodes."""
+        return self._n_left, self._n_center, self._n_right
+
+    @property
+    def n_total(self) -> int:
+        """The total number of *left*, *center* and *right* nodes."""
+        return self._n_left + self._n_center + self._n_right
+
+    @property
+    def nodes_left(self) -> set[int]:
+        """The set of *left* nodes."""
+        return set(range(self._n_left))
+
+    @property
+    def nodes_center(self) -> set[int]:
+        """The set of *center* nodes."""
+        return set(range(self._n_left, self._n_left + self._n_center))
+
+    @property
+    def nodes_right(self) -> set[int]:
+        """The set of *right* nodes."""
+        return set(
+            range(self._n_left + self._n_center, self._n_left + self._n_center + self._n_right)
+        )
+
+    @property
+    def nodes(self) -> set[int]:
+        """The set of *left*, *center* and *right* nodes."""
+        return set(range(self._n_left + self._n_center + self._n_right))
 
     def copy(self) -> Self:
         """Return a copy of the path bi-graph.
@@ -88,8 +124,7 @@ class PathBiGraph(BiGraph[int]):
             A copy of the path bi-graph.
         """
         return type(self)(
-            self._n_east,
-            self._n_west,
+            self.n_nodes,
             self._balloon_graph[0].copy(),
             self._balloon_graph[1].copy(),
             name=self._name + '-copy' if self._name else '',
@@ -100,17 +135,16 @@ class PathBiGraph(BiGraph[int]):
     #   Structure
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
-    def _check_east_west_nodes(self) -> None:
+    def _check_left_center_right_nodes(self) -> None:
         """Validate the nodes of the two balloon graphs."""
-        node_set = set(range(self._n_east + self._n_west))
         for bg in self._balloon_graph:
-            if bg.nodes != node_set:
-                raise ValueError(f"one of the two balloon graphs does not have nodes {node_set}")
+            if bg.nodes != self.nodes:
+                raise ValueError(f"one of the two balloon graphs does not have nodes {self.nodes}")
 
     def check_structure(self) -> None:
         """Validate the structure of the path bi-graph.
 
-        Checks that both balloon graphs have the integer nodes `0, 1, ..., (n_east + n_west - 1)`
+        Checks that both balloon graphs have the integer nodes `0, 1, ..., (n_total - 1)`
         and checks the bi-graph structure (see :meth:`BiGraph.check_structure`).
 
         Returns quietly if the structure is valid.
@@ -120,7 +154,7 @@ class PathBiGraph(BiGraph[int]):
         ValueError
             If either of the above conditions is not met (a short message explains the issue).
         """
-        self._check_east_west_nodes()
+        self._check_left_center_right_nodes()
         super().check_structure()
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
@@ -128,40 +162,40 @@ class PathBiGraph(BiGraph[int]):
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
 
     def reverse(self) -> Self:
-        """Swap east and west nodes."""
+        """Swap left and right nodes."""
         bgraph_0 = self._balloon_graph[0].copy()
         bgraph_1 = self._balloon_graph[1].copy()
-        mapping = {i: self.n_east + self.n_west - i - 1 for i in range(self.n_east + self.n_west)}
+        mapping = {i: self.n_total - i - 1 for i in range(self.n_total)}
         bgraph_0.relabel_nodes(mapping)
         bgraph_1.relabel_nodes(mapping)
-        return type(self)(self.n_west, self.n_east, bgraph_0, bgraph_1)
+        return type(self)((self.n_right, self.n_center, self.n_left), bgraph_0, bgraph_1)
 
     def node_permutations(
         self,
         *,
-        which: Literal["east", "west", "both"] = "both"
+        which: Literal["left", "right", "both"] = "both"
     ) -> Generator[Self]:
-        """Yield copies of the path bi-graph with east/west nodes permuted amongst themselves.
+        """Yield copies of the path bi-graph with left/right nodes permuted amongst themselves.
 
-        If `which == "east"` returns `n_east!` permuted copies,
-        if `which == "west"` returns `n_west!` permuted copies, and
-        if `which == "both"` returns `n_east! * n_west!` permuted copies.
+        If `which == "left"` returns `n_left!` permuted copies,
+        if `which == "right"` returns `n_right!` permuted copies, and
+        if `which == "both"` returns `n_left! * n_right!` permuted copies.
         In each case some of the returned path bi-graphs may be duplicates.
         """
-        east_perms = (
-            permutations(self.nodes_east)
-            if which in ("east", "both")
-            else [self.nodes_east]
+        left_perms = (
+            permutations(self.nodes_left)
+            if which in ("left", "both")
+            else [self.nodes_left]
         )
-        west_perms = (
-            permutations(self.nodes_west)
-            if which in ("west", "both")
-            else [self.nodes_west]
+        right_perms = (
+            permutations(self.nodes_right)
+            if which in ("right", "both")
+            else [self.nodes_right]
         )
-        for east_west_perms in product(east_perms, west_perms):
+        for left_right_perms in product(left_perms, right_perms):
             node_permutation = {
                 u: v
-                for group, group_perm in zip([self.nodes_east, self.nodes_west], east_west_perms)
+                for group, group_perm in zip([self.nodes_left, self.nodes_right], left_right_perms)
                 for u, v in zip(group, group_perm)
             }
             g_permuted = self.copy()
@@ -176,11 +210,11 @@ class PathBiGraph(BiGraph[int]):
     def closable(self) -> bool:
         """Determine if the path bi-graph can be closed into a cycle.
 
-        For this to a meaningful notion the number of east and west nodes must be equal.
+        For this to a meaningful notion the number of left and right nodes must be equal.
         """
-        if self._n_east != self._n_west:
-            raise ValueError(f"n_east = {self._n_east} != {self._n_west} = n_west")
-        return len(self.join_node_subsets(self.nodes_east, self.nodes_west)) > 0
+        if self._n_left != self._n_right:
+            raise ValueError(f"n_left = {self._n_left} != {self._n_right} = n_right")
+        return len(self.join_node_subsets(self.nodes_left, self.nodes_right)) > 0
 
     # ==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--~~==~~--
     #   (In)equality
@@ -216,7 +250,7 @@ def poset_le(g: PathBiGraph, h: PathBiGraph) -> bool:
     """Return whether `g ≤ h`.
 
     The path bi-graph `g` is *less than or equal to* the path bi-graph `h` *if and only if*
-    there exist permutations of the east and west nodes of `g` such that each balloon graph
+    there exist permutations of the left and right nodes of `g` such that each balloon graph
     of `g` with permuted nodes is less than or equal to a different balloon graph of `h`.
 
     Parameters
@@ -232,11 +266,14 @@ def poset_le(g: PathBiGraph, h: PathBiGraph) -> bool:
     Raises
     ------
     ValueError
-        If the numbers of east and west nodes of `g` and `h` are not the same.
+        If either `g` or `h` has center nodes or
+        ff the numbers of left and right nodes of `g` and `h` are not the same.
     """
-    if (g.n_east, g.n_west) != (h.n_east, h.n_west):
+    if g.n_center != 0 or h.n_center != 0:
+        raise ValueError("cannot compare path bi-graphs if n_center is non-zero.")
+    if (g.n_left, g.n_right) != (h.n_left, h.n_right):
         raise ValueError(
-            f"nodes do not match: ({g.n_east}, {g.n_west}) != ({h.n_east}, {h.n_west})"
+            f"left/right nodes do not match: ({g.n_left}, {g.n_right}) != ({h.n_left}, {h.n_right})"
         )
     g.check_structure()
     h.check_structure()
@@ -262,56 +299,59 @@ def poset_eq(g: PathBiGraph, h: PathBiGraph) -> bool:
 def join(g: PathBiGraph, h: PathBiGraph) -> list[PathBiGraph]:
     """Join two path bi-graphs.
 
-    The west nodes of `g` are joined to the east nodes of `h` in all possible ways to form
-    path bi-graphs with `g.n_east` east nodes and `h.n_west` west nodes.
-    The number of west nodes in `g` must be the same as the number of east nodes in `h`.
+    The right nodes of `g` are joined to the left nodes of `h` in all possible ways to form
+    path bi-graphs with `g.n_left` left nodes and `h.n_right` right nodes.
+    The number of right nodes in `g` must be the same as the number of left nodes in `h`.
 
     Parameters
     ----------
     g, h : PathBiGraph
-        Two path bi-graphs with `g.n_west == h.n_east`.
+        Two path bi-graphs with `g.n_right == h.n_left`.
 
     Returns
     -------
     list[PathBiGraph]
-        Path bi-graphs with `g.n_east` east nodes and `h.n_west` west nodes.
+        Path bi-graphs with `g.n_left` left nodes and `h.n_right` right nodes.
 
     Raises
     ------
     ValueError
-        If `g.n_west != h.n_east` or if either of `g` or `h` does not have valid structure.
+        If either `g` or `h` have center nodes or
+        if `g.n_right != h.n_left` or if either of `g` or `h` does not have valid structure.
     """
-    if g.n_west != h.n_east:
-        raise ValueError(f"g.n_west = {g.n_west} != {h.n_east} = h.n_east")
+    if g.n_center != 0 or h.n_center != 0:
+        raise ValueError("cannot join if n_center is non-zero")
+    if g.n_right != h.n_left:
+        raise ValueError(f"g.n_right = {g.n_right} != {h.n_left} = h.n_left")
 
     g.check_structure()
     h.check_structure()
 
-    g_west_mapping = {i: i + h.n_west for i in g.nodes_west}
-    h_east_mapping = {i: i + g.n_east + h.n_west + g.n_west for i in h.nodes_east}
-    h_mapping = {i: i - h.n_east + g.n_east for i in h.nodes_west}
-    h_mapping.update(h_east_mapping)
+    g_right_mapping = {i: i + h.n_right for i in g.nodes_right}
+    h_left_mapping = {i: i + g.n_left + h.n_right + g.n_right for i in h.nodes_left}
+    h_mapping = {i: i - h.n_left + g.n_left for i in h.nodes_right}
+    h_mapping.update(h_left_mapping)
 
     h_relabeled = h.copy()
     h_relabeled.relabel_nodes(h_mapping)
 
     results = {}
-    for g_permuted in g.node_permutations(which='west'):
-        g_permuted.relabel_nodes(g_west_mapping)
+    for g_permuted in g.node_permutations(which='right'):
+        g_permuted.relabel_nodes(g_right_mapping)
         gh = BiGraph(
             BalloonGraph(*g_permuted.balloon_graphs[0], *h_relabeled.balloon_graphs[1]),
             BalloonGraph(*g_permuted.balloon_graphs[1], *h_relabeled.balloon_graphs[0])
         )
-        for big in gh.join_node_subsets(g_west_mapping.values(), h_east_mapping.values()):
-            pbg = PathBiGraph(g.n_east, h.n_west, *big.balloon_graphs)
+        for big in gh.join_node_subsets(g_right_mapping.values(), h_left_mapping.values()):
+            pbg = PathBiGraph((g.n_left, 0, h.n_right), *big.balloon_graphs)
             results[pbg.data_string()] = pbg
 
         gh = BiGraph(
             BalloonGraph(*g_permuted.balloon_graphs[0], *h_relabeled.balloon_graphs[0]),
             BalloonGraph(*g_permuted.balloon_graphs[1], *h_relabeled.balloon_graphs[1])
         )
-        for big in gh.join_node_subsets(g_west_mapping.values(), h_east_mapping.values()):
-            pbg = PathBiGraph(g.n_east, h.n_west, *big.balloon_graphs)
+        for big in gh.join_node_subsets(g_right_mapping.values(), h_left_mapping.values()):
+            pbg = PathBiGraph((g.n_left, 0, h.n_right), *big.balloon_graphs)
             results[pbg.data_string()] = pbg
 
     return list(results.values())
