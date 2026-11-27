@@ -25,18 +25,16 @@ class PathBiGraph(BiGraph[int]):
 
     def __init__(
         self,
-        n_left: int,
-        n_center: int,
-        n_right: int,
+        n_nodes: tuple[int, int, int],
         g_data: BalloonGraph[int] | str,
         h_data: BalloonGraph[int] | str,
         *,
         name: str = '',
         **attr: Any
     ) -> None:
-        self.n_left = n_left
-        self.n_center = n_center
-        self.n_right = n_right
+        self.n_left = n_nodes[0]
+        self.n_center = n_nodes[1]
+        self.n_right = n_nodes[2]
         super().__init__(
             BalloonGraph.from_data_string(g_data, int) if isinstance(g_data, str) else g_data,
             BalloonGraph.from_data_string(h_data, int) if isinstance(h_data, str) else h_data,
@@ -83,6 +81,11 @@ class PathBiGraph(BiGraph[int]):
         self._n_right = value
 
     @property
+    def n_nodes(self) -> tuple[int, int, int]:
+        """The number of *left*/*center*/*right* nodes."""
+        return self._n_left, self._n_center, self._n_right
+
+    @property
     def n_total(self) -> int:
         """The total number of *left*, *center* and *right* nodes."""
         return self._n_left + self._n_center + self._n_right
@@ -121,9 +124,7 @@ class PathBiGraph(BiGraph[int]):
             A copy of the path bi-graph.
         """
         return type(self)(
-            self._n_left,
-            self._n_center,
-            self._n_right,
+            self.n_nodes,
             self._balloon_graph[0].copy(),
             self._balloon_graph[1].copy(),
             name=self._name + '-copy' if self._name else '',
@@ -167,7 +168,7 @@ class PathBiGraph(BiGraph[int]):
         mapping = {i: self.n_total - i - 1 for i in range(self.n_total)}
         bgraph_0.relabel_nodes(mapping)
         bgraph_1.relabel_nodes(mapping)
-        return type(self)(self.n_right, self.n_center, self.n_left, bgraph_0, bgraph_1)
+        return type(self)((self.n_right, self.n_center, self.n_left), bgraph_0, bgraph_1)
 
     def node_permutations(
         self,
@@ -342,7 +343,7 @@ def join(g: PathBiGraph, h: PathBiGraph) -> list[PathBiGraph]:
             BalloonGraph(*g_permuted.balloon_graphs[1], *h_relabeled.balloon_graphs[0])
         )
         for big in gh.join_node_subsets(g_right_mapping.values(), h_left_mapping.values()):
-            pbg = PathBiGraph(g.n_left, 0, h.n_right, *big.balloon_graphs)
+            pbg = PathBiGraph((g.n_left, 0, h.n_right), *big.balloon_graphs)
             results[pbg.data_string()] = pbg
 
         gh = BiGraph(
@@ -350,7 +351,7 @@ def join(g: PathBiGraph, h: PathBiGraph) -> list[PathBiGraph]:
             BalloonGraph(*g_permuted.balloon_graphs[1], *h_relabeled.balloon_graphs[1])
         )
         for big in gh.join_node_subsets(g_right_mapping.values(), h_left_mapping.values()):
-            pbg = PathBiGraph(g.n_left, 0, h.n_right, *big.balloon_graphs)
+            pbg = PathBiGraph((g.n_left, 0, h.n_right), *big.balloon_graphs)
             results[pbg.data_string()] = pbg
 
     return list(results.values())

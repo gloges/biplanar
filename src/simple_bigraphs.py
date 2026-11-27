@@ -109,6 +109,6 @@ def simple_complete_path_bigraphs(n_left: int, n_right: int) -> list[PathBiGraph
         bg_b = g.balloon_graphs[1].copy()
         bg_a.relabel_nodes(mapping)
         bg_b.relabel_nodes(mapping)
-        pbgs.append(PathBiGraph(n_left, 0, n_right, bg_a, bg_b))
+        pbgs.append(PathBiGraph((n_left, 0, n_right), bg_a, bg_b))
 
     return unique_elements(pbgs, progress=True)

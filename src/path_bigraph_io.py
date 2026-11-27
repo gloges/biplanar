@@ -43,5 +43,5 @@ def load_path_bigraphs(
     with open(file_path, 'rt', encoding='utf-8') as file_in:
         for line in file_in.readlines():
             data_g, data_h = line[1:-2].split('}, {')
-            graphs.append(PathBiGraph(n_left, n_center, n_right, data_g, data_h))
+            graphs.append(PathBiGraph((n_left, n_center, n_right), data_g, data_h))
     return graphs
