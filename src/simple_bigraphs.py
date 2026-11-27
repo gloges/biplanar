@@ -86,21 +86,21 @@ def simple_complete_bigraphs(n_max: int = 8) -> list[list[BiGraph[int]]]:
     return bigraphs
 
 
-def simple_complete_path_bigraphs(n_east: int, n_west: int) -> list[PathBiGraph]:
-    """Return all unique simple, complete path bi-graphs with given numbers of east and west nodes.
+def simple_complete_path_bigraphs(n_left: int, n_right: int) -> list[PathBiGraph]:
+    """Return all unique simple, complete path bi-graphs with given numbers of left and right nodes.
 
     The returned path bi-graphs are unique, *i.e.* no two compare equal. They are simple
     in the sense that each balloon has at most one anklet graph that has only 2-hyperedges,
     and they are complete in the sense that the contain one edge between each pairs of nodes.
     """
-    n_total = n_east + n_west
+    n_total = n_left + n_right
     graphs = simple_complete_bigraphs(n_total)[n_total]
 
     mappings = []
-    for east_nodes in tqdm(combinations(range(n_total), n_east), total=comb(n_total, n_east)):
-        west_nodes = set(range(n_total)) - set(east_nodes)
-        mapping = {n: i for i, n in enumerate(east_nodes)}
-        mapping.update({n: i for i, n in enumerate(west_nodes, start=n_east)})
+    for left_nodes in tqdm(combinations(range(n_total), n_left), total=comb(n_total, n_left)):
+        right_nodes = set(range(n_total)) - set(left_nodes)
+        mapping = {n: i for i, n in enumerate(left_nodes)}
+        mapping.update({n: i for i, n in enumerate(right_nodes, start=n_left)})
         mappings.append(mapping)
 
     pbgs = []
@@ -109,6 +109,6 @@ def simple_complete_path_bigraphs(n_east: int, n_west: int) -> list[PathBiGraph]
         bg_b = g.balloon_graphs[1].copy()
         bg_a.relabel_nodes(mapping)
         bg_b.relabel_nodes(mapping)
-        pbgs.append(PathBiGraph(n_east, n_west, bg_a, bg_b))
+        pbgs.append(PathBiGraph(n_left, 0, n_right, bg_a, bg_b))
 
     return unique_elements(pbgs, progress=True)
