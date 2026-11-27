@@ -29,15 +29,17 @@ def unique_elements(graphs: Sequence[PathBiGraph], *, progress: bool = False) ->
 def minimal_elements(graphs: Sequence[PathBiGraph], *, progress: bool = False) -> list[PathBiGraph]:
     """Return minimal elements from a collection of path bi-graphs.
 
-    All path bi-graphs must have the same number of east and west nodes.
+    All path bi-graphs must have the same number of left and right nodes and no center nodes.
     """
 
     if not graphs:
         return []
 
     for g in graphs:
-        if (g.n_east, g.n_west) != (graphs[0].n_east, graphs[0].n_west):
-            raise ValueError("graphs do not all have the same number of east/west nodes")
+        if g.n_center != 0:
+            raise ValueError("graph has center nodes")
+        if (g.n_left, g.n_right) != (graphs[0].n_left, graphs[0].n_right):
+            raise ValueError("graphs do not all have the same number of left/right nodes")
 
     graph_iter = remove_identical(graphs)
     if progress:
