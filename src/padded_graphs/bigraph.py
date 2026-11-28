@@ -406,3 +406,17 @@ class BiGraph[T: Hashable]:
             bigraphs = bigraphs_new
 
         return list(bigraphs.values())
+
+    def add_hyperedge(self, u: T, v: T, /) -> list[Self]:
+
+        result = []
+        for bg_new in self._balloon_graph[0].add_hyperedge(u, v):
+            result.append(
+                type(self)(bg_new, self._balloon_graph[1])
+            )
+        for bg_new in self._balloon_graph[1].add_hyperedge(u, v):
+            result.append(
+                type(self)(self._balloon_graph[0], bg_new)
+            )
+
+        return result
