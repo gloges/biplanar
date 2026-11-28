@@ -406,3 +406,104 @@ class BiGraph[T: Hashable]:
             bigraphs = bigraphs_new
 
         return list(bigraphs.values())
+
+    def add_hyperedge(self, u: T, v: T, /) -> list[Self]:
+        """Add a hyperedge incident to two nodes in the bi-graph.
+
+        The hyperedge `A(u, v)` is added to either of the consistuent balloon graphs
+        via :meth:`BalloonGraph.add_hyperedge`.
+
+        Parameters
+        ----------
+        u, v : T
+            Two nodes in the bi-graph.
+
+        Returns
+        -------
+        list[Self]
+            Bi-graphs with valid structure resulting from adding
+            a hyperedge incident to only `u` and `v`.
+
+        Raises
+        ------
+        ValueError
+            If either `u` or `v` is not a node in the bi-graph, if `u == v`,
+            or if either balloon graph does not have valid structure.
+
+        Examples
+        --------
+        >>> g = BiGraph.from_data_strings(
+        ...     "[<0, 2 | A(0, 2)>, <0, 3, 4 | A(0, 3, 4)>], [<1, 5 | A(1, 5)>]",
+        ...     "[<0, 1, 2 | A(0, 2) + A(1, 2)>, <1, 3 | A(1, 3)>], [<4, 5 | A(4, 5)>]",
+        ...     int
+        ... )
+        >>> for big in g.add_hyperedge(0, 1):
+        ...     big.print_details()
+        ╭╼ Balloon graph A
+        │  ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3, 4, 5}
+        │  │ ├─╼  <0, 2 | A(0, 2)>                                  connected ✓  planar ✓
+        │  │ └─╼  <0, 1, 3, 4, 5 | A(0, 1) + A(1, 5) + A(0, 3, 4)>  connected ✓  planar ✓
+        │  │
+        │  ╰╼ Valid structure ✓
+        │
+        ├╼ Balloon graph B
+        │  ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3}
+        │  │ ├─╼  <0, 1, 2 | A(0, 2) + A(1, 2)>  connected ✓  planar ✓
+        │  │ └─╼  <1, 3 | A(1, 3)>               connected ✓  planar ✓
+        │  │
+        │  ├─┬╼ Balloon 1:  nodes = {4, 5}
+        │  │ └─╼  <4, 5 | A(4, 5)>               connected ✓  planar ✓
+        │  │
+        │  ╰╼ Valid structure ✓
+        │
+        ╰╼ Valid structure ✓
+        ╭╼ Balloon graph A
+        │  ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3, 4, 5}
+        │  │ ├─╼  <0, 1, 2, 5 | A(0, 1) + A(0, 2) + A(1, 5)>  connected ✓  planar ✓
+        │  │ └─╼  <0, 3, 4 | A(0, 3, 4)>                      connected ✓  planar ✓
+        │  │
+        │  ╰╼ Valid structure ✓
+        │
+        ├╼ Balloon graph B
+        │  ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3}
+        │  │ ├─╼  <0, 1, 2 | A(0, 2) + A(1, 2)>  connected ✓  planar ✓
+        │  │ └─╼  <1, 3 | A(1, 3)>               connected ✓  planar ✓
+        │  │
+        │  ├─┬╼ Balloon 1:  nodes = {4, 5}
+        │  │ └─╼  <4, 5 | A(4, 5)>               connected ✓  planar ✓
+        │  │
+        │  ╰╼ Valid structure ✓
+        │
+        ╰╼ Valid structure ✓
+        ╭╼ Balloon graph A
+        │  ╭─┬╼ Balloon 0:  nodes = {0, 2, 3, 4}
+        │  │ ├─╼  <0, 2 | A(0, 2)>        connected ✓  planar ✓
+        │  │ └─╼  <0, 3, 4 | A(0, 3, 4)>  connected ✓  planar ✓
+        │  │
+        │  ├─┬╼ Balloon 1:  nodes = {1, 5}
+        │  │ └─╼  <1, 5 | A(1, 5)>        connected ✓  planar ✓
+        │  │
+        │  ╰╼ Valid structure ✓
+        │
+        ├╼ Balloon graph B
+        │  ╭─┬╼ Balloon 0:  nodes = {0, 1, 2, 3}
+        │  │ ├─╼  <0, 1, 2 | A(0, 1) + A(0, 2) + A(1, 2)>  connected ✓  planar ✓
+        │  │ └─╼  <1, 3 | A(1, 3)>                         connected ✓  planar ✓
+        │  │
+        │  ├─┬╼ Balloon 1:  nodes = {4, 5}
+        │  │ └─╼  <4, 5 | A(4, 5)>                         connected ✓  planar ✓
+        │  │
+        │  ╰╼ Valid structure ✓
+        │
+        ╰╼ Valid structure ✓
+        """
+        result = []
+        for bg_new in self._balloon_graph[0].add_hyperedge(u, v):
+            result.append(
+                type(self)(bg_new, self._balloon_graph[1])
+            )
+        for bg_new in self._balloon_graph[1].add_hyperedge(u, v):
+            result.append(
+                type(self)(self._balloon_graph[0], bg_new)
+            )
+        return list({big.data_string(): big for big in result}.values())

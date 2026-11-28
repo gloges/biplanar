@@ -485,6 +485,109 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         for _, ag in self.iter_anklet_graphs():
             ag.relabel_nodes(node_replacements)
 
+    def add_hyperedge(self, u: T, v: T, /) -> list[Self]:
+        """Add a hyperedge incident to two nodes in the balloon graph.
+
+        If `u` and `v` are in separate balloons then their balloons are combined and a pair
+        of anklet graphs, one containing `u` and one containing `v`, is replaced with their union
+        and then the hyperedge `A(u, v)` added (this always results in a planar anklet graph).
+        Otherwise if `u` and `v` appear in an anklet graph together then the hyperedge `A(u, v)`
+        is simply added to that anklet graph and if it is planar then the resulting balloon graph
+        is returned.
+        If `u` and `v` are in the same balloon but appear in no anklet graph together then
+        it is not possible to add a hyperedge between them and an empty list is returned.
+
+        Parameters
+        ----------
+        u, v : T
+            Two nodes in the balloon graph.
+
+        Returns
+        -------
+        list[Self]
+            Balloon graphs with valid structure resulting from adding
+            a hyperedge incident to only `u` and `v`.
+
+        Raises
+        ------
+        ValueError
+            If either `u` or `v` is not a node in the balloon graph, if `u == v`,
+            or if the balloon graph does not have valid structure.
+
+        See Also
+        --------
+        :meth:`BalloonGraph.merge_nodes`
+
+        Examples
+        --------
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 2 | A(0, 2)>, <0, 3, 4 | A(0, 3, 4)>], [<1, 5 | A(1, 5)>, <1, 6 | A(1, 6)>]",
+        ...     int
+        ... )
+        >>> for bg in g.add_hyperedge(0, 1):
+        ...     print(bg.data_string())
+        [<0, 1, 3, 4, 5 | A(0, 1) + A(1, 5) + A(0, 3, 4)>, <0, 2 | A(0, 2)>, <1, 6 | A(1, 6)>]
+        [<0, 1, 3, 4, 6 | A(0, 1) + A(1, 6) + A(0, 3, 4)>, <0, 2 | A(0, 2)>, <1, 5 | A(1, 5)>]
+        [<0, 1, 2, 5 | A(0, 1) + A(0, 2) + A(1, 5)>, <0, 3, 4 | A(0, 3, 4)>, <1, 6 | A(1, 6)>]
+        [<0, 1, 2, 6 | A(0, 1) + A(0, 2) + A(1, 6)>, <0, 3, 4 | A(0, 3, 4)>, <1, 5 | A(1, 5)>]
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2 | A(0, 2) + A(1, 2)>, <0, 3 | A(0, 3)>, <1, 4 | A(1, 4)>]", int
+        ... )
+        >>> for bg in g.add_hyperedge(0, 1):
+        ...     print(bg.data_string())
+        [<0, 1, 2 | A(0, 1) + A(0, 2) + A(1, 2)>, <0, 3 | A(0, 3)>, <1, 4 | A(1, 4)>]
+
+        If adding the hyperedge results in a non-planar anklet graph then no balloon graphs
+        are returned:
+
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 1, 2, 3 | A(0, 2, 1, 3) + A(2, 3)>, <1, 4 | A(1, 4)>]", int
+        ... )
+        >>> g.add_hyperedge(0, 1)
+        []
+
+        If the nodes are in the same balloon but no common anklet graph then returns an empty list:
+
+        >>> g = BalloonGraph.from_data_string(
+        ...     "[<0, 2 | A(0, 2)>, <1, 2 | A(1, 2)>]", int
+        ... )
+        >>> g.add_hyperedge(0, 1)
+        []
+        """
+        if u not in self.nodes:
+            raise ValueError(f"{u!r} is not a node in the balloon graph")
+        if v not in self.nodes:
+            raise ValueError(f"{v!r} is not a node in the balloon graph")
+        if u == v:
+            raise ValueError(f"u = v = {u!r} are not distinct")
+
+        self.check_structure()
+
+        incidence = self.incidence()
+        i_u = list(incidence[u])[0][0]
+        i_v = list(incidence[v])[0][0]
+
+        results = []
+        if i_u != i_v:
+            for (_, j_u), (_, j_v) in product(incidence[u], incidence[v]):
+                graph_new = self.copy()
+                graph_new[i_u][j_u] = union(graph_new[i_u][j_u], graph_new[i_v][j_v])
+                graph_new[i_u][j_u].add_hyperedge(Anklet(u, v))
+                graph_new[i_u][j_u].reduce()
+                graph_new[i_v].pop(j_v)
+                graph_new[i_u].extend(graph_new[i_v])
+                graph_new.pop(i_v)
+                results.append(graph_new)
+        elif incidence[u] & incidence[v]:
+            i, j = list(incidence[u] & incidence[v])[0]
+            graph_new = self.copy()
+            graph_new[i][j].add_hyperedge(Anklet(u, v))
+            graph_new[i][j].reduce()
+            if graph_new[i][j].is_planar():
+                results.append(graph_new)
+
+        return results
+
     def merge_nodes(self, u: T, v: T, /) -> list[BalloonGraph[T]]:
         """Merge two nodes in the balloon graph.
 
@@ -509,7 +612,11 @@ class BalloonGraph[T: Hashable](list[list[AnkletGraph[T]]]):
         ------
         ValueError
             If either `u` or `v` is not a node in the balloon graph, if `u == v`,
-            or if any node appears in more than one balloon.
+            or if the balloon graph does not have valid structure.
+
+        See Also
+        --------
+        :meth:`BalloonGraph.add_hyperedge`
 
         Examples
         --------
